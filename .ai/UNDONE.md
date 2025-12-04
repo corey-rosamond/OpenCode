@@ -23,7 +23,7 @@
 | 5.1 | Session Management | ✅ Done | ✅ Done | ✅ Done |
 | 5.2 | Context Management | ✅ Done | ✅ Done | ✅ Done |
 | 6.1 | Slash Commands | ✅ Done | ✅ Done | ✅ Done |
-| 6.2 | Operating Modes | ✅ Done | ⬜ Not Started | ⬜ Not Started |
+| 6.2 | Operating Modes | ✅ Done | ✅ Done | ✅ Done |
 | 7.1 | Subagents System | ✅ Done | ⬜ Not Started | ⬜ Not Started |
 | 7.2 | Skills System | ✅ Done | ⬜ Not Started | ⬜ Not Started |
 | 8.1 | MCP Protocol Support | ✅ Done | ⬜ Not Started | ⬜ Not Started |
@@ -206,11 +206,53 @@ Phase 6.1 implementation complete in `src/opencode/commands/`:
   - config_commands.py: /config with subcommands (get, set), /model
   - debug_commands.py: /debug, /tokens, /history, /tools
 
+Phase 6.2 implementation complete in `src/opencode/modes/`:
+- Mode base classes (`modes/base.py`)
+  - Mode - Abstract base class with activate/deactivate lifecycle
+  - ModeConfig - Mode configuration with system prompt additions
+  - ModeContext - Context for mode operations (session, config, output handler)
+  - ModeState - Persistent mode state with serialization
+  - NormalMode - Default mode with no modifications
+  - ModeName - Enum for available modes (NORMAL, PLAN, THINKING, HEADLESS)
+- Mode prompts (`modes/prompts.py`)
+  - PLAN_MODE_PROMPT - System prompt for planning mode
+  - THINKING_MODE_PROMPT - System prompt for thinking mode
+  - THINKING_MODE_DEEP_PROMPT - Enhanced prompt for deep thinking
+  - HEADLESS_MODE_PROMPT - System prompt for headless mode
+  - get_mode_prompt() - Factory function for mode prompts
+- Mode manager (`modes/manager.py`)
+  - ModeManager - Thread-safe singleton for mode management
+  - switch_mode() - Switch between modes with push/pop support
+  - Mode stacking for temporary mode changes
+  - Auto-activation via pattern matching
+  - State save/restore for persistence
+- Plan mode (`modes/plan.py`)
+  - PlanMode - Mode for structured planning with task breakdown
+  - Plan - Structured plan with steps, considerations, success criteria
+  - PlanStep - Individual step with substeps, dependencies, files, complexity
+  - PLANNING_PATTERNS - Regex patterns for auto-activation
+  - Plan to markdown conversion for display
+  - Plan to todos conversion for execution
+- Thinking mode (`modes/thinking.py`)
+  - ThinkingMode - Extended reasoning with visible thinking process
+  - ThinkingConfig - Configuration (max tokens, show thinking, deep mode)
+  - ThinkingResult - Separated thinking and response with metrics
+  - THINKING_PATTERN - Regex for extracting <thinking>/<response> sections
+  - should_suggest_thinking() - Pattern detection for complex problems
+- Headless mode (`modes/headless.py`)
+  - HeadlessMode - Non-interactive mode for automation/CI/CD
+  - HeadlessConfig - File I/O, output format, timeout, auto-approve settings
+  - HeadlessResult - Structured output with success, message, exit code
+  - OutputFormat - Enum for TEXT/JSON output
+  - create_headless_config_from_args() - Factory from CLI arguments
+- Package exports (`modes/__init__.py`)
+  - setup_modes() - Register all default modes with manager
+
 ### Tests
 
-Phase 1.1 + 1.2 + 1.3 + 2.1 + 2.2 + 2.3 + 3.1 + 3.2 + 4.1 + 4.2 + 5.1 + 5.2 + 6.1 tests complete in `tests/`:
-- 1795 tests passing (1584 previous + 211 new Slash Commands tests)
-- 90% code coverage for commands package
+Phase 1.1 + 1.2 + 1.3 + 2.1 + 2.2 + 2.3 + 3.1 + 3.2 + 4.1 + 4.2 + 5.1 + 5.2 + 6.1 + 6.2 tests complete in `tests/`:
+- 2035 tests passing (1795 previous + 240 new Operating Modes tests)
+- 97% code coverage for modes package
 - mypy strict mode passing
 - ruff linting passing
 
@@ -218,9 +260,9 @@ Phase 1.1 + 1.2 + 1.3 + 2.1 + 2.2 + 2.3 + 3.1 + 3.2 + 4.1 + 4.2 + 5.1 + 5.2 + 6.
 
 ## Next Steps
 
-### Immediate Priority: Phase 6.2 Implementation (Operating Modes)
+### Immediate Priority: Phase 7.1 Implementation (Subagents System)
 
-Before starting Phase 6.2:
+Before starting Phase 7.1:
 1. [x] Phase 1.1 complete (Core Foundation)
 2. [x] Phase 1.2 complete (Configuration System)
 3. [x] Phase 1.3 complete (Basic REPL Shell)
@@ -234,14 +276,15 @@ Before starting Phase 6.2:
 11. [x] Phase 5.1 complete (Session Management)
 12. [x] Phase 5.2 complete (Context Management)
 13. [x] Phase 6.1 complete (Slash Commands)
-14. [ ] Read `.ai/phase/6.2/` planning documents
-15. [ ] Understand operating modes requirements
+14. [x] Phase 6.2 complete (Operating Modes)
+15. [ ] Read `.ai/phase/7.1/` planning documents
+16. [ ] Understand subagents requirements
 
-Phase 6.2 will implement:
-1. [ ] Plan mode for step-by-step planning
-2. [ ] Compact mode for context optimization
-3. [ ] Mode-aware tool behavior
-4. [ ] Mode transition commands
+Phase 7.1 will implement:
+1. [ ] Agent spawning and management
+2. [ ] Inter-agent communication
+3. [ ] Task delegation patterns
+4. [ ] Agent lifecycle management
 
 ### Implementation Order
 
@@ -295,6 +338,7 @@ Phase 10.2 (Polish & Testing) - Requires all above
 
 | Date | Changes |
 |------|---------|
+| 2025-12-05 | Phase 6.2 implementation complete (2035 tests) |
 | 2025-12-05 | Phase 6.1 implementation complete (1795 tests) |
 | 2025-12-04 | Phase 5.2 implementation complete (1584 tests) |
 | 2025-12-04 | Phase 5.1 implementation complete (1433 tests) |

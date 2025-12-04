@@ -13,6 +13,7 @@ A Claude Code alternative providing access to 400+ AI models via OpenRouter API 
 - **Session Management**: Persistent conversations with JSON storage and auto-save
 - **Context Management**: Token counting, truncation strategies, and context compaction
 - **Slash Commands**: Extensible command system with built-in commands for session, context, config, and debugging
+- **Operating Modes**: Plan, Thinking, and Headless modes for structured task execution
 
 ## Installation
 
@@ -59,8 +60,9 @@ OpenCode/
 │   ├── hooks/              # Event hooks, executor
 │   ├── sessions/           # Session management and persistence
 │   ├── context/            # Context management and token counting
-│   └── commands/           # Slash command system
-├── tests/                  # Test suite (1795 tests)
+│   ├── commands/           # Slash command system
+│   └── modes/              # Operating modes (Plan, Thinking, Headless)
+├── tests/                  # Test suite (2035 tests)
 └── .ai/                    # AI planning documentation
 ```
 
@@ -430,6 +432,125 @@ else:
     print(f"Error: {result.error}")
 ```
 
+## Operating Modes
+
+OpenCode supports different operating modes that modify assistant behavior for specialized tasks.
+
+### Available Modes
+
+| Mode | Description |
+|------|-------------|
+| Normal | Default mode with no modifications |
+| Plan | Structured planning with task breakdown and dependency tracking |
+| Thinking | Extended reasoning with visible thinking process |
+| Headless | Non-interactive mode for automation and CI/CD |
+
+### Programmatic Usage
+
+```python
+from opencode.modes import ModeManager, ModeContext, ModeName, setup_modes
+
+# Set up all default modes
+manager = setup_modes()
+
+# Create context for mode operations
+context = ModeContext(session=session, config=config, output=print)
+
+# Switch to plan mode
+manager.switch_mode(ModeName.PLAN, context)
+
+# Get current mode
+current = manager.get_current_mode()
+print(f"Current mode: {current.name.value}")
+
+# Modify system prompt for current mode
+prompt = manager.get_system_prompt("You are a helpful assistant.")
+
+# Switch back to normal mode
+manager.switch_mode(ModeName.NORMAL, context)
+```
+
+### Plan Mode
+
+```python
+from opencode.modes import PlanMode, Plan, PlanStep
+
+mode = PlanMode()
+
+# Create a plan
+plan = Plan(
+    title="API Refactoring",
+    summary="Refactor REST API to use async handlers",
+    steps=[
+        PlanStep(number=1, description="Update dependencies", files=["requirements.txt"]),
+        PlanStep(number=2, description="Convert handlers to async", dependencies=[1]),
+        PlanStep(number=3, description="Update tests", dependencies=[2]),
+    ],
+    considerations=["Backwards compatibility", "Performance testing"],
+    success_criteria=["All tests pass", "No sync handlers remain"],
+)
+
+# Set plan and convert to markdown
+mode.set_plan(plan)
+print(mode.show_plan())
+
+# Convert to todos for execution
+todos = mode.execute_plan()
+```
+
+### Thinking Mode
+
+```python
+from opencode.modes import ThinkingMode, ThinkingConfig
+
+# Configure thinking mode
+config = ThinkingConfig(
+    max_thinking_tokens=10000,
+    show_thinking=True,
+    deep_mode=True,
+)
+
+mode = ThinkingMode(thinking_config=config)
+
+# Process response with thinking extraction
+response = "<thinking>Analysis...</thinking><response>Final answer</response>"
+formatted = mode.modify_response(response)
+
+# Get last thinking result
+result = mode.get_last_thinking()
+if result:
+    print(f"Thinking time: {result.time_seconds:.1f}s")
+```
+
+### Headless Mode
+
+```python
+from opencode.modes import HeadlessMode, HeadlessConfig, OutputFormat
+
+# Configure headless mode for CI/CD
+config = HeadlessConfig(
+    input_file="task.txt",
+    output_file="result.json",
+    output_format=OutputFormat.JSON,
+    timeout=300,
+    auto_approve_safe=True,
+    fail_on_unsafe=True,
+)
+
+mode = HeadlessMode(headless_config=config)
+
+# Create execution result
+result = mode.create_result(
+    success=True,
+    message="Task completed",
+    output="Generated code...",
+    details={"files_modified": 3},
+)
+
+# Write result to configured output
+mode.write_output(result)
+```
+
 ## Configuration
 
 Configuration is loaded from multiple sources with precedence:
@@ -520,7 +641,7 @@ All code must pass:
 | 5.1 | Session Management | Complete |
 | 5.2 | Context Management | Complete |
 | 6.1 | Slash Commands | Complete |
-| 6.2 | Operating Modes | Planned |
+| 6.2 | Operating Modes | Complete |
 | 7.1 | Subagents System | Planned |
 | 7.2 | Skills System | Planned |
 | 8.1 | MCP Protocol Support | Planned |
