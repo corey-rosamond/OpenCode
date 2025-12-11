@@ -58,18 +58,21 @@ def run_setup_wizard(config_dir: Path | None = None) -> str | None:
     # Prompt for API key
     while True:
         api_key = Prompt.ask(
-            "[bold]Step 2:[/bold] Enter your OpenRouter API key",
-            password=True,  # Hide input for security
+            "[bold]Step 2:[/bold] Paste your OpenRouter API key"
         )
 
+        # Strip whitespace
+        api_key = api_key.strip() if api_key else ""
+
+        # Check for empty input
         if not api_key:
-            if Confirm.ask("No API key entered. Would you like to exit setup?", default=False):
-                console.print("[yellow]Setup cancelled. You can run 'forge' again to retry.[/yellow]")
+            console.print("[red]API key cannot be empty.[/red]")
+            if Confirm.ask("Would you like to exit setup?", default=False):
+                console.print("[yellow]Setup cancelled. Run 'forge' again to retry.[/yellow]")
                 return None
             continue
 
-        # Basic validation
-        api_key = api_key.strip()
+        # Validate format
         if not api_key.startswith("sk-or-"):
             console.print("[yellow]Warning: OpenRouter API keys typically start with 'sk-or-'[/yellow]")
             if not Confirm.ask("Use this key anyway?", default=False):
