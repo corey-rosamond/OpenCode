@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import (
@@ -43,7 +44,8 @@ def langchain_to_forge(message: BaseMessage) -> Message:
         if message.tool_calls:
             tool_calls = [
                 ToolCall(
-                    id=tc["id"] or "",  # LangChain can have None
+                    # Generate UUID if ID is None/empty to ensure tool result matching works
+                    id=tc.get("id") or f"call_{uuid.uuid4().hex[:8]}",
                     type="function",
                     function={
                         "name": tc["name"],

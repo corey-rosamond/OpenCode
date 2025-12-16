@@ -164,11 +164,9 @@ _All critical issues have been addressed._
 **Fix:** Added explicit check for running event loop before creating lock. Raises clear RuntimeError if called from non-async context.
 
 #### SEC-016: Unsafe None Handling in Tool IDs
-**Status:** Pending
-**File:** `src/code_forge/langchain/messages.py:46`
-**Issue:** `id=tc["id"] or ""` converts None to empty string, breaks ID matching
-**Impact:** Tool results may not match tool calls
-**Fix:** Generate UUID if ID is None: `id=tc.get("id") or f"call_{uuid.uuid4().hex[:8]}"`
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/messages.py:48`
+**Fix:** Generate UUID if ID is None/empty: `id=tc.get("id") or f"call_{uuid.uuid4().hex[:8]}"` to ensure tool result matching works.
 
 #### SEC-017: Fragile Tool Name Parsing
 **Status:** Pending
