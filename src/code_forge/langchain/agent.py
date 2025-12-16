@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
@@ -12,8 +13,11 @@ from typing import TYPE_CHECKING, Any
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 
+from code_forge.core.logging import get_logger
 from code_forge.langchain.memory import ConversationMemory
 from code_forge.langchain.tools import LangChainToolAdapter
+
+logger = get_logger("agent")
 
 if TYPE_CHECKING:
     from code_forge.langchain.llm import OpenRouterLLM
@@ -418,11 +422,29 @@ class CodeForgeAgent:
                 # Use first non-empty name found (don't concatenate)
                 if chunk.get("name") and not name:
                     raw_name = chunk["name"]
-                    # Sanitize: some models return malformed names with extra text
-                    # e.g., 'Bash" description="...' - extract just the tool name
-                    if '"' in raw_name:
-                        raw_name = raw_name.split('"')[0]
-                    name = raw_name.strip()
+
+                    # Validate tool name format - should be alphanumeric with underscores
+                    # Valid examples: "Bash", "read_file", "WebSearch2"
+                    if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", raw_name):
+                        # Log warning for malformed tool names
+                        logger.warning(
+                            f"Malformed tool name received: {raw_name!r}. "
+                            f"Attempting to extract valid name."
+                        )
+                        # Try to extract a valid tool name from malformed data
+                        # e.g., 'Bash" description="...' -> 'Bash'
+                        match = re.match(r"^([a-zA-Z_][a-zA-Z0-9_]*)", raw_name)
+                        if match:
+                            name = match.group(1)
+                            logger.debug(f"Extracted tool name: {name!r}")
+                        else:
+                            logger.error(
+                                f"Could not extract valid tool name from: {raw_name!r}. "
+                                f"Skipping this tool call."
+                            )
+                            continue
+                    else:
+                        name = raw_name.strip()
                 # Args are streamed as JSON string pieces, need concatenation
                 if chunk.get("args"):
                     args_str += chunk["args"]

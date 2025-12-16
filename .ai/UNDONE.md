@@ -169,11 +169,9 @@ _All critical issues have been addressed._
 **Fix:** Generate UUID if ID is None/empty: `id=tc.get("id") or f"call_{uuid.uuid4().hex[:8]}"` to ensure tool result matching works.
 
 #### SEC-017: Fragile Tool Name Parsing
-**Status:** Pending
-**File:** `src/code_forge/langchain/agent.py:339-342`
-**Issue:** Simplistic string parsing for malformed tool names using quotes
-**Impact:** Incorrect tool execution on malformed names
-**Fix:** Add proper validation, fail fast on malformed data
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/agent.py:420-447`
+**Fix:** Added regex validation for tool names, log warnings for malformed data, use regex extraction instead of fragile string split. Skip tool calls that can't be parsed.
 
 #### SEC-018: Missing Null Check in LoggingCallback
 **Status:** Pending
