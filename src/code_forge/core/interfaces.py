@@ -1,4 +1,17 @@
-"""Abstract base classes defining core interfaces for Code-Forge."""
+"""Abstract base classes defining core interfaces for Code-Forge.
+
+These interfaces define contracts that concrete implementations should follow.
+They enable dependency injection, testing with mocks, and loose coupling.
+
+Interface Implementation Status:
+- IConfigLoader: Implemented by config.loader.ConfigLoader
+- ISessionRepository: Implemented by sessions.repository.SessionRepository
+- IModelProvider: Interface for LLM providers (OpenRouterClient is compatible)
+- ITool: Defines the tool contract (BaseTool provides full implementation)
+
+Note: Some concrete classes may have richer interfaces than defined here.
+The interfaces define the minimum contract for polymorphism and testing.
+"""
 
 from __future__ import annotations
 
@@ -14,7 +27,6 @@ if TYPE_CHECKING:
         CompletionResponse,
         Session,
         SessionId,
-        SessionSummary,
         ToolParameter,
         ToolResult,
     )
@@ -25,6 +37,10 @@ class ITool(ABC):
 
     Tools are the primary way the agent interacts with the environment.
     Each tool has a name, description, parameters, and execute method.
+
+    Note: The concrete BaseTool class in tools.base provides a richer
+    implementation with categories, timeout handling, and schema generation.
+    This interface defines the minimum contract for tool polymorphism.
 
     McCabe Complexity Target: All methods <= 5
     """
@@ -80,20 +96,12 @@ class IModelProvider(ABC):
     Supports both OpenRouter and direct API connections.
     All providers must support streaming.
 
+    Note: OpenRouterClient provides additional functionality beyond
+    this interface (usage tracking, retry logic, etc.). This interface
+    defines the minimum contract for provider polymorphism.
+
     McCabe Complexity Target: All methods <= 6
     """
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Provider identifier."""
-        ...
-
-    @property
-    @abstractmethod
-    def supports_tools(self) -> bool:
-        """Whether this provider supports tool/function calling."""
-        ...
 
     @abstractmethod
     async def complete(self, request: CompletionRequest) -> CompletionResponse:
@@ -108,20 +116,24 @@ class IModelProvider(ABC):
         ...
 
     @abstractmethod
-    def stream(self, request: CompletionRequest) -> AsyncIterator[str]:
-        """Stream completion response token by token.
+    def stream(self, request: CompletionRequest) -> AsyncIterator[Any]:
+        """Stream completion response.
 
         Args:
             request: The completion request.
 
         Yields:
-            Individual tokens as they arrive.
+            Stream chunks (implementation-specific format).
         """
         ...
 
     @abstractmethod
-    async def list_models(self) -> list[str]:
-        """Return list of available model IDs."""
+    async def list_models(self) -> list[Any]:
+        """Return list of available models.
+
+        Returns:
+            List of model information (format is implementation-specific).
+        """
         ...
 
 
@@ -179,6 +191,9 @@ class IConfigLoader(ABC):
 class ISessionRepository(ABC):
     """Abstract base class for session persistence.
 
+    Implemented by sessions.repository.SessionRepository which wraps
+    the sync SessionStorage with an async interface.
+
     McCabe Complexity Target: All methods <= 5
     """
 
@@ -204,14 +219,14 @@ class ISessionRepository(ABC):
         ...
 
     @abstractmethod
-    async def list_recent(self, limit: int = 10) -> list[SessionSummary]:
+    async def list_recent(self, limit: int = 10) -> list[Any]:
         """List recent sessions with summaries.
 
         Args:
             limit: Maximum number of sessions to return.
 
         Returns:
-            List of session summaries.
+            List of session summaries (format is implementation-specific).
         """
         ...
 

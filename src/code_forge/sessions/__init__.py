@@ -25,6 +25,7 @@ Example:
 from .index import SessionIndex, SessionSummary
 from .manager import SessionManager
 from .models import Session, SessionMessage, ToolInvocation
+from .repository import SessionRepository
 from .storage import (
     SessionCorruptedError,
     SessionNotFoundError,
@@ -39,6 +40,7 @@ __all__ = [
     "SessionManager",
     "SessionMessage",
     "SessionNotFoundError",
+    "SessionRepository",
     "SessionStorage",
     "SessionStorageError",
     "SessionSummary",
