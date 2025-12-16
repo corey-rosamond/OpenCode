@@ -42,24 +42,39 @@ class StreamCollector:
 
         Returns:
             New content text, or None if no new content
-        """
-        self.model = chunk.model
 
-        if chunk.finish_reason:
+        Note:
+            Validates chunk structure before processing. Malformed chunks
+            are silently skipped to allow stream processing to continue.
+        """
+        # Validate chunk has required attributes
+        if not hasattr(chunk, "model"):
+            return None
+
+        self.model = chunk.model or self.model
+
+        if hasattr(chunk, "finish_reason") and chunk.finish_reason:
             self.finish_reason = chunk.finish_reason
 
-        if chunk.usage:
+        if hasattr(chunk, "usage") and chunk.usage:
             self.usage = chunk.usage
+
+        # Validate delta exists
+        if not hasattr(chunk, "delta") or chunk.delta is None:
+            return None
 
         delta = chunk.delta
         new_content = None
 
-        # Handle content
-        if delta.content:
+        # Handle content (validate delta has content attribute)
+        if hasattr(delta, "content") and delta.content:
             self.content += delta.content
             new_content = delta.content
 
-        # Handle tool calls
+        # Handle tool calls (validate delta has tool_calls attribute)
+        if not hasattr(delta, "tool_calls") or not delta.tool_calls:
+            return new_content
+
         if delta.tool_calls:
             for tc in delta.tool_calls:
                 index = tc.get("index", 0)

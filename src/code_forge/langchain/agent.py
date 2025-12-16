@@ -111,6 +111,7 @@ class CodeForgeAgent:
         timeout: float = 300.0,
         iteration_timeout: float = 60.0,
         tool_timeout: float = 30.0,
+        tool_max_retries: int = 2,
     ) -> None:
         """
         Initialize agent.
@@ -123,6 +124,7 @@ class CodeForgeAgent:
             timeout: Overall timeout in seconds
             iteration_timeout: Timeout per iteration in seconds
             tool_timeout: Timeout for individual tool execution in seconds
+            tool_max_retries: Max retries for transient tool failures (default 2)
         """
         self.llm = llm
         self.tools = tools
@@ -131,6 +133,7 @@ class CodeForgeAgent:
         self.timeout = timeout
         self.iteration_timeout = iteration_timeout
         self.tool_timeout = tool_timeout
+        self.tool_max_retries = tool_max_retries
 
         # Create tool lookup
         self._tool_map: dict[str, Any] = {}
@@ -140,6 +143,85 @@ class CodeForgeAgent:
 
         # Bind tools to LLM
         self._bound_llm = self.llm.bind_tools(tools)
+
+    async def _execute_tool_with_retry(
+        self,
+        tool: Any,
+        tool_name: str,
+        tool_args: dict,
+    ) -> tuple[str, bool]:
+        """Execute a tool with retry logic for transient failures.
+
+        Args:
+            tool: The tool to execute
+            tool_name: Name of the tool (for error messages)
+            tool_args: Arguments to pass to the tool
+
+        Returns:
+            Tuple of (result_string, success_bool)
+
+        Retries on:
+            - TimeoutError (transient network/resource issues)
+            - OSError (transient system issues)
+            - ConnectionError (network issues)
+
+        Does NOT retry on:
+            - ValueError, TypeError (argument/logic errors)
+            - PermissionError (won't resolve with retry)
+            - FileNotFoundError (won't resolve with retry)
+        """
+        import random
+
+        last_error: Exception | None = None
+        retryable_errors = (TimeoutError, OSError, ConnectionError)
+
+        for attempt in range(self.tool_max_retries + 1):
+            try:
+                if isinstance(tool, LangChainToolAdapter):
+                    result = await asyncio.wait_for(
+                        tool._arun(**tool_args),
+                        timeout=self.tool_timeout,
+                    )
+                elif hasattr(tool, "ainvoke"):
+                    result = await asyncio.wait_for(
+                        tool.ainvoke(tool_args),
+                        timeout=self.tool_timeout,
+                    )
+                else:
+                    # Sync tools run in executor with timeout
+                    loop = asyncio.get_event_loop()
+                    result = await asyncio.wait_for(
+                        loop.run_in_executor(
+                            None, lambda: tool.invoke(tool_args)
+                        ),
+                        timeout=self.tool_timeout,
+                    )
+                return str(result), True
+
+            except retryable_errors as e:
+                last_error = e
+                if attempt < self.tool_max_retries:
+                    # Exponential backoff with jitter
+                    wait_time = (0.5 * (2 ** attempt)) * random.uniform(0.5, 1.5)
+                    logger.warning(
+                        f"Tool {tool_name} failed (attempt {attempt + 1}), "
+                        f"retrying in {wait_time:.1f}s: {e}"
+                    )
+                    await asyncio.sleep(wait_time)
+                continue
+
+            except TimeoutError:
+                return (
+                    f"Tool {tool_name} timed out after {self.tool_timeout}s",
+                    False,
+                )
+
+            except Exception as e:
+                # Non-retryable error
+                return f"Error executing {tool_name}: {e}", False
+
+        # All retries exhausted
+        return f"Tool {tool_name} failed after {self.tool_max_retries + 1} attempts: {last_error}", False
 
     async def run(
         self,
@@ -264,53 +346,10 @@ class CodeForgeAgent:
                                         )
                                         continue
 
-                                # Execute tool with timeout
-                                try:
-                                    if isinstance(tool, LangChainToolAdapter):
-                                        result = await asyncio.wait_for(
-                                            tool._arun(**tool_args),
-                                            timeout=self.tool_timeout,
-                                        )
-                                    elif hasattr(tool, "ainvoke"):
-                                        result = await asyncio.wait_for(
-                                            tool.ainvoke(tool_args),
-                                            timeout=self.tool_timeout,
-                                        )
-                                    else:
-                                        # Sync tools run in executor with timeout
-                                        loop = asyncio.get_event_loop()
-                                        result = await asyncio.wait_for(
-                                            loop.run_in_executor(
-                                                None, lambda: tool.invoke(tool_args)
-                                            ),
-                                            timeout=self.tool_timeout,
-                                        )
-                                except TimeoutError:
-                                    result = (
-                                        f"Tool {tool_name} timed out after "
-                                        f"{self.tool_timeout}s"
-                                    )
-                                    success = False
-                                    tool_duration = time.time() - tool_start
-                                    tool_call_records.append(
-                                        ToolCallRecord(
-                                            id=tool_id or "",
-                                            name=tool_name,
-                                            arguments=tool_args,
-                                            result=result,
-                                            success=success,
-                                            duration=tool_duration,
-                                        )
-                                    )
-                                    self.memory.add_message(
-                                        Message.tool_result(tool_id or "", result)
-                                    )
-                                    continue
-
-                                success = True
-                            except Exception as e:
-                                result = f"Error executing {tool_name}: {e}"
-                                success = False
+                                # Execute tool with retry logic
+                                result, success = await self._execute_tool_with_retry(
+                                    tool, tool_name, tool_args
+                                )
                         else:
                             result = f"Unknown tool: {tool_name}"
                             success = False
@@ -543,6 +582,15 @@ class CodeForgeAgent:
                     if hasattr(chunk, "tool_call_chunks") and chunk.tool_call_chunks:
                         tool_call_chunks.extend(chunk.tool_call_chunks)
 
+                    # Track token usage from streaming chunks
+                    # LangChain includes usage_metadata on final chunk for many providers
+                    if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
+                        usage = chunk.usage_metadata
+                        if hasattr(usage, "input_tokens"):
+                            total_prompt_tokens += usage.input_tokens
+                        if hasattr(usage, "output_tokens"):
+                            total_completion_tokens += usage.output_tokens
+
                 # Yield LLM end event
                 yield AgentEvent(
                     type=AgentEventType.LLM_END,
@@ -577,17 +625,10 @@ class CodeForgeAgent:
                         tool = self._tool_map.get(tool_name)
 
                         if tool:
-                            try:
-                                if isinstance(tool, LangChainToolAdapter):
-                                    result = await tool._arun(**tool_args)
-                                elif hasattr(tool, "ainvoke"):
-                                    result = await tool.ainvoke(tool_args)
-                                else:
-                                    result = tool.invoke(tool_args)
-                                success = True
-                            except Exception as e:
-                                result = f"Error: {e}"
-                                success = False
+                            # Execute tool with retry logic
+                            result, success = await self._execute_tool_with_retry(
+                                tool, tool_name, tool_args
+                            )
                         else:
                             result = f"Unknown tool: {tool_name}"
                             success = False

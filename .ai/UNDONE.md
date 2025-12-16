@@ -321,32 +321,24 @@ _All critical issues have been addressed._
 **Fix:** Use copy.deepcopy() for base dict and all override values. Returned dict is now fully independent of inputs.
 
 #### LLM-005: Retry Thundering Herd
-**Status:** Pending
-**File:** `src/code_forge/llm/client.py:250-281`
-**Issue:** Exponential backoff without jitter causes simultaneous retries
-**Impact:** Thundering herd on API, poor retry distribution
-**Fix:** Add random jitter: `wait_time * random.uniform(0.5, 1.5)`
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/llm/client.py:288-308`
+**Fix:** Added random jitter (0.5x to 1.5x) to retry wait times for both rate limits and timeouts.
 
 #### LLM-006: Streaming Token Tracking Not Implemented
-**Status:** Pending
-**File:** `src/code_forge/langchain/agent.py:366-536`
-**Issue:** `total_prompt_tokens` and `total_completion_tokens` initialized but never updated
-**Impact:** Token metrics in stream events always 0
-**Fix:** Track tokens from streaming chunks like in non-streaming `run()` method
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/agent.py:546-553`
+**Fix:** Extract usage_metadata from LangChain chunks during streaming and accumulate token counts.
 
 #### LLM-007: No Chunk Validation in Streaming
-**Status:** Pending
-**File:** `src/code_forge/llm/streaming.py:36-91`
-**Issue:** `StreamCollector.add_chunk()` assumes specific chunk structure
-**Impact:** Silent failures if API response format changes
-**Fix:** Add schema validation for chunks
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/llm/streaming.py:36-78`
+**Fix:** Added hasattr checks before accessing chunk attributes. Malformed chunks are silently skipped to allow stream to continue.
 
 #### LLM-008: No Retry Logic for Tool Failures
-**Status:** Pending
-**File:** `src/code_forge/langchain/agent.py:213-230`
-**Issue:** Tool execution failure recorded but not retried
-**Impact:** Transient failures (network, timeouts) fail immediately
-**Fix:** Implement exponential backoff retry for tool execution
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/agent.py:147-224`
+**Fix:** Added _execute_tool_with_retry() helper with exponential backoff and jitter. Retries on TimeoutError, OSError, ConnectionError. Used in both run() and stream().
 
 #### LLM-009: No Complex Type Support in Schema
 **Status:** Pending

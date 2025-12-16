@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import random
 import threading
 import warnings
 import weakref
@@ -286,18 +287,22 @@ class OpenRouterClient:
 
             except RateLimitError as e:
                 last_error = e
-                wait_time = e.retry_after or (self.retry_delay * (2**attempt))
+                base_wait = e.retry_after or (self.retry_delay * (2**attempt))
+                # Add jitter (0.5x to 1.5x) to prevent thundering herd
+                wait_time = base_wait * random.uniform(0.5, 1.5)
                 logger.warning(
-                    f"Rate limited, retrying in {wait_time}s "
+                    f"Rate limited, retrying in {wait_time:.1f}s "
                     f"(attempt {attempt + 1}/{self.max_retries})"
                 )
                 await asyncio.sleep(wait_time)
 
             except httpx.TimeoutException as e:
                 last_error = LLMError(f"Request timeout: {e!s}")
-                wait_time = self.retry_delay * (2**attempt)
+                base_wait = self.retry_delay * (2**attempt)
+                # Add jitter (0.5x to 1.5x) to prevent thundering herd
+                wait_time = base_wait * random.uniform(0.5, 1.5)
                 logger.warning(
-                    f"Timeout, retrying in {wait_time}s "
+                    f"Timeout, retrying in {wait_time:.1f}s "
                     f"(attempt {attempt + 1}/{self.max_retries})"
                 )
                 await asyncio.sleep(wait_time)
