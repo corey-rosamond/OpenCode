@@ -107,20 +107,45 @@ Usage:
         if not os.path.isdir(base_path):
             return ToolResult.fail(f"Directory not found: {base_path}")
 
+        # Resolve base path to canonical form
+        resolved_base = Path(base_path).resolve()
+
         try:
-            # Build full pattern
+            # Security: Reject absolute patterns to prevent directory escape
+            # Patterns must be relative to base_path
             if os.path.isabs(pattern):
-                full_pattern = pattern
-            else:
-                full_pattern = os.path.join(base_path, pattern)
+                return ToolResult.fail(
+                    f"Absolute patterns are not allowed for security reasons. "
+                    f"Use a relative pattern within: {base_path}"
+                )
+
+            # Security: Check for path traversal attempts in pattern
+            if ".." in pattern:
+                return ToolResult.fail(
+                    "Path traversal (..) is not allowed in glob patterns"
+                )
+
+            # Build full pattern (always relative to base_path)
+            full_pattern = os.path.join(base_path, pattern)
 
             # Run glob in a thread with timeout to avoid blocking
             def do_glob() -> list[str]:
                 matches = glob_module.glob(full_pattern, recursive=True)
                 # Filter to files only
                 files = [f for f in matches if os.path.isfile(f)]
+                # Security: Ensure all results are within base_path
+                # This catches edge cases where glob might match outside
+                safe_files = []
+                for f in files:
+                    try:
+                        resolved = Path(f).resolve()
+                        if resolved.is_relative_to(resolved_base):
+                            safe_files.append(f)
+                    except (OSError, ValueError):
+                        # Skip files we can't resolve
+                        pass
                 # Exclude common patterns
-                return self._filter_excludes(files)
+                return self._filter_excludes(safe_files)
 
             try:
                 loop = asyncio.get_event_loop()
