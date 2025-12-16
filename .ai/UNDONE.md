@@ -410,39 +410,29 @@ _All critical issues have been addressed._
 **Fix:** Added edge case handling for budget <= 0. Returns True if any conversation tokens exist when budget is exhausted.
 
 #### PERM-001: Path Traversal in Glob Patterns
-**Status:** Pending
-**File:** `src/code_forge/permissions/rules.py:162-164`
-**Issue:** Glob pattern matching doesn't account for path traversal evasion
-**Impact:** Rule bypass via `/etc/../etc/passwd` style paths
-**Fix:** Add path normalization before matching
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/permissions/rules.py:184-206`
+**Fix:** Added `_normalize_path_value()` method that uses `os.path.normpath()` to normalize path-like values before glob/regex matching, preventing traversal attacks like `/etc/../etc/passwd`.
 
 #### PERM-002: Unvalidated Hook Environment Variables
-**Status:** Pending
-**File:** `src/code_forge/hooks/executor.py:206-207`
-**Issue:** Hook env vars merged without validation; can overwrite PATH, LD_PRELOAD
-**Impact:** Arbitrary code execution via env var injection
-**Fix:** Whitelist safe variables or blacklist dangerous ones
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/hooks/executor.py:81-119, 245-255`
+**Fix:** Added `DANGEROUS_ENV_VARS` blacklist (LD_PRELOAD, PYTHONPATH, etc.) and validation that logs warning and blocks dangerous env vars from hooks.
 
 #### PERM-003: Thread-Safety of Session Rules
-**Status:** Pending
-**File:** `src/code_forge/permissions/checker.py:45-60`
-**Issue:** RuleSet has no locking; session_rules can be modified from multiple threads
-**Impact:** Inconsistent results or crashes
-**Fix:** Add threading.RLock to RuleSet or PermissionChecker
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/permissions/checker.py:64-65, 78-80, 157-184`
+**Fix:** Added `threading.RLock` to PermissionChecker. All session_rules operations now protected by lock.
 
 #### PERM-004: HookResult.should_continue Ignores Errors
-**Status:** Pending
-**File:** `src/code_forge/hooks/executor.py:50-56`
-**Issue:** Property only checks exit code, ignores `timed_out` and `error` fields
-**Impact:** Code continues on timeout/error incorrectly
-**Fix:** Return `self.exit_code == 0 and not self.timed_out and not self.error`
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/hooks/executor.py:49-59`
+**Fix:** Changed `should_continue` to return `self.exit_code == 0 and not self.timed_out and not self.error`, matching the `success` property logic.
 
 #### PERM-005: No Audit Logging for Permission Decisions
-**Status:** Pending
-**File:** `src/code_forge/permissions/`
-**Issue:** Permission checks happen silently with no audit trail
-**Impact:** No security record of who ran what with what permissions
-**Fix:** Add optional permission audit logging
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/permissions/checker.py:107-146`
+**Fix:** Added `_audit_log()` method that logs permission decisions. DENY logs at WARNING, ASK at INFO, ALLOW at DEBUG level. Includes tool name, source (session/project/global/default), and rule pattern.
 
 #### MCP-001: Race Condition in Agent Manager
 **Status:** Pending

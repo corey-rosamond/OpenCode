@@ -51,9 +51,12 @@ class HookResult:
         """
         Check if operation should continue.
 
-        For pre-execution hooks, non-zero exit means block.
+        For pre-execution hooks, returns False if:
+        - Exit code is non-zero
+        - Hook timed out
+        - Hook had an error during execution
         """
-        return self.exit_code == 0
+        return self.exit_code == 0 and not self.timed_out and not self.error
 
 
 class HookExecutor:
@@ -77,6 +80,46 @@ class HookExecutor:
 
     # Maximum number of results to keep per execute_hooks call
     MAX_RESULTS: ClassVar[int] = 100
+
+    # Environment variables that hooks are not allowed to override
+    # These can be used for privilege escalation or code injection
+    DANGEROUS_ENV_VARS: ClassVar[frozenset[str]] = frozenset({
+        # Dynamic linker - can inject arbitrary code
+        "LD_PRELOAD",
+        "LD_LIBRARY_PATH",
+        "DYLD_INSERT_LIBRARIES",
+        "DYLD_LIBRARY_PATH",
+        # Python - can inject code or change module loading
+        "PYTHONPATH",
+        "PYTHONSTARTUP",
+        "PYTHONHOME",
+        # Ruby
+        "RUBYLIB",
+        "RUBYOPT",
+        # Perl
+        "PERL5LIB",
+        "PERL5OPT",
+        # Node.js
+        "NODE_PATH",
+        "NODE_OPTIONS",
+        # Shell startup - can inject code
+        "BASH_ENV",
+        "ENV",
+        "ZDOTDIR",
+        # Sudo/privilege escalation
+        "SUDO_ASKPASS",
+        # SSL/TLS - can enable MITM attacks
+        "SSL_CERT_FILE",
+        "SSL_CERT_DIR",
+        "REQUESTS_CA_BUNDLE",
+        "CURL_CA_BUNDLE",
+        # Git - can inject hooks
+        "GIT_EXEC_PATH",
+        "GIT_TEMPLATE_DIR",
+        # Other potentially dangerous
+        "IFS",
+        "CDPATH",
+    })
 
     def __init__(
         self,
@@ -202,9 +245,17 @@ class HookExecutor:
         work_dir = hook.working_dir or str(self.working_dir)
         env["FORGE_WORKING_DIR"] = work_dir
 
-        # Add hook-specific env vars
+        # Add hook-specific env vars (filtered for security)
         if hook.env:
-            env.update(hook.env)
+            for key, value in hook.env.items():
+                if key.upper() in self.DANGEROUS_ENV_VARS:
+                    logger.warning(
+                        "Hook '%s' attempted to set dangerous env var '%s' - blocked",
+                        hook.event_pattern,
+                        key,
+                    )
+                else:
+                    env[key] = value
 
         # Determine timeout
         timeout = hook.timeout or self.default_timeout

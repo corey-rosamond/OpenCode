@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import fnmatch
 import functools
+import os
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field
@@ -182,16 +183,40 @@ class PatternMatcher:
 
     @classmethod
     def _match_glob(cls, pattern: str, value: str) -> bool:
-        """Match using glob/fnmatch pattern."""
-        return fnmatch.fnmatch(value, pattern)
+        """Match using glob/fnmatch pattern.
+
+        Security: Values are normalized to prevent path traversal attacks.
+        For example, '/etc/../etc/passwd' is normalized to '/etc/passwd'.
+        """
+        # Normalize path-like values to prevent traversal evasion
+        normalized_value = cls._normalize_path_value(value)
+        return fnmatch.fnmatch(normalized_value, pattern)
+
+    @classmethod
+    def _normalize_path_value(cls, value: str) -> str:
+        """Normalize path-like values to prevent traversal attacks.
+
+        Handles paths like '/etc/../etc/passwd' -> '/etc/passwd'.
+        Non-path values are returned unchanged.
+        """
+        # Only normalize if it looks like a path
+        if "/" in value or "\\" in value or value.startswith("."):
+            # Use os.path.normpath to resolve .. and .
+            return os.path.normpath(value)
+        return value
 
     @classmethod
     def _match_regex(cls, pattern: str, value: str) -> bool:
-        """Match using regex pattern."""
+        """Match using regex pattern.
+
+        Security: Values are normalized to prevent path traversal attacks.
+        """
         compiled = cls._compile_regex(pattern)
         if compiled is None:
             return False  # Invalid regex
-        return bool(compiled.search(value))
+        # Normalize path-like values to prevent traversal evasion
+        normalized_value = cls._normalize_path_value(value)
+        return bool(compiled.search(normalized_value))
 
     @classmethod
     def specificity(cls, pattern: str) -> int:

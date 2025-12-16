@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import threading
 from typing import TYPE_CHECKING, Any
 
 from code_forge.permissions.models import (
@@ -13,6 +15,8 @@ from code_forge.permissions.rules import RuleSet
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class PermissionChecker:
@@ -57,6 +61,8 @@ class PermissionChecker:
         self.global_rules = global_rules or RuleSet()
         self.project_rules = project_rules
         self.session_rules = RuleSet()
+        # Lock protects session_rules from concurrent modification
+        self._session_lock = threading.RLock()
 
     def check(self, tool_name: str, arguments: dict[str, Any]) -> PermissionResult:
         """
@@ -70,27 +76,74 @@ class PermissionChecker:
             PermissionResult with determined permission level
         """
         # Check session rules first (highest priority)
-        session_result = self.session_rules.evaluate(tool_name, arguments)
+        with self._session_lock:
+            session_result = self.session_rules.evaluate(tool_name, arguments)
         if session_result.rule is not None:
+            self._audit_log(tool_name, arguments, session_result, "session")
             return session_result
 
         # Check project rules
         if self.project_rules:
             project_result = self.project_rules.evaluate(tool_name, arguments)
             if project_result.rule is not None:
+                self._audit_log(tool_name, arguments, project_result, "project")
                 return project_result
 
         # Check global rules
         global_result = self.global_rules.evaluate(tool_name, arguments)
         if global_result.rule is not None:
+            self._audit_log(tool_name, arguments, global_result, "global")
             return global_result
 
         # Use global default
-        return PermissionResult(
+        result = PermissionResult(
             level=self.global_rules.default,
             rule=None,
             reason=f"Using global default: {self.global_rules.default.value}",
         )
+        self._audit_log(tool_name, arguments, result, "default")
+        return result
+
+    def _audit_log(
+        self,
+        tool_name: str,
+        arguments: dict[str, Any],
+        result: PermissionResult,
+        source: str,
+    ) -> None:
+        """Log permission decision for audit trail.
+
+        Args:
+            tool_name: The tool being checked
+            arguments: Tool arguments
+            result: The permission result
+            source: Where the rule came from (session, project, global, default)
+        """
+        # Use DEBUG level for ALLOW, INFO for ASK, WARNING for DENY
+        level = result.level
+        rule_pattern = result.rule.pattern if result.rule else "none"
+
+        if level == PermissionLevel.DENY:
+            logger.warning(
+                "Permission DENIED for tool '%s' (source=%s, rule=%s)",
+                tool_name,
+                source,
+                rule_pattern,
+            )
+        elif level == PermissionLevel.ASK:
+            logger.info(
+                "Permission ASK for tool '%s' (source=%s, rule=%s)",
+                tool_name,
+                source,
+                rule_pattern,
+            )
+        else:  # ALLOW
+            logger.debug(
+                "Permission ALLOWED for tool '%s' (source=%s, rule=%s)",
+                tool_name,
+                source,
+                rule_pattern,
+            )
 
     def add_session_rule(self, rule: PermissionRule) -> None:
         """
@@ -98,22 +151,37 @@ class PermissionChecker:
 
         Session rules take highest priority and are cleared
         when the session ends.
+
+        Thread-safe: Protected by internal lock.
         """
-        # Remove existing rule with same pattern if any
-        self.session_rules.remove_rule(rule.pattern)
-        self.session_rules.add_rule(rule)
+        with self._session_lock:
+            # Remove existing rule with same pattern if any
+            self.session_rules.remove_rule(rule.pattern)
+            self.session_rules.add_rule(rule)
 
     def remove_session_rule(self, pattern: str) -> bool:
-        """Remove a session rule by pattern."""
-        return self.session_rules.remove_rule(pattern)
+        """Remove a session rule by pattern.
+
+        Thread-safe: Protected by internal lock.
+        """
+        with self._session_lock:
+            return self.session_rules.remove_rule(pattern)
 
     def clear_session_rules(self) -> None:
-        """Clear all session rules."""
-        self.session_rules = RuleSet()
+        """Clear all session rules.
+
+        Thread-safe: Protected by internal lock.
+        """
+        with self._session_lock:
+            self.session_rules = RuleSet()
 
     def get_session_rules(self) -> list[PermissionRule]:
-        """Get all session rules."""
-        return list(self.session_rules.rules)
+        """Get all session rules.
+
+        Thread-safe: Returns a copy of the rules list.
+        """
+        with self._session_lock:
+            return list(self.session_rules.rules)
 
     def allow_always(
         self, tool_name: str, arguments: dict[str, Any] | None = None
