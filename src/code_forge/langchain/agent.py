@@ -207,12 +207,56 @@ class CodeForgeAgent:
                     for tool_call in response.tool_calls:
                         tool_start = time.time()
                         tool_name = tool_call["name"]
-                        tool_args = tool_call["args"]
+                        tool_args = tool_call.get("args", {})
                         tool_id = tool_call["id"]
+
+                        # Validate tool_args is a dict (security: LLM could send other types)
+                        if not isinstance(tool_args, dict):
+                            result = f"Invalid arguments for {tool_name}: expected dict, got {type(tool_args).__name__}"
+                            success = False
+                            tool_duration = time.time() - tool_start
+                            tool_call_records.append(
+                                ToolCallRecord(
+                                    id=tool_id or "",
+                                    name=tool_name,
+                                    arguments={"_raw": str(tool_args)[:100]},
+                                    result=result,
+                                    success=success,
+                                    duration=tool_duration,
+                                )
+                            )
+                            self.memory.add_message(
+                                Message.tool_result(tool_id or "", result)
+                            )
+                            continue
 
                         tool = self._tool_map.get(tool_name)
                         if tool:
                             try:
+                                # Validate arguments against tool schema (if available)
+                                if isinstance(tool, LangChainToolAdapter) and tool.args_schema:
+                                    try:
+                                        # Pydantic validation
+                                        tool.args_schema(**tool_args)
+                                    except Exception as validation_error:
+                                        result = f"Invalid arguments for {tool_name}: {validation_error}"
+                                        success = False
+                                        tool_duration = time.time() - tool_start
+                                        tool_call_records.append(
+                                            ToolCallRecord(
+                                                id=tool_id or "",
+                                                name=tool_name,
+                                                arguments=tool_args,
+                                                result=result,
+                                                success=success,
+                                                duration=tool_duration,
+                                            )
+                                        )
+                                        self.memory.add_message(
+                                            Message.tool_result(tool_id or "", result)
+                                        )
+                                        continue
+
                                 # Execute tool
                                 if isinstance(tool, LangChainToolAdapter):
                                     result = await tool._arun(**tool_args)
