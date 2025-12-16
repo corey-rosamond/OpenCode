@@ -13,12 +13,14 @@ def validate_path_security(
     """Validate a file path for security issues.
 
     Checks for:
-    - Path traversal attacks (../)
-    - Symlinks escaping allowed directory (always rejected for security)
-    - Absolute path requirements
+    - Absolute path requirement
+    - Symlinks (rejected for security - can escape directory restrictions)
+    - Path traversal via canonical path resolution and base_dir comparison
 
-    Note: Symlinks are always rejected to prevent directory escape attacks.
-    The resolved path is checked to ensure it stays within base_dir if specified.
+    Security Model:
+    - The resolved (canonical) path is compared against the base directory
+    - This handles all forms of path traversal including ../ and symlinks
+    - Explicit symlink check provides defense-in-depth against obvious attacks
 
     Args:
         file_path: Path to validate.
@@ -32,25 +34,30 @@ def validate_path_security(
     if not os.path.isabs(file_path):
         return False, f"Path must be absolute: {file_path}"
 
-    # Check for symlinks first (security: symlinks can escape directory restrictions)
-    if Path(file_path).is_symlink():
-        return False, "Symlinks not allowed for security reasons"
+    path = Path(file_path)
 
-    # Resolve to canonical path (resolves .., symlinks, etc.)
+    # Check for symlink at the specified path (defense-in-depth)
+    # Note: This only catches symlinks at the final path component
     try:
-        resolved = Path(file_path).resolve()
+        if path.is_symlink():
+            return False, "Symlinks not allowed for security reasons"
+    except OSError:
+        pass  # Path doesn't exist yet, continue with other checks
+
+    # Resolve to canonical path (handles .., symlinks in parent dirs, etc.)
+    try:
+        resolved = path.resolve()
     except (OSError, RuntimeError) as e:
         return False, f"Invalid path: {e}"
 
-    # Check for path traversal by comparing resolved vs original
-    # If resolved path differs significantly, there may be traversal
-    original_parts = Path(file_path).parts
-    if ".." in original_parts:
-        return False, "Path traversal not allowed (contains ..)"
-
-    # Check base directory restriction
+    # Check base directory restriction - this is the primary security boundary
+    # The resolved path must be within the base directory
     if base_dir:
-        base_resolved = Path(base_dir).resolve()
+        try:
+            base_resolved = Path(base_dir).resolve()
+        except (OSError, RuntimeError) as e:
+            return False, f"Invalid base directory: {e}"
+
         try:
             resolved.relative_to(base_resolved)
         except ValueError:

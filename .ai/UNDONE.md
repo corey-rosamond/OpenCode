@@ -144,11 +144,9 @@ _All critical issues have been addressed._
 **Fix:** Added tool_timeout parameter (default 30s), wrapped all tool invocations with asyncio.wait_for().
 
 #### SEC-012: Broken Path Validation Logic
-**Status:** Pending
-**File:** `src/code_forge/tools/file/utils.py:35-44`
-**Issue:** Path traversal check is redundant and ineffective - `resolve()` already handles `..`
-**Impact:** Access control bypass potential
-**Fix:** Compare resolved path against base directory properly
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/file/utils.py:9-66`
+**Fix:** Removed redundant `..` check on original path parts. The resolved path comparison with base_dir is the actual security boundary. Added error handling for symlink check on non-existent paths and invalid base_dir.
 
 #### SEC-013: Bare Exception in Stream Reading
 **Status:** Pending
