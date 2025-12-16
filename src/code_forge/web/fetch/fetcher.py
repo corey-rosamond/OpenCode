@@ -38,6 +38,18 @@ def is_private_ip(ip_str: str) -> bool:
 def validate_url_host(url: str) -> None:
     """Validate that URL doesn't point to internal/private IPs.
 
+    SECURITY NOTE: This validation has a TOCTOU (time-of-check-time-of-use)
+    vulnerability. DNS resolution happens here, but aiohttp may resolve
+    the hostname again when making the actual request. An attacker could
+    use DNS rebinding to bypass this check:
+    1. First DNS query returns benign IP (passes validation)
+    2. Attacker changes DNS to internal IP
+    3. aiohttp resolves again and connects to internal IP
+
+    A complete fix would require using aiohttp with a custom connector that
+    pins resolved IPs. This is a defense-in-depth measure, not a complete
+    SSRF mitigation.
+
     Args:
         url: URL to validate
 

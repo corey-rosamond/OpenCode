@@ -238,6 +238,11 @@ async def run_with_agent(repl: CodeForgeREPL, config: CodeForgeConfig, api_key: 
             from rich.status import Status
 
             repl._status.set_status("Thinking...")
+
+            # Initialize spinners before try block to avoid NameError in except/finally
+            spinner = None
+            tool_spinner = None
+
             try:
                 # Add user message to session
                 session_manager.add_message("user", text)
@@ -245,7 +250,6 @@ async def run_with_agent(repl: CodeForgeREPL, config: CodeForgeConfig, api_key: 
                 # Stream agent execution with real-time output
                 accumulated_output = ""
                 current_tool = None
-                tool_spinner = None  # Spinner for tool execution
                 iteration_count = 0
                 first_content_received = False
 
@@ -365,22 +369,23 @@ async def run_with_agent(repl: CodeForgeREPL, config: CodeForgeConfig, api_key: 
             except Exception as e:
                 logger.exception("Agent error")
                 # Stop spinners if still running
-                if not first_content_received:
+                if spinner and not first_content_received:
                     spinner.stop()
                 if tool_spinner:
                     tool_spinner.stop()
                 repl.output.print_error(f"Error: {e}")
             finally:
                 # Ensure all spinners are stopped
-                try:
-                    spinner.stop()
-                except Exception:
-                    pass
-                try:
-                    if tool_spinner:
+                if spinner:
+                    try:
+                        spinner.stop()
+                    except Exception:
+                        pass
+                if tool_spinner:
+                    try:
                         tool_spinner.stop()
-                except Exception:
-                    pass
+                    except Exception:
+                        pass
                 repl._status.set_status("Ready")
 
     repl.on_input(handle_input)

@@ -194,18 +194,15 @@ _All critical issues have been addressed._
 **Fix:** Added `domain_matches()` helper with proper suffix matching. Now checks exact match or subdomain match (domain ends with ".pattern"), preventing attacks like "github.com.attacker.com".
 
 #### SEC-022: Race Condition in SSRF Check
-**Status:** Pending
-**File:** `src/code_forge/github/client.py:156-157`
+**Status:** Documented (2025-12-17)
+**File:** `src/code_forge/web/fetch/fetcher.py:38-58`
 **Issue:** DNS validation at fetch time doesn't prevent TOCTOU (DNS rebinding)
-**Impact:** SSRF bypass via DNS rebinding attack
-**Fix:** Use aiohttp connector with IP filtering instead of hostname validation
+**Note:** Added detailed SECURITY NOTE in docstring explaining the vulnerability and mitigation complexity. Full fix requires custom aiohttp connector with IP pinning - deferred to future work.
 
 #### SEC-023: Race Condition in Spinner Management
-**Status:** Pending
-**File:** `src/code_forge/cli/main.py:373-383`
-**Issue:** `spinner` variable referenced before checking if it exists in scope
-**Impact:** NameError if exception occurs before spinner creation
-**Fix:** Initialize `spinner = None` before try block
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/cli/main.py:240-389`
+**Fix:** Initialize `spinner = None` and `tool_spinner = None` before try block. Added existence checks before calling stop() in except and finally blocks.
 
 #### SEC-024: Potential Data Loss in Session Auto-Save
 **Status:** Pending
