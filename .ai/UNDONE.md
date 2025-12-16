@@ -124,32 +124,24 @@ _All critical issues have been addressed._
 **Fix:** Removed `allow_symlinks` parameter entirely; symlinks are now always rejected for security
 
 #### LLM-001: Streaming Errors Silently Skipped
-**Status:** Pending
-**File:** `src/code_forge/llm/client.py:211-212`
-**Issue:** JSON parse failures during streaming just logged as warning
-**Impact:** Data loss, incomplete responses without notification
-**Fix:** Propagate errors or provide mechanism to detect incomplete streams
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/llm/client.py:193-236`
+**Fix:** Track parse errors during streaming, log summary at end with error rate. Catches JSONDecodeError and structural errors.
 
 #### LLM-002: Thread Cleanup Timeout Too Short
-**Status:** Pending
-**File:** `src/code_forge/langchain/llm.py:260`
-**Issue:** 1-second timeout for producer thread join may orphan threads
-**Impact:** Resource leaks, orphaned background threads
-**Fix:** Increase timeout or implement proper cancellation
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/llm.py:260-270`
+**Fix:** Increased join timeout from 1s to 10s, added warning if thread still alive after timeout.
 
 #### LLM-003: Token Counter Race Condition
-**Status:** Pending
-**File:** `src/code_forge/llm/client.py:204-208`
-**Issue:** Concurrent streams update token counts without locking
-**Impact:** Inaccurate token/cost tracking
-**Fix:** Add threading lock around counter updates
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/llm/client.py:103-370`
+**Fix:** Added threading.Lock to protect all token counter access (update, read, reset).
 
 #### LLM-004: Tool Execution Has No Timeout
-**Status:** Pending
-**File:** `src/code_forge/langchain/agent.py:216-249`
-**Issue:** LLM calls have iteration_timeout, but tool execution can hang forever
-**Impact:** Agent can hang indefinitely on slow tools
-**Fix:** Apply timeout to tool execution within agent loop
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/agent.py:109,263-304`
+**Fix:** Added tool_timeout parameter (default 30s), wrapped all tool invocations with asyncio.wait_for().
 
 #### SEC-012: Broken Path Validation Logic
 **Status:** Pending
