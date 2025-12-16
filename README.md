@@ -1,6 +1,6 @@
 # Code-Forge
 
-A Claude Code alternative providing access to 400+ AI models via OpenRouter API with LangChain 1.0 integration for agent orchestration.
+An AI-powered CLI development assistant with access to 400+ AI models via OpenRouter API and LangChain 1.0 integration for agent orchestration.
 
 ## Quick Start
 

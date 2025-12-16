@@ -25,7 +25,7 @@
 
 ## Project Overview
 
-**Code-Forge** is a Claude Code alternative providing:
+**Code-Forge** is an AI-powered CLI development assistant providing:
 - Access to 400+ AI models via OpenRouter API
 - LangChain integration for agent orchestration
 - Full CLI with tools, permissions, sessions, and extensibility

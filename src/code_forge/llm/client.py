@@ -293,11 +293,18 @@ class OpenRouterClient:
         if response.is_success:
             return
 
+        # For streaming responses, we must read the content first
+        # before accessing .text or .json()
+        try:
+            await response.aread()
+        except Exception:
+            pass  # Already read or other issue, continue with what we have
+
         try:
             error_data = response.json()
-            error_msg = error_data.get("error", {}).get("message", str(response.text))
-        except json.JSONDecodeError:
-            error_msg = response.text
+            error_msg = error_data.get("error", {}).get("message", response.text)
+        except (json.JSONDecodeError, Exception):
+            error_msg = response.text or "Unknown error"
 
         status = response.status_code
 
