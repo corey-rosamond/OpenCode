@@ -178,12 +178,13 @@ class ConversationMemory:
 
         available = max_tokens - system_tokens
 
-        # Trim from front until under budget
-        while self.messages:
-            total = sum(self._token_counter(m) for m in self.messages)
-            if total <= available:
-                break
-            self.messages.pop(0)
+        # Calculate total tokens once (O(n)), then update incrementally
+        total = sum(self._token_counter(m) for m in self.messages)
+
+        # Trim from front until under budget (O(n) total)
+        while self.messages and total > available:
+            removed = self.messages.pop(0)
+            total -= self._token_counter(removed)
 
     def to_langchain_messages(self) -> list[BaseMessage]:
         """
@@ -255,9 +256,16 @@ class SummaryMemory(ConversationMemory):
     When messages exceed a threshold, older messages are
     summarized into a single message, preserving context
     while reducing token usage.
+
+    Attributes:
+        summary_threshold: Trigger summarization when messages exceed this count
+        recent_messages_to_keep: Number of recent messages to preserve (not summarized)
+        summary: Current summary of older messages
+        summarizer: LLM to use for generating summaries
     """
 
     summary_threshold: int = 20  # Messages before summarizing
+    recent_messages_to_keep: int = 10  # Keep this many recent messages unsummarized
     summary: str | None = None
     summarizer: Any = None  # LLM to use for summarization
 
@@ -292,8 +300,9 @@ class SummaryMemory(ConversationMemory):
             return
 
         # Keep most recent messages, summarize older ones
-        to_summarize = self.messages[:-10]
-        to_keep = self.messages[-10:]
+        keep_count = self.recent_messages_to_keep
+        to_summarize = self.messages[:-keep_count] if keep_count > 0 else self.messages
+        to_keep = self.messages[-keep_count:] if keep_count > 0 else []
 
         if to_summarize:
             # Generate summary

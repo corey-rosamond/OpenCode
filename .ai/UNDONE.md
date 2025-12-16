@@ -286,18 +286,14 @@ _All critical issues have been addressed._
 **Fix:** Added MAX_PATTERN_LENGTH (500 chars), REDOS_PATTERNS detection for nested quantifiers. Patterns matching ReDoS vectors are rejected.
 
 #### MEM-001: Conversation Memory Trim is O(n^2)
-**Status:** Pending
-**File:** `src/code_forge/langchain/memory.py:155-186`
-**Issue:** Recalculates total tokens for ALL messages every iteration
-**Impact:** Poor performance with large conversation histories
-**Fix:** Track running total, update incrementally
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/memory.py:181-187`
+**Fix:** Calculate total tokens once, then subtract each removed message incrementally. Changed from O(n²) to O(n).
 
 #### MEM-002: Summary Memory Keeps Last 10 Hardcoded
-**Status:** Pending
-**File:** `src/code_forge/langchain/memory.py:295-319`
-**Issue:** Always keeps last 10 messages regardless of conversation structure
-**Impact:** May drop important context
-**Fix:** Make configurable or use smarter heuristics
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/memory.py:267-268, 302-305`
+**Fix:** Added `recent_messages_to_keep` parameter (default 10) to SummaryMemory. Now configurable per instance.
 
 #### CFG-001: Memory Leak in ConfigLoader.__del__
 **Status:** Pending
