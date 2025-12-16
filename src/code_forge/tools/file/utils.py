@@ -9,19 +9,20 @@ from pathlib import Path
 def validate_path_security(
     file_path: str,
     base_dir: str | None = None,
-    allow_symlinks: bool = False,
 ) -> tuple[bool, str | None]:
     """Validate a file path for security issues.
 
     Checks for:
     - Path traversal attacks (../)
-    - Symlinks escaping allowed directory
+    - Symlinks escaping allowed directory (always rejected for security)
     - Absolute path requirements
+
+    Note: Symlinks are always rejected to prevent directory escape attacks.
+    The resolved path is checked to ensure it stays within base_dir if specified.
 
     Args:
         file_path: Path to validate.
         base_dir: Optional base directory to restrict access.
-        allow_symlinks: Whether to allow symlinks.
 
     Returns:
         Tuple of (is_valid, error_message).
@@ -30,6 +31,10 @@ def validate_path_security(
     # Must be absolute
     if not os.path.isabs(file_path):
         return False, f"Path must be absolute: {file_path}"
+
+    # Check for symlinks first (security: symlinks can escape directory restrictions)
+    if Path(file_path).is_symlink():
+        return False, "Symlinks not allowed for security reasons"
 
     # Resolve to canonical path (resolves .., symlinks, etc.)
     try:
@@ -42,10 +47,6 @@ def validate_path_security(
     original_parts = Path(file_path).parts
     if ".." in original_parts:
         return False, "Path traversal not allowed (contains ..)"
-
-    # Check symlinks if not allowed
-    if not allow_symlinks and Path(file_path).is_symlink():
-        return False, "Symlinks not allowed"
 
     # Check base directory restriction
     if base_dir:
