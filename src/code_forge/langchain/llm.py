@@ -257,7 +257,17 @@ class OpenRouterLLM(BaseChatModel):
                 raise item
             yield item
 
-        producer_thread.join(timeout=1.0)
+        # Wait for producer thread to complete with reasonable timeout
+        # 10 seconds should be enough for any in-flight network cleanup
+        producer_thread.join(timeout=10.0)
+
+        # Warn if thread is still running (potential resource leak)
+        if producer_thread.is_alive():
+            logger.warning(
+                "Producer thread did not complete within timeout. "
+                "Thread may be orphaned due to slow network or blocking I/O. "
+                "This is a daemon thread and will be cleaned up on process exit."
+            )
 
     async def _astream(
         self,
