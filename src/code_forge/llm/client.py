@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import threading
 import warnings
 import weakref
 from collections.abc import AsyncIterator
@@ -99,7 +100,8 @@ class OpenRouterClient:
         self._client: httpx.AsyncClient | None = None
         self._closed = False
 
-        # Usage tracking
+        # Usage tracking (protected by lock for thread safety)
+        self._usage_lock = threading.Lock()
         self._total_prompt_tokens = 0
         self._total_completion_tokens = 0
         self._total_requests = 0
@@ -156,10 +158,11 @@ class OpenRouterClient:
 
         response = CompletionResponse.from_dict(response_data)
 
-        # Track usage
-        self._total_prompt_tokens += response.usage.prompt_tokens
-        self._total_completion_tokens += response.usage.completion_tokens
-        self._total_requests += 1
+        # Track usage (thread-safe)
+        with self._usage_lock:
+            self._total_prompt_tokens += response.usage.prompt_tokens
+            self._total_completion_tokens += response.usage.completion_tokens
+            self._total_requests += 1
 
         logger.debug(f"Completion response: tokens={response.usage.total_tokens}")
 
@@ -190,6 +193,10 @@ class OpenRouterClient:
         async with client.stream("POST", "/chat/completions", json=payload) as response:
             await self._check_response(response)
 
+            # Track streaming stats for error detection
+            chunks_received = 0
+            parse_errors = 0
+
             async for line in response.aiter_lines():
                 if not line:
                     continue
@@ -200,16 +207,37 @@ class OpenRouterClient:
                     try:
                         chunk_data = json.loads(data)
                         chunk = StreamChunk.from_dict(chunk_data)
+                        chunks_received += 1
 
-                        # Track final usage
+                        # Track final usage (thread-safe)
                         if chunk.usage:
-                            self._total_prompt_tokens += chunk.usage.prompt_tokens
-                            self._total_completion_tokens += chunk.usage.completion_tokens
-                            self._total_requests += 1
+                            with self._usage_lock:
+                                self._total_prompt_tokens += chunk.usage.prompt_tokens
+                                self._total_completion_tokens += chunk.usage.completion_tokens
+                                self._total_requests += 1
 
                         yield chunk
-                    except json.JSONDecodeError:
-                        logger.warning(f"Failed to parse chunk: {data}")
+                    except json.JSONDecodeError as e:
+                        parse_errors += 1
+                        logger.warning(
+                            f"Failed to parse streaming chunk {chunks_received + parse_errors}: "
+                            f"{e} - data: {data[:100]}..."
+                        )
+                    except (KeyError, TypeError) as e:
+                        parse_errors += 1
+                        logger.warning(
+                            f"Invalid chunk structure at position {chunks_received + parse_errors}: "
+                            f"{e} - data: {data[:100]}..."
+                        )
+
+            # Log summary if there were errors (visible indicator of incomplete stream)
+            if parse_errors > 0:
+                error_rate = parse_errors / max(1, chunks_received + parse_errors) * 100
+                logger.error(
+                    f"Streaming completed with {parse_errors} parse error(s) "
+                    f"({error_rate:.1f}% error rate). "
+                    f"Response may be incomplete. Received {chunks_received} valid chunks."
+                )
 
     async def list_models(self) -> list[dict[str, Any]]:
         """
@@ -326,18 +354,20 @@ class OpenRouterClient:
             raise ProviderError(error_msg)
 
     def get_usage(self) -> TokenUsage:
-        """Get cumulative token usage."""
-        return TokenUsage(
-            prompt_tokens=self._total_prompt_tokens,
-            completion_tokens=self._total_completion_tokens,
-            total_tokens=self._total_prompt_tokens + self._total_completion_tokens,
-        )
+        """Get cumulative token usage (thread-safe)."""
+        with self._usage_lock:
+            return TokenUsage(
+                prompt_tokens=self._total_prompt_tokens,
+                completion_tokens=self._total_completion_tokens,
+                total_tokens=self._total_prompt_tokens + self._total_completion_tokens,
+            )
 
     def reset_usage(self) -> None:
-        """Reset usage counters."""
-        self._total_prompt_tokens = 0
-        self._total_completion_tokens = 0
-        self._total_requests = 0
+        """Reset usage counters (thread-safe)."""
+        with self._usage_lock:
+            self._total_prompt_tokens = 0
+            self._total_completion_tokens = 0
+            self._total_requests = 0
 
     async def close(self) -> None:
         """Close the HTTP client."""
