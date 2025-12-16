@@ -289,17 +289,20 @@ class AgentManager:
         Returns:
             Aggregated results.
         """
+        # Capture all data atomically to prevent race conditions
+        # where agent_ids could be modified by caller during await
         with self._lock:
             if agent_ids is None:
                 tasks = list(self._tasks.values())
                 ids_to_wait = list(self._agents.keys())
             else:
+                # Make a copy to prevent caller modifications affecting results
+                ids_to_wait = list(agent_ids)
                 tasks = [
                     self._tasks[aid]
-                    for aid in agent_ids
+                    for aid in ids_to_wait
                     if aid in self._tasks
                 ]
-                ids_to_wait = agent_ids
 
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)

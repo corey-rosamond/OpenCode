@@ -316,14 +316,19 @@ class Skill:
         self._context.clear()
         self._activated_at = None
 
+    # Maximum length for context values to prevent injection via very long strings
+    MAX_CONTEXT_VALUE_LENGTH = 1000
+
     def get_prompt(self) -> str:
         """Get skill prompt with variable substitution.
 
         Variables in the format {{ name }} are replaced
         with values from the context.
 
-        Security: Only allows alphanumeric values and common punctuation
-        to prevent injection attacks through context values.
+        Security:
+        - Only allows alphanumeric values and common punctuation
+        - Truncates values to MAX_CONTEXT_VALUE_LENGTH to prevent injection
+          via very long strings that could overflow buffers or confuse parsers
         """
         prompt = self.definition.prompt
 
@@ -334,11 +339,14 @@ class Skill:
             if value is None:
                 return match.group(0)  # Keep original if not found
 
+            # Convert to string and enforce length limit
+            str_value = str(value)
+            if len(str_value) > self.MAX_CONTEXT_VALUE_LENGTH:
+                str_value = str_value[: self.MAX_CONTEXT_VALUE_LENGTH] + "..."
+
             # Sanitize value to prevent injection
             # Only allow safe characters: alphanumeric, spaces, common punctuation
-            str_value = str(value)
             # Remove any potentially dangerous characters
-            # Allow: letters, numbers, spaces, basic punctuation
             sanitized = re.sub(
                 r'[^\w\s\-_.,:;!?@#$%&*()+=\[\]{}<>/\\|`~\'"]+', "", str_value
             )

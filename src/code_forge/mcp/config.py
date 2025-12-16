@@ -312,13 +312,47 @@ class MCPConfigLoader:
             return [self._expand_env_vars(item) for item in data]
         return data
 
+    # Allowed directories for saving config
+    ALLOWED_SAVE_DIRS = [
+        Path.home() / ".forge",
+        Path(".forge"),
+    ]
+
     def save_to_file(self, config: MCPConfig, path: Path) -> None:
         """Save configuration to a file.
+
+        Security: Only allows saving to expected config directories
+        (~/.forge or .forge) to prevent path traversal attacks.
 
         Args:
             config: Configuration to save.
             path: Path to save to.
+
+        Raises:
+            ValueError: If path is outside allowed directories.
         """
+        # Resolve the path to handle .. and symlinks
+        resolved = path.resolve()
+
+        # Check if path is within allowed directories
+        allowed = False
+        for allowed_dir in self.ALLOWED_SAVE_DIRS:
+            try:
+                allowed_resolved = allowed_dir.resolve()
+                # Check if resolved path starts with allowed directory
+                resolved.relative_to(allowed_resolved)
+                allowed = True
+                break
+            except ValueError:
+                # relative_to raises ValueError if path is not relative
+                continue
+
+        if not allowed:
+            allowed_dirs_str = ", ".join(str(d) for d in self.ALLOWED_SAVE_DIRS)
+            raise ValueError(
+                f"Cannot save to {path}: path must be within {allowed_dirs_str}"
+            )
+
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, "w") as f:
             yaml.safe_dump(config.to_dict(), f, default_flow_style=False)

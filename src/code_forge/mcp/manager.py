@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
@@ -150,7 +151,10 @@ class MCPManager:
             raise ValueError(f"Unknown transport: {config.transport}")
 
     async def connect(self, server_name: str) -> MCPConnection:
-        """Connect to a specific server.
+        """Connect to a specific server with retry logic.
+
+        Uses exponential backoff with jitter for reconnection attempts.
+        Respects settings.reconnect_attempts and settings.reconnect_delay.
 
         Args:
             server_name: Name of server to connect.
@@ -160,7 +164,7 @@ class MCPManager:
 
         Raises:
             ValueError: If server is unknown or disabled.
-            MCPClientError: If connection fails.
+            MCPClientError: If connection fails after all retries.
         """
         async with self._connection_lock:
             # Check if already connected
@@ -179,49 +183,77 @@ class MCPManager:
             if not config.enabled:
                 raise ValueError(f"Server {server_name} is disabled")
 
-            # Create transport and client
-            transport = self._create_transport(config)
-            client = MCPClient(
-                transport,
-                request_timeout=float(self._config.settings.timeout),
-            )
+            # Get retry settings
+            max_attempts = self._config.settings.reconnect_attempts
+            base_delay = self._config.settings.reconnect_delay
 
-            try:
-                # Connect
-                await client.connect()
-                logger.info(f"Connected to MCP server: {server_name}")
+            last_error: Exception | None = None
 
-                # Create adapter
-                adapter = MCPToolAdapter(client, server_name)
-
-                # Discover capabilities
-                tools = await client.list_tools()
-                resources = await client.list_resources()
-                prompts = await client.list_prompts()
-
-                # Register tools
-                self._tool_registry.register_server_tools(adapter, tools)
-
-                # Create connection
-                connection = MCPConnection(
-                    name=server_name,
-                    client=client,
-                    config=config,
-                    adapter=adapter,
-                    tools=tools,
-                    resources=resources,
-                    prompts=prompts,
-                    connected_at=datetime.now(),
+            for attempt in range(max_attempts + 1):
+                # Create transport and client for each attempt
+                transport = self._create_transport(config)
+                client = MCPClient(
+                    transport,
+                    request_timeout=float(self._config.settings.timeout),
                 )
 
-                self._connections[server_name] = connection
-                return connection
+                try:
+                    # Connect
+                    await client.connect()
+                    logger.info(f"Connected to MCP server: {server_name}")
 
-            except Exception as e:
-                await client.disconnect()
-                if isinstance(e, MCPClientError):
-                    raise
-                raise MCPClientError(f"Failed to connect to {server_name}: {e}") from e
+                    # Create adapter
+                    adapter = MCPToolAdapter(client, server_name)
+
+                    # Discover capabilities
+                    tools = await client.list_tools()
+                    resources = await client.list_resources()
+                    prompts = await client.list_prompts()
+
+                    # Register tools
+                    self._tool_registry.register_server_tools(adapter, tools)
+
+                    # Create connection
+                    connection = MCPConnection(
+                        name=server_name,
+                        client=client,
+                        config=config,
+                        adapter=adapter,
+                        tools=tools,
+                        resources=resources,
+                        prompts=prompts,
+                        connected_at=datetime.now(),
+                    )
+
+                    self._connections[server_name] = connection
+                    return connection
+
+                except Exception as e:
+                    await client.disconnect()
+                    last_error = e
+
+                    # Log attempt failure
+                    if attempt < max_attempts:
+                        # Calculate delay with exponential backoff and jitter
+                        delay = base_delay * (2**attempt) * random.uniform(0.5, 1.5)
+                        logger.warning(
+                            f"Connection attempt {attempt + 1}/{max_attempts + 1} "
+                            f"to {server_name} failed: {e}. Retrying in {delay:.1f}s"
+                        )
+                        await asyncio.sleep(delay)
+                    else:
+                        logger.error(
+                            f"All {max_attempts + 1} connection attempts to "
+                            f"{server_name} failed"
+                        )
+
+            # All attempts failed
+            if isinstance(last_error, MCPClientError):
+                raise last_error
+            raise MCPClientError(
+                f"Failed to connect to {server_name} after {max_attempts + 1} attempts: "
+                f"{last_error}"
+            ) from last_error
 
     async def connect_all(self) -> list[MCPConnection]:
         """Connect to all enabled servers with auto_connect=True.

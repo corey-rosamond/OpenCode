@@ -435,39 +435,29 @@ _All critical issues have been addressed._
 **Fix:** Added `_audit_log()` method that logs permission decisions. DENY logs at WARNING, ASK at INFO, ALLOW at DEBUG level. Includes tool name, source (session/project/global/default), and rule pattern.
 
 #### MCP-001: Race Condition in Agent Manager
-**Status:** Pending
-**File:** `src/code_forge/agents/manager.py:297-302`
-**Issue:** `agent_ids` can be modified between getting tasks and waiting
-**Impact:** Inconsistent state with concurrent access
-**Fix:** Capture all IDs atomically with lock
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/agents/manager.py:292-305`
+**Fix:** Made copy of `agent_ids` list within lock to prevent caller modifications affecting results during await.
 
 #### MCP-002: Missing Dependency Validation in Plugins
-**Status:** Pending
-**File:** `src/code_forge/plugins/manager.py:70-78`
-**Issue:** Plugin manifest `dependencies` field never validated or installed
-**Impact:** Plugins with missing dependencies fail silently at runtime
-**Fix:** Add dependency checking during discovery or before activation
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/plugins/manager.py:61-88, 111-119`
+**Fix:** Added `_check_dependencies()` method using `importlib.metadata.version()` to check if dependencies are installed before loading plugins.
 
 #### MCP-003: Missing Reconnection Logic
-**Status:** Pending
-**File:** `src/code_forge/mcp/manager.py:276-286`
-**Issue:** Config includes `reconnect_attempts` and `reconnect_delay` but they're never used
-**Impact:** Connection failures don't trigger automatic reconnection
-**Fix:** Implement exponential backoff reconnection
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/mcp/manager.py:153-256`
+**Fix:** Implemented exponential backoff with jitter in `connect()` using `reconnect_attempts` and `reconnect_delay` from settings.
 
 #### MCP-004: Missing Path Traversal Protection in Config Save
-**Status:** Pending
-**File:** `src/code_forge/mcp/config.py:322`
-**Issue:** `save_to_file` doesn't validate path argument
-**Impact:** User tricked into saving config to unexpected locations
-**Fix:** Restrict paths to specific directories
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/mcp/config.py:315-358`
+**Fix:** Added `ALLOWED_SAVE_DIRS` and validation that resolved path is within `~/.forge` or `.forge` directories.
 
 #### MCP-005: Potential Injection Through Skill Context Values
-**Status:** Pending
-**File:** `src/code_forge/skills/base.py:342-345`
-**Issue:** Regex-based sanitization could be bypassed with careful encoding
-**Impact:** Prompt injection through context values
-**Fix:** Use Jinja2 templating or add length limits
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/skills/base.py:319-356`
+**Fix:** Added `MAX_CONTEXT_VALUE_LENGTH` (1000 chars) limit. Values are truncated before sanitization to prevent injection via very long strings.
 
 ---
 

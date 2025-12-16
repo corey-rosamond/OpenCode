@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import logging
+import re
 import threading
 
 from .config import PluginConfig, PluginConfigManager
@@ -56,6 +58,35 @@ class PluginManager:
         """
         return dict(self._plugins)
 
+    def _check_dependencies(self, dependencies: list[str]) -> list[str]:
+        """Check if plugin dependencies are installed.
+
+        Args:
+            dependencies: List of package requirements (e.g., ["requests>=2.0", "pyyaml"]).
+
+        Returns:
+            List of missing or unsatisfied dependencies.
+        """
+        missing: list[str] = []
+
+        for dep in dependencies:
+            # Parse package name (handle version specifiers)
+            # e.g., "requests>=2.0" -> "requests"
+            match = re.match(r"^([a-zA-Z0-9_-]+)", dep)
+            if not match:
+                self.logger.warning(f"Invalid dependency format: {dep}")
+                missing.append(dep)
+                continue
+
+            package_name = match.group(1)
+            try:
+                importlib.metadata.version(package_name)
+            except importlib.metadata.PackageNotFoundError:
+                missing.append(dep)
+                self.logger.debug(f"Dependency not found: {dep}")
+
+        return missing
+
     def discover_and_load(self) -> None:
         """Discover and load all plugins.
 
@@ -85,7 +116,19 @@ class PluginManager:
 
         Returns:
             Loaded plugin instance.
+
+        Raises:
+            PluginLoadError: If dependencies are missing or plugin fails to load.
         """
+        # Check dependencies before loading
+        if discovered.manifest and discovered.manifest.dependencies:
+            missing = self._check_dependencies(discovered.manifest.dependencies)
+            if missing:
+                raise PluginLoadError(
+                    f"Plugin {discovered.id} has missing dependencies: {', '.join(missing)}",
+                    plugin_id=discovered.id,
+                )
+
         plugin = self.loader.load(discovered)
         self._plugins[plugin.id] = plugin
 
