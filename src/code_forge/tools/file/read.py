@@ -250,8 +250,20 @@ Usage:
                 f"(max: {self.MAX_NOTEBOOK_SIZE / 1024 / 1024:.0f}MB)"
             )
 
-        with open(file_path, encoding="utf-8") as f:
-            notebook = json.load(f)
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                notebook = json.load(f)
+        except json.JSONDecodeError as e:
+            return ToolResult.fail(
+                f"Invalid notebook format: {file_path} is not valid JSON. "
+                f"Error at line {e.lineno}, column {e.colno}: {e.msg}"
+            )
+
+        # Validate basic notebook structure
+        if not isinstance(notebook, dict):
+            return ToolResult.fail(
+                f"Invalid notebook format: {file_path} is not a valid Jupyter notebook"
+            )
 
         cells = []
         for i, cell in enumerate(notebook.get("cells", [])):
