@@ -167,19 +167,31 @@ class StdioTransport(MCPTransport):
 
         async with self._read_lock:
             try:
-                line = await self._process.stdout.readline()
-                if not line:
-                    # Check if process exited
-                    if self._process.returncode is not None:
-                        raise ConnectionError(
-                            f"Process exited with code {self._process.returncode}"
-                        )
-                    raise ConnectionError("Server closed connection")
+                # Loop to skip empty lines (prevents stack overflow from recursion)
+                max_empty_lines = 1000  # Safety limit
+                empty_count = 0
 
-                data = line.decode().strip()
-                if not data:
-                    # Empty line, try again
-                    return await self.receive()
+                while True:
+                    line = await self._process.stdout.readline()
+                    if not line:
+                        # Check if process exited
+                        if self._process.returncode is not None:
+                            raise ConnectionError(
+                                f"Process exited with code {self._process.returncode}"
+                            )
+                        raise ConnectionError("Server closed connection")
+
+                    data = line.decode().strip()
+                    if data:
+                        # Got non-empty data, process it
+                        break
+
+                    # Empty line - continue loop but track count for safety
+                    empty_count += 1
+                    if empty_count >= max_empty_lines:
+                        raise ConnectionError(
+                            f"Received {max_empty_lines} consecutive empty lines"
+                        )
 
                 logger.debug(f"Received: {data}")
                 try:
