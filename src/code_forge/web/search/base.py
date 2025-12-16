@@ -68,17 +68,35 @@ class SearchProvider(ABC):
         if not allowed_domains and not blocked_domains:
             return response
 
+        def domain_matches(domain: str, pattern: str) -> bool:
+            """Check if domain matches pattern (exact or subdomain).
+
+            Proper suffix matching to prevent attacks like:
+            - "github.com" should NOT match "github.com.attacker.com"
+            - "github.com" SHOULD match "www.github.com" and "api.github.com"
+            """
+            pattern = pattern.lower().lstrip(".")
+            # Exact match
+            if domain == pattern:
+                return True
+            # Subdomain match (domain ends with .pattern)
+            if domain.endswith("." + pattern):
+                return True
+            return False
+
         filtered: list[SearchResult] = []
         for result in response.results:
             domain = urlparse(result.url).netloc.lower()
 
-            # Check blocked domains
-            if blocked_domains and any(d.lower() in domain for d in blocked_domains):
+            # Check blocked domains (using proper suffix matching)
+            if blocked_domains and any(
+                domain_matches(domain, d) for d in blocked_domains
+            ):
                 continue
 
-            # Check allowed domains
+            # Check allowed domains (using proper suffix matching)
             if allowed_domains and not any(
-                d.lower() in domain for d in allowed_domains
+                domain_matches(domain, d) for d in allowed_domains
             ):
                 continue
 

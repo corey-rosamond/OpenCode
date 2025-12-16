@@ -174,32 +174,24 @@ _All critical issues have been addressed._
 **Fix:** Added regex validation for tool names, log warnings for malformed data, use regex extraction instead of fragile string split. Skip tool calls that can't be parsed.
 
 #### SEC-018: Missing Null Check in LoggingCallback
-**Status:** Pending
-**File:** `src/code_forge/langchain/callbacks.py:152-158`
-**Issue:** `response.llm_output.get("usage", {})` doesn't check if `llm_output` is None
-**Impact:** AttributeError crash
-**Fix:** Use `(response.llm_output or {}).get("usage", {})`
+**Status:** Not a bug (2025-12-17)
+**File:** `src/code_forge/langchain/callbacks.py:154`
+**Note:** Code already handles None check with ternary: `response.llm_output.get("usage", {}) if response.llm_output else {}`
 
 #### SEC-019: Fragile Async-Sync Pattern
-**Status:** Pending
-**File:** `src/code_forge/langchain/tools.py:104`
-**Issue:** `asyncio.run()` called from within potentially async context creates new event loops
-**Impact:** Fragile behavior, potential deadlocks
-**Fix:** Use `nest_asyncio` properly or document limitations
+**Status:** Not a bug (2025-12-17)
+**File:** `src/code_forge/langchain/tools.py:103-116`
+**Note:** Code already handles async context properly: checks for running loop, uses ThreadPoolExecutor when in async context. This is cleaner than nest_asyncio.
 
 #### SEC-020: Complex Heuristic Tool Call Parsing
-**Status:** Pending
-**File:** `src/code_forge/langchain/agent.py:299-364`
-**Issue:** `_assemble_tool_calls()` uses string splitting and heuristics for malformed data
-**Impact:** Incorrect tool calls on API parsing issues
-**Fix:** Add schema validation, fail fast on malformed data
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/agent.py:385-472`
+**Fix:** Addressed with SEC-017 (regex tool name validation). Added logging for JSON parse failures. Invalid tool names are now skipped with clear error messages.
 
 #### SEC-021: Substring Domain Matching
-**Status:** Pending
-**File:** `src/code_forge/web/search/base.py:76`
-**Issue:** `"github.com" in domain` matches `github.com.attacker.com`
-**Impact:** Domain filtering bypass
-**Fix:** Use proper suffix matching: `domain.endswith(blocked)` or split and compare
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/web/search/base.py:71-103`
+**Fix:** Added `domain_matches()` helper with proper suffix matching. Now checks exact match or subdomain match (domain ends with ".pattern"), preventing attacks like "github.com.attacker.com".
 
 #### SEC-022: Race Condition in SSRF Check
 **Status:** Pending

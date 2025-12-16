@@ -455,7 +455,11 @@ class CodeForgeAgent:
             # Parse args JSON
             try:
                 args = json.loads(args_str) if args_str else {}
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    f"Failed to parse tool args as JSON for '{name}': {e}. "
+                    f"Storing as raw string."
+                )
                 args = {"raw": args_str}
 
             if name:
