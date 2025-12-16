@@ -180,17 +180,32 @@ class SessionIndex:
         """Rebuild the index from session files.
 
         Reads all session files to create fresh index data.
+        Logs warnings for any corrupted sessions that cannot be loaded.
         """
         self._index.clear()
+        corrupted_count = 0
 
         for session_id in self.storage.list_session_ids():
             session = self.storage.load_or_none(session_id)
             if session:
                 self._index[session_id] = SessionSummary.from_session(session)
+            else:
+                # Session file exists but couldn't be loaded (corrupted)
+                corrupted_count += 1
+                logger.warning(
+                    f"Skipped corrupted session during rebuild: {session_id}"
+                )
 
         self._dirty = True
         self._save_index()
-        logger.info(f"Rebuilt index with {len(self._index)} sessions")
+
+        if corrupted_count > 0:
+            logger.warning(
+                f"Rebuilt index with {len(self._index)} sessions "
+                f"({corrupted_count} corrupted sessions skipped)"
+            )
+        else:
+            logger.info(f"Rebuilt index with {len(self._index)} sessions")
 
     def add(self, session: Session) -> None:
         """Add or update a session in the index.

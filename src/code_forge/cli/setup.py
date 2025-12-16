@@ -89,8 +89,10 @@ def run_setup_wizard(config_dir: Path | None = None) -> str | None:
         console.print(f"[green]API key saved to {config_dir / 'settings.json'}[/green]")
     except Exception as e:
         console.print(f"[red]Failed to save configuration: {e}[/red]")
-        console.print("[yellow]You can set the OPENROUTER_API_KEY environment variable instead.[/yellow]")
-        return api_key  # Return key anyway so session can continue
+        console.print("[yellow]Warning: Your API key is NOT saved and will need to be re-entered next time.[/yellow]")
+        console.print("[yellow]Hint: Set OPENROUTER_API_KEY environment variable for persistent configuration.[/yellow]")
+        # Return None to signal save failure - caller can decide whether to continue
+        return None
 
     # Success message
     console.print()

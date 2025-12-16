@@ -275,9 +275,14 @@ class ContextTracker:
         """Check if context exceeds limit.
 
         Returns:
-            True if over limit.
+            True if over limit. Also returns True if conversation_budget is 0
+            (no space for conversation) and there are conversation tokens.
         """
-        return self.current_tokens() > self.budget.conversation_budget
+        budget = self.budget.conversation_budget
+        # Edge case: if budget is 0, any conversation tokens exceed limit
+        if budget <= 0:
+            return self.budget.conversation > 0
+        return self.current_tokens() > budget
 
     def overflow_amount(self) -> int:
         """Calculate how many tokens over limit.

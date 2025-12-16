@@ -526,6 +526,9 @@ class SessionManager:
     def _fire_hook(self, event: str, *args: Any) -> None:
         """Fire registered hooks for an event.
 
+        Hook exceptions are caught and logged to prevent one failing hook
+        from breaking the entire system. However, this may hide critical issues.
+
         Args:
             event: Event name.
             *args: Arguments to pass to callbacks.
@@ -534,7 +537,10 @@ class SessionManager:
             try:
                 callback(*args)
             except Exception as e:
-                logger.error(f"Hook error for {event}: {e}")
+                # Log with full traceback for debugging
+                logger.exception(
+                    f"Hook error for {event} (callback: {callback.__name__ if hasattr(callback, '__name__') else callback}): {e}"
+                )
 
     def _start_auto_save(self) -> None:
         """Start the auto-save task."""

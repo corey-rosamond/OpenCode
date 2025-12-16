@@ -163,11 +163,15 @@ class TokenBudgetStrategy(TruncationStrategy):
             return system_messages
 
         # Remove oldest messages until within budget
+        # Track token count incrementally (O(n) total) instead of recounting (O(n^2))
         result = list(other_messages)
+        result_tokens = self._count_messages(result, counter)
 
-        while result and self._count_messages(result, counter) > available_tokens:
-            # Remove oldest (first) message
+        while result and result_tokens > available_tokens:
+            # Remove oldest (first) message and subtract its tokens
             removed = result.pop(0)
+            removed_tokens = counter([removed])
+            result_tokens -= removed_tokens
             logger.debug(f"Removed message: {removed.get('role')}")
 
         final = system_messages + result

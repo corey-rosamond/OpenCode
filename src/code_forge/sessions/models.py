@@ -197,6 +197,9 @@ class Session:
         self.messages.append(message)
         self._mark_updated()
 
+    # Valid message roles
+    VALID_ROLES = frozenset({"system", "user", "assistant", "tool"})
+
     def add_message_from_dict(
         self,
         role: str,
@@ -206,13 +209,23 @@ class Session:
         """Create and add a message from components.
 
         Args:
-            role: Message role (system, user, assistant, tool).
+            role: Message role (must be: system, user, assistant, or tool).
             content: Message content.
             **kwargs: Additional message fields.
 
         Returns:
             The created SessionMessage.
+
+        Raises:
+            ValueError: If role is not a valid message role.
         """
+        # Validate role
+        if role not in self.VALID_ROLES:
+            raise ValueError(
+                f"Invalid message role: {role!r}. "
+                f"Must be one of: {', '.join(sorted(self.VALID_ROLES))}"
+            )
+
         message = SessionMessage(
             role=role,
             content=content,

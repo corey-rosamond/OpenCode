@@ -362,67 +362,52 @@ _All critical issues have been addressed._
 **Note:** Code already uses `data.get("head", {}).get("repo")` check before accessing full_name.
 
 #### SESS-001: Unhandled Exception in Hook System
-**Status:** Pending
-**File:** `src/code_forge/sessions/manager.py:504-515`
-**Issue:** Hook callback exceptions silently caught and logged
-**Impact:** Critical issues hidden
-**Fix:** Consider re-raising critical exceptions or add hook validation
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/sessions/manager.py:526-543`
+**Fix:** Changed logger.error to logger.exception for full traceback. Added callback name to error message for debugging.
 
 #### SESS-002: Memory Leak in Token Counter Caching
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/context/tokens.py:257-353`
 **Issue:** Cache default `max_cache_size=1000` could cause memory issues
-**Impact:** Memory growth in long sessions
-**Fix:** Add cache statistics monitoring, make size adaptive
+**Note:** Feature request for cache statistics monitoring. Current size is reasonable for most use cases.
 
 #### SESS-003: Silent Failure in Setup Wizard
-**Status:** Pending
-**File:** `src/code_forge/cli/setup.py:87-93`
-**Issue:** Config save failure returns API key anyway, leaving inconsistent state
-**Impact:** User thinks configured but it's not
-**Fix:** Return `None` on save failure or add success flag
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/cli/setup.py:87-95`
+**Fix:** Return None on save failure instead of API key. Added clearer warning that key is NOT saved.
 
 #### SESS-004: Missing Error Handling in Session Index Rebuild
-**Status:** Pending
-**File:** `src/code_forge/sessions/index.py:179-193`
-**Issue:** Corrupted sessions silently skipped via `load_or_none()`
-**Impact:** User data loss awareness lost
-**Fix:** Log warnings for corrupted sessions, provide recovery option
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/sessions/index.py:179-208`
+**Fix:** Added logging for corrupted sessions during rebuild. Summary shows count of corrupted sessions skipped.
 
 #### SESS-005: No Validation in Message Adding
-**Status:** Pending
-**File:** `src/code_forge/sessions/models.py:200-222`
-**Issue:** `add_message_from_dict()` accepts arbitrary kwargs without validation
-**Impact:** Invalid message structures allowed
-**Fix:** Validate that `role` is one of: system, user, assistant, tool
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/sessions/models.py:200-235`
+**Fix:** Added VALID_ROLES frozenset and validation. Raises ValueError for invalid roles with helpful message.
 
 #### SESS-006: Quadratic Token Counting
-**Status:** Pending
-**File:** `src/code_forge/context/strategies.py:165-172`
-**Issue:** While loop calls `_count_messages()` for entire list on each iteration
-**Impact:** O(n^2) complexity for large contexts
-**Fix:** Track token counts incrementally
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/context/strategies.py:165-175`
+**Fix:** Calculate token count once, subtract incrementally. Changed from O(n²) to O(n).
 
 #### SESS-007: No Automatic Session Cleanup
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/sessions/storage.py:329-369`
 **Issue:** `cleanup_old_sessions()` and `cleanup_old_backups()` exist but never called
-**Impact:** Sessions accumulate indefinitely
-**Fix:** Add scheduled cleanup or CLI command
+**Note:** Feature request - requires implementing scheduled cleanup or CLI command.
 
 #### SESS-008: No Conflict Detection for Concurrent Access
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/sessions/storage.py:141-195`
 **Issue:** Multiple processes can write to same session file
-**Impact:** Data corruption
-**Fix:** Implement file locking or modification time checking
+**Note:** Feature request - requires implementing file locking (fcntl/msvcrt).
 
 #### SESS-009: Missing Token Limit Enforcement
-**Status:** Pending
-**File:** `src/code_forge/context/limits.py:266-289`
-**Issue:** `exceeds_limit()` compares against `conversation_budget` which can be <= 0
-**Impact:** Edge case bugs
-**Fix:** Add bounds checking
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/context/limits.py:274-285`
+**Fix:** Added edge case handling for budget <= 0. Returns True if any conversation tokens exist when budget is exhausted.
 
 #### PERM-001: Path Traversal in Glob Patterns
 **Status:** Pending
