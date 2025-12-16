@@ -50,6 +50,16 @@ class PluginDiscovery:
     - Installed Python packages (via entry points)
     - Additional configured paths
 
+    SECURITY WARNING:
+        Plugin discovery executes code from installed packages when loading
+        entry points. Only install plugins from trusted sources. A malicious
+        package could execute arbitrary code during the discovery process.
+
+        Future improvements may include:
+        - Plugin signing and verification
+        - Sandboxed plugin execution
+        - Plugin allowlist/blocklist configuration
+
     Attributes:
         USER_PLUGIN_DIR: Default user plugin directory.
         PROJECT_PLUGIN_DIR: Default project plugin directory.
@@ -132,6 +142,11 @@ class PluginDiscovery:
         Searches for Python packages that have registered
         code_forge.plugins entry points.
 
+        SECURITY WARNING: Loading entry points executes code from installed
+        packages. Only install plugins from trusted sources. A malicious
+        package could execute arbitrary code during discovery. In the future,
+        consider implementing plugin signing/verification.
+
         Returns:
             List of plugins found via entry points.
         """
@@ -146,7 +161,13 @@ class PluginDiscovery:
 
         for ep in eps:
             try:
-                # Load the entry point to get the plugin class
+                # SECURITY: ep.load() executes code from the package.
+                # This is inherent to Python's entry point system.
+                # Only install packages from trusted sources.
+                logger.debug(
+                    f"Loading plugin entry point: {ep.name} from {ep.value} "
+                    "(SECURITY: executes package code)"
+                )
                 plugin_class = ep.load()
 
                 # Create a manifest from the plugin class
