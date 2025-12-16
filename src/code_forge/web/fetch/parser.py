@@ -135,14 +135,60 @@ class HTMLParser:
 
         return markdown.strip()
 
+    # Attributes that can execute JavaScript (XSS vectors)
+    DANGEROUS_ATTRS = frozenset([
+        # Event handlers
+        "onabort", "onafterprint", "onbeforeprint", "onbeforeunload", "onblur",
+        "oncanplay", "oncanplaythrough", "onchange", "onclick", "oncontextmenu",
+        "oncopy", "oncuechange", "oncut", "ondblclick", "ondrag", "ondragend",
+        "ondragenter", "ondragleave", "ondragover", "ondragstart", "ondrop",
+        "ondurationchange", "onemptied", "onended", "onerror", "onfocus",
+        "onhashchange", "oninput", "oninvalid", "onkeydown", "onkeypress",
+        "onkeyup", "onload", "onloadeddata", "onloadedmetadata", "onloadstart",
+        "onmessage", "onmousedown", "onmousemove", "onmouseout", "onmouseover",
+        "onmouseup", "onmousewheel", "onoffline", "ononline", "onpagehide",
+        "onpageshow", "onpaste", "onpause", "onplay", "onplaying", "onpopstate",
+        "onprogress", "onratechange", "onreset", "onresize", "onscroll",
+        "onsearch", "onseeked", "onseeking", "onselect", "onstalled", "onstorage",
+        "onsubmit", "onsuspend", "ontimeupdate", "ontoggle", "onunload",
+        "onvolumechange", "onwaiting", "onwheel",
+        # JavaScript URL handlers
+        "href", "src", "action", "formaction", "data",  # Only dangerous with javascript: URLs
+    ])
+
+    def _sanitize_element(self, element: Any) -> None:
+        """Remove dangerous attributes from an element.
+
+        Args:
+            element: BeautifulSoup element to sanitize
+        """
+        if not hasattr(element, "attrs"):
+            return
+
+        # Remove event handler attributes
+        attrs_to_remove = []
+        for attr in element.attrs:
+            attr_lower = attr.lower()
+            # Remove all event handlers (on*)
+            if attr_lower.startswith("on"):
+                attrs_to_remove.append(attr)
+            # Remove javascript: URLs
+            elif attr_lower in ("href", "src", "action", "formaction", "data"):
+                value = element.get(attr, "")
+                if isinstance(value, str) and value.strip().lower().startswith("javascript:"):
+                    attrs_to_remove.append(attr)
+
+        for attr in attrs_to_remove:
+            del element[attr]
+
     def extract_main_content(self, html: str) -> str:
-        """Extract main content, removing boilerplate.
+        """Extract main content, removing boilerplate and XSS vectors.
 
         Args:
             html: HTML content
 
         Returns:
-            Main content HTML
+            Sanitized main content HTML
         """
         soup = BeautifulSoup(html, "html.parser")
 
@@ -152,6 +198,10 @@ class HTMLParser:
             "aside", "form", "iframe", "noscript",
         ]):
             element.decompose()
+
+        # Sanitize all remaining elements (remove event handlers, javascript: URLs)
+        for element in soup.find_all(True):  # True matches all tags
+            self._sanitize_element(element)
 
         # Try to find main content area
         main = (

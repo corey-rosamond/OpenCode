@@ -33,13 +33,35 @@ class PatternMatcher:
     - LRU eviction prevents unbounded memory growth
     """
 
+    # Maximum pattern length to prevent ReDoS via long patterns
+    MAX_PATTERN_LENGTH = 500
+
+    # Patterns that can cause catastrophic backtracking (ReDoS)
+    # These detect nested quantifiers which are the main ReDoS vector
+    REDOS_PATTERNS = [
+        r"\([^)]*[+*][^)]*\)[+*]",  # (a+)+ or (a*)*
+        r"\[[^\]]*\][+*]{2,}",  # [a-z]++ (possessive not supported, but ++ can be typo)
+        r"(\.\*){3,}",  # Multiple .* in sequence
+    ]
+
     @staticmethod
     @functools.lru_cache(maxsize=256)
     def _compile_regex(pattern: str) -> re.Pattern[str] | None:
-        """Compile and cache a regex pattern.
+        """Compile and cache a regex pattern with ReDoS protection.
 
-        Returns None if pattern is invalid.
+        Returns None if pattern is invalid or potentially dangerous.
+
+        Security: Rejects patterns that could cause catastrophic backtracking.
         """
+        # Length limit
+        if len(pattern) > PatternMatcher.MAX_PATTERN_LENGTH:
+            return None
+
+        # Check for known ReDoS patterns
+        for redos_pattern in PatternMatcher.REDOS_PATTERNS:
+            if re.search(redos_pattern, pattern):
+                return None
+
         try:
             return re.compile(pattern)
         except re.error:

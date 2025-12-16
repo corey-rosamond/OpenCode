@@ -266,11 +266,9 @@ _All critical issues have been addressed._
 **Fix:** Better error handling or robust quote parsing
 
 #### SEC-027: Dangerous Command Regex Bypassable
-**Status:** Pending
-**File:** `src/code_forge/tools/execution/bash.py:31-42`
-**Issue:** Patterns like `rm -rf /` won't catch `rm -rf / | something`
-**Impact:** Dangerous commands can slip through
-**Fix:** Improve pattern matching or use allowlist approach
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/execution/bash.py:37-55`
+**Fix:** Improved patterns to catch piped/chained variants. Removed `$` anchors, added patterns for any flag order, added curl/wget pipe-to-shell detection.
 
 #### SEC-028: Domain Filter Uses Substring Match
 **Status:** Duplicate of SEC-021 (2025-12-17)
@@ -278,18 +276,14 @@ _All critical issues have been addressed._
 **Note:** Already fixed in SEC-021. Added proper domain_matches() helper with suffix matching.
 
 #### SEC-029: HTML Parser Doesn't Remove Event Handlers
-**Status:** Pending
-**File:** `src/code_forge/web/fetch/parser.py:138-166`
-**Issue:** Removes `<script>` but not `onerror=`, `onclick=` handlers
-**Impact:** XSS if content rendered as HTML
-**Fix:** Use proper HTML sanitizer (nh3, bleach)
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/web/fetch/parser.py:138-216`
+**Fix:** Added _sanitize_element() method that removes all event handler attributes (on*) and javascript: URLs from href/src/action/etc. Applied to all elements in extract_main_content().
 
 #### SEC-030: Permission Pattern Regex DoS Risk
-**Status:** Pending
-**File:** `src/code_forge/permissions/rules.py:149-172`
-**Issue:** User-supplied patterns compiled as regex without complexity limits
-**Impact:** Malicious regex can cause ReDoS
-**Fix:** Add regex complexity limits or use simplified pattern language
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/permissions/rules.py:36-68`
+**Fix:** Added MAX_PATTERN_LENGTH (500 chars), REDOS_PATTERNS detection for nested quantifiers. Patterns matching ReDoS vectors are rejected.
 
 #### MEM-001: Conversation Memory Trim is O(n^2)
 **Status:** Pending

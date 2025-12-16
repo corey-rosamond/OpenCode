@@ -35,17 +35,23 @@ class BashTool(BaseTool):
     MAX_OUTPUT_SIZE: ClassVar[int] = 30000  # characters
 
     # Patterns for dangerous commands
+    # Note: Patterns use word boundaries and avoid end anchors ($) to catch
+    # piped/chained variants like "rm -rf / | cat" or "rm -rf / && echo done"
     DANGEROUS_PATTERNS: ClassVar[list[str]] = [
-        r"rm\s+-rf\s+/\s*$",  # rm -rf /
+        r"rm\s+(-[a-z]*r[a-z]*\s+)*-[a-z]*f[a-z]*\s+/(\s|;|\||&|$)",  # rm -rf / (any flag order)
+        r"rm\s+(-[a-z]*f[a-z]*\s+)*-[a-z]*r[a-z]*\s+/(\s|;|\||&|$)",  # rm -fr / (any flag order)
         r"rm\s+-rf\s+/\*",  # rm -rf /*
+        r"rm\s+-fr\s+/\*",  # rm -fr /*
         r"mkfs\.",  # Format filesystem
-        r"dd\s+if=.+of=/dev/sd",  # Direct disk write
-        r">\s*/dev/sd",  # Write to disk device
-        r"chmod\s+-R\s+777\s+/\s*$",  # Recursive 777 on root
-        r":()\{\s*:\|:&\s*\};:",  # Fork bomb
-        r":\(\)\s*\{\s*:\|:&\s*\}\s*;\s*:",  # Fork bomb (with spaces)
-        r"mv\s+/\s+",  # Move root
-        r"chown\s+-R\s+.+\s+/\s*$",  # Chown root
+        r"dd\s+.*of=/dev/[sh]d",  # Direct disk write (sd* or hd*)
+        r">\s*/dev/[sh]d",  # Write to disk device
+        r"chmod\s+(-[a-z]*R[a-z]*\s+)*777\s+/(\s|;|\||&|$)",  # chmod -R 777 /
+        r"chmod\s+777\s+(-[a-z]*R[a-z]*\s+)+/(\s|;|\||&|$)",  # chmod 777 -R /
+        r":()\s*\{",  # Fork bomb start pattern
+        r"mv\s+/\s",  # Move root
+        r"chown\s+(-[a-z]*R[a-z]*\s+)*\S+\s+/(\s|;|\||&|$)",  # chown -R user /
+        r"curl\s+.*\|\s*(ba)?sh",  # Pipe curl to shell
+        r"wget\s+.*\|\s*(ba)?sh",  # Pipe wget to shell
     ]
 
     @property
