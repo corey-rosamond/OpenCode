@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from pathlib import Path
 from typing import Any, ClassVar
 
 from code_forge.tools.base import (
@@ -21,10 +22,16 @@ class BashTool(BaseTool):
 
     Supports foreground execution with timeout and
     background execution for long-running commands.
+
+    Timeout Units:
+        - The `timeout` parameter uses MILLISECONDS (LLM API convention)
+        - Internally converted to seconds for asyncio.wait_for()
+        - ExecutionContext.timeout (seconds) provides an outer limit
+        - DEFAULT_TIMEOUT_MS = 120000ms = 2 minutes (matches context default)
     """
 
-    DEFAULT_TIMEOUT_MS: ClassVar[int] = 120000  # 2 minutes
-    MAX_TIMEOUT_MS: ClassVar[int] = 600000  # 10 minutes
+    DEFAULT_TIMEOUT_MS: ClassVar[int] = 120000  # 2 minutes (120000ms = 120s)
+    MAX_TIMEOUT_MS: ClassVar[int] = 600000  # 10 minutes (600000ms = 600s)
     MAX_OUTPUT_SIZE: ClassVar[int] = 30000  # characters
 
     # Patterns for dangerous commands
@@ -110,10 +117,15 @@ Usage notes:
         if timeout_ms > self.MAX_TIMEOUT_MS:
             return ToolResult.fail(f"Timeout exceeds maximum: {self.MAX_TIMEOUT_MS}ms")
 
-        # Security check
+        # Security check - dangerous command patterns
         security_error = self._check_dangerous_command(command)
         if security_error:
             return ToolResult.fail(security_error)
+
+        # Security check - validate working directory
+        working_dir_error = self._validate_working_dir(context.working_dir)
+        if working_dir_error:
+            return ToolResult.fail(working_dir_error)
 
         # Execute
         if run_in_background:
@@ -221,3 +233,26 @@ Usage notes:
             if re.search(pattern, command, re.IGNORECASE):
                 return "Command blocked for security: matches dangerous pattern"
         return None
+
+    def _validate_working_dir(self, working_dir: str) -> str | None:
+        """Validate working directory for safe command execution.
+
+        Returns error message if invalid, None if valid.
+        """
+        try:
+            path = Path(working_dir)
+
+            # Resolve to canonical path (follows symlinks, normalizes)
+            resolved = path.resolve()
+
+            # Check that it exists
+            if not resolved.exists():
+                return f"Working directory does not exist: {working_dir}"
+
+            # Check that it's a directory
+            if not resolved.is_dir():
+                return f"Working directory is not a directory: {working_dir}"
+
+            return None
+        except (OSError, RuntimeError) as e:
+            return f"Invalid working directory: {e}"
