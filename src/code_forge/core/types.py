@@ -88,23 +88,9 @@ class ProjectId(BaseModel):
         return self.value == other.value
 
 
-class ToolParameter(BaseModel):
-    """Schema for a tool parameter."""
-
-    name: str
-    type: str
-    description: str
-    required: bool = True
-    default: Any = None
-
-
-class ToolResult(BaseModel):
-    """Result from tool execution."""
-
-    success: bool
-    output: Any
-    error: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+# ToolParameter and ToolResult are defined in tools/base.py with full functionality
+# Re-exported here for backwards compatibility with imports from code_forge.core
+from code_forge.tools.base import ToolParameter, ToolResult  # noqa: E402
 
 
 class Message(BaseModel):
