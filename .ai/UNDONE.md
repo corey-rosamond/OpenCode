@@ -337,39 +337,29 @@ _All critical issues have been addressed._
 **Fix:** Use Pydantic's `model_json_schema()` recursively
 
 #### GIT-001: Lossy UTF-8 Decoding in Cache
-**Status:** Pending
-**File:** `src/code_forge/web/cache.py:220-221`
-**Issue:** `errors="replace"` silently corrupts non-UTF-8 content
-**Impact:** Content corruption without notification
-**Fix:** Use `errors="surrogateescape"` or explicitly reject binary
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/web/cache.py:217-227`
+**Fix:** Changed from `errors="replace"` to `errors="surrogateescape"` to preserve non-UTF-8 bytes in a recoverable form.
 
 #### GIT-002: Complex Rename Parsing in Diff
-**Status:** Pending
-**File:** `src/code_forge/git/diff.py:253-264`
-**Issue:** Overly complex string manipulation for rename parsing
-**Impact:** Maintenance burden, potential parsing bugs
-**Fix:** Use dedicated regex pattern
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/git/diff.py:251-276`
+**Fix:** Replaced string manipulation with dedicated regex patterns for partial renames (dir/{old => new}/file) and simple renames.
 
 #### GIT-003: Silent Parse Failures in Git Status
-**Status:** Pending
-**File:** `src/code_forge/git/status.py:176-178`
-**Issue:** Returns silently on parse failure; git format changes undetected
-**Impact:** Silent data loss
-**Fix:** Log error or raise exception
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/git/status.py:180-188`
+**Fix:** Added logger and warning message when git status line format is unexpected, helping detect git porcelain format changes.
 
 #### GIT-004: Fragile Commit Block Splitting
-**Status:** Pending
-**File:** `src/code_forge/git/history.py:115`
-**Issue:** Lookahead regex fragile if commit messages contain blank lines
-**Impact:** Incorrect commit parsing
-**Fix:** Use NULL-separated format explicitly
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/git/history.py:87-118`
+**Fix:** Added ASCII record separator (\\x1e) as commit marker in format string. Split on marker instead of fragile double-newline regex.
 
 #### GIT-005: Unchecked Null on Deleted Source Repo
-**Status:** Pending
-**File:** `src/code_forge/github/pull_requests.py:57-59`
-**Issue:** `head["repo"]` can be None for deleted source repos
-**Impact:** KeyError/TypeError crash
-**Fix:** Check if `head["repo"]` is None before accessing
+**Status:** Already fixed
+**File:** `src/code_forge/github/pull_requests.py:56-58`
+**Note:** Code already uses `data.get("head", {}).get("repo")` check before accessing full_name.
 
 #### SESS-001: Unhandled Exception in Hook System
 **Status:** Pending

@@ -248,6 +248,13 @@ class GitDiffTool:
             stat: Raw stat output
             diff: GitDiff to update
         """
+        # Regex for partial renames like: dir/{old => new}/file or prefix/{old.txt => new.txt}
+        PARTIAL_RENAME_PATTERN = re.compile(
+            r"^(.*)?\{([^}]*) => ([^}]*)\}(.*)$"
+        )
+        # Regex for simple renames like: old.txt => new.txt
+        SIMPLE_RENAME_PATTERN = re.compile(r"^(.+) => (.+)$")
+
         for line in stat.split("\n"):
             # Match file stat line: " path | N +++ ---"
             match = re.match(r"\s*(.+?)\s*\|\s*(\d+)", line)
@@ -255,13 +262,18 @@ class GitDiffTool:
                 path = match.group(1).strip()
                 # Handle renames: "old => new"
                 if " => " in path:
-                    parts = path.split(" => ")
-                    path = parts[-1].rstrip("}")
-                    if "{" in parts[0]:
-                        # Handle partial renames like: dir/{old => new}/file
-                        prefix = parts[0].split("{")[0]
-                        suffix = parts[-1].split("}")[1] if "}" in parts[-1] else ""
-                        path = prefix + parts[-1].split("}")[0] + suffix
+                    # Try partial rename pattern first (dir/{old => new}/file)
+                    partial_match = PARTIAL_RENAME_PATTERN.match(path)
+                    if partial_match:
+                        prefix = partial_match.group(1) or ""
+                        new_part = partial_match.group(3)
+                        suffix = partial_match.group(4) or ""
+                        path = prefix + new_part + suffix
+                    else:
+                        # Try simple rename pattern (old => new)
+                        simple_match = SIMPLE_RENAME_PATTERN.match(path)
+                        if simple_match:
+                            path = simple_match.group(2)
 
                 # Find or create file entry
                 file_entry = None

@@ -85,7 +85,9 @@ class GitHistory:
             List of log entries
         """
         # Use NULL byte as separator for reliable parsing
-        format_str = "%H%x00%h%x00%an%x00%ae%x00%ai%x00%s%x00%b%x00%P%x00"
+        # Start each commit with a unique marker to handle messages with blank lines
+        COMMIT_MARKER = "\x1e"  # ASCII record separator
+        format_str = f"{COMMIT_MARKER}%H%x00%h%x00%an%x00%ae%x00%ai%x00%s%x00%b%x00%P%x00"
 
         args = [
             "log",
@@ -111,8 +113,9 @@ class GitHistory:
         out, _, _ = await self.repo.run_git(*args)
 
         entries = []
-        # Split by double newline which separates commits in shortstat output
-        commit_blocks = re.split(r"\n\n(?=\x00|[a-f0-9]{40}\x00)", out)
+        # Split by record separator marker (handles commit messages with blank lines)
+        COMMIT_MARKER = "\x1e"
+        commit_blocks = out.split(COMMIT_MARKER)
 
         for block in commit_blocks:
             if not block.strip():

@@ -215,10 +215,16 @@ class WebCache:
         return True
 
     def _serialize_response(self, response: FetchResponse) -> dict[str, Any]:
-        """Serialize response for caching."""
+        """Serialize response for caching.
+
+        Note: Uses surrogateescape for binary content to preserve original bytes
+        in a recoverable form. This avoids silent corruption from 'replace'.
+        """
         content = response.content
         if isinstance(content, bytes):
-            content = content.decode("utf-8", errors="replace")
+            # Use surrogateescape to preserve non-UTF-8 bytes in a recoverable form
+            # This is better than 'replace' which silently corrupts data
+            content = content.decode("utf-8", errors="surrogateescape")
 
         return {
             "url": response.url,

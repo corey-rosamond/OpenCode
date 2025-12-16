@@ -5,8 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from code_forge.core import get_logger
+
 if TYPE_CHECKING:
     from .repository import GitRepository
+
+logger = get_logger("git.status")
 
 
 @dataclass
@@ -175,6 +179,12 @@ class GitStatusTool:
         """
         parts = line.split(" ", 8)
         if len(parts) < 9:
+            # Log unexpected format - could indicate git porcelain format changed
+            logger.warning(
+                "Unexpected git status line format (expected 9 parts, got %d): %s",
+                len(parts),
+                line[:100],  # Truncate for safety
+            )
             return
 
         xy = parts[1]
