@@ -5,6 +5,29 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-12-17
+
+### Added
+- **Setup Wizard**: First-time API key configuration wizard for new users
+
+### Fixed
+- ReadTool line limit now properly stops reading after limit reached
+- SSRF protection added to URL fetcher with private IP range detection
+- API keys no longer exposed in logs (wrapped with SecretStr)
+- Agent no longer makes double API calls (fixed streaming tool assembly)
+- Shell output buffers now bounded to prevent memory issues
+
+### Changed
+- Reorganized `.ai/` documentation structure
+
+## [1.1.0] - 2025-12-10
+
+### Changed
+- **Project Rename**: Renamed from OpenCode to Code-Forge
+
+### Fixed
+- Help text URL updated to point to correct repository
+
 ## [1.0.0] - 2025-12-09
 
 ### Added
