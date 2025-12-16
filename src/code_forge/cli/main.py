@@ -74,6 +74,18 @@ def main() -> int:
             print("Run 'forge --help' for usage information", file=sys.stderr)
             return 1
 
+    # Check for piped stdin (non-interactive input)
+    stdin_input: str | None = None
+    if not sys.stdin.isatty():
+        try:
+            stdin_input = sys.stdin.read().strip()
+            if stdin_input:
+                logger.debug("Read %d chars from stdin", len(stdin_input))
+        except UnicodeDecodeError as e:
+            print(f"Error: Invalid encoding in stdin: {e}", file=sys.stderr)
+            print("Hint: Ensure input is valid UTF-8", file=sys.stderr)
+            return 1
+
     # Load configuration
     try:
         config_loader = ConfigLoader()
@@ -81,6 +93,11 @@ def main() -> int:
     except Exception as e:
         logger.exception("Failed to load configuration")
         print(f"Error: Failed to load configuration: {e}", file=sys.stderr)
+        print(
+            "Hint: Check your config files at ~/.forge/settings.json or "
+            ".forge/settings.json",
+            file=sys.stderr,
+        )
         return 1
 
     # Check for API key - run setup wizard if not configured
@@ -91,26 +108,36 @@ def main() -> int:
         if not api_key:
             return 1  # User cancelled setup
 
-    # Start REPL
+    # Start REPL or process stdin
     try:
         repl = CodeForgeREPL(config)
-        return asyncio.run(run_with_agent(repl, config, api_key))
+        return asyncio.run(run_with_agent(repl, config, api_key, stdin_input=stdin_input))
     except KeyboardInterrupt:
         print("\nInterrupted")
         return 130  # Standard exit code for SIGINT
     except Exception as e:
         logger.exception("REPL error")
         print(f"Error: {e}", file=sys.stderr)
+        print(
+            "Hint: For debugging, run with FORGE_LOG_LEVEL=DEBUG environment variable",
+            file=sys.stderr,
+        )
         return 1
 
 
-async def run_with_agent(repl: CodeForgeREPL, config: CodeForgeConfig, api_key: str) -> int:
+async def run_with_agent(
+    repl: CodeForgeREPL,
+    config: CodeForgeConfig,
+    api_key: str,
+    stdin_input: str | None = None,
+) -> int:
     """Run REPL with agent and command handling.
 
     Args:
         repl: The REPL instance.
         config: Application configuration.
         api_key: OpenRouter API key.
+        stdin_input: Optional input from stdin (batch mode).
 
     Returns:
         Exit code.
@@ -218,12 +245,26 @@ async def run_with_agent(repl: CodeForgeREPL, config: CodeForgeConfig, api_key: 
     # Track cumulative token usage (use list for mutable closure)
     total_tokens = [0]
 
+    # Command timeout (30 seconds)
+    COMMAND_TIMEOUT = 30.0
+
     # Register input handler
     async def handle_input(text: str) -> None:
         """Handle user input - route to commands or agent."""
         if text.startswith("/"):
-            # Execute command
-            cmd_result = await command_executor.execute(text, command_context)
+            # Execute command with timeout
+            try:
+                cmd_result = await asyncio.wait_for(
+                    command_executor.execute(text, command_context),
+                    timeout=COMMAND_TIMEOUT,
+                )
+            except TimeoutError:
+                repl.output.print_error(
+                    f"Command timed out after {COMMAND_TIMEOUT}s. "
+                    "Press Ctrl+C to interrupt if stuck."
+                )
+                return
+
             if cmd_result.output:
                 repl.output.print(cmd_result.output)
             if cmd_result.error:
@@ -390,7 +431,13 @@ async def run_with_agent(repl: CodeForgeREPL, config: CodeForgeConfig, api_key: 
 
     repl.on_input(handle_input)
 
-    # Run REPL
+    # Handle stdin input (batch mode)
+    if stdin_input:
+        logger.info("Processing stdin input in batch mode")
+        await handle_input(stdin_input)
+        return 0  # Exit after processing stdin
+
+    # Run REPL (interactive mode)
     return await repl.run()
 
 

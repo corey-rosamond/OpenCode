@@ -504,6 +504,16 @@ AI-powered CLI Development Assistant
                 if not text:
                     continue
 
+                # Validate UTF-8 encoding (defense against binary/malformed input)
+                try:
+                    # Ensure text is valid UTF-8 by encoding and decoding
+                    text.encode('utf-8').decode('utf-8')
+                except (UnicodeEncodeError, UnicodeDecodeError) as e:
+                    self._output.print_error(
+                        f"Invalid character encoding in input: {e}"
+                    )
+                    continue
+
                 # Check for shortcuts help
                 if text == "?":
                     self._show_shortcuts()

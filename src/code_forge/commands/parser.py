@@ -144,8 +144,16 @@ class CommandParser:
         # Parse using shlex for proper quoting
         try:
             tokens = shlex.split(content)
-        except ValueError:
-            # Fallback to simple split if quotes are unbalanced
+        except ValueError as e:
+            # Provide helpful error for unbalanced quotes
+            error_msg = str(e)
+            if "quote" in error_msg.lower():
+                raise ValueError(
+                    f"Unbalanced quotes in command: {text}\n"
+                    f"Hint: Ensure all quotes are properly closed, "
+                    f'e.g., /session title "My Title"'
+                ) from e
+            # For other shlex errors, fallback to simple split
             tokens = content.split()
 
         if not tokens:

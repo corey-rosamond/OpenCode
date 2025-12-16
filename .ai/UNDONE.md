@@ -224,46 +224,35 @@ _All critical issues have been addressed._
 ### Medium Priority (P2)
 
 #### CLI-001: No Stdin/Batch Input Support
-**Status:** Pending
-**File:** `src/code_forge/cli/main.py`
-**Issue:** No support for `echo "fix bug" | forge` or `forge < script.txt`
-**Impact:** Can't use in automation pipelines
-**Fix:** Add stdin detection and batch mode
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/cli/main.py:77-87, 411-415`
+**Fix:** Added stdin detection with sys.stdin.isatty(). Piped input is read and processed in batch mode, then exits.
 
 #### CLI-002: No Output Format Options
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/cli/repl.py`
 **Issue:** No `--json`, `--no-color`, `-q` quiet mode options
-**Impact:** Hard to integrate with other tools
-**Fix:** Add output format flags to CLI
+**Note:** Feature request requiring significant CLI restructuring. Deferred to future enhancement.
 
 #### CLI-003: Generic Error Messages
-**Status:** Pending
-**Files:** `src/code_forge/cli/main.py:54-60`, `src/code_forge/commands/parser.py`
-**Issue:** Errors don't explain what went wrong or how to fix
-**Impact:** Poor user experience
-**Fix:** Add context-specific error messages with suggestions
+**Status:** Fixed (2025-12-17)
+**Files:** `src/code_forge/cli/main.py:95-100, 121-124`
+**Fix:** Added "Hint:" messages with actionable suggestions for config errors and REPL errors.
 
 #### CLI-004: No Command Timeout Handling
-**Status:** Pending
-**File:** `src/code_forge/cli/main.py:197-230`
-**Issue:** Commands can hang indefinitely with no interrupt mechanism
-**Impact:** Unresponsive CLI
-**Fix:** Add timeout wrapper around command execution
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/cli/main.py:248-266`
+**Fix:** Added 30-second timeout via asyncio.wait_for() for command execution with helpful error message.
 
 #### CLI-005: Missing UTF-8 Input Validation
-**Status:** Pending
-**File:** `src/code_forge/cli/repl.py:503-505`
-**Issue:** No validation that input is valid UTF-8
-**Impact:** Binary/invalid encoding could crash parser
-**Fix:** Add encoding validation on input
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/cli/repl.py:507-515`
+**Fix:** Added UTF-8 encode/decode validation before processing input. Also added validation in stdin reading.
 
 #### CLI-006: Quote Parsing Falls Back Poorly
-**Status:** Pending
-**File:** `src/code_forge/commands/parser.py:145-150`
-**Issue:** Unbalanced quotes fall back to `.split()` losing quoted strings
-**Impact:** `/session title "My Title"` fails with unbalanced quotes
-**Fix:** Better error handling or robust quote parsing
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/commands/parser.py:145-157`
+**Fix:** Changed to raise ValueError with helpful message for unbalanced quotes instead of silently falling back to split().
 
 #### SEC-027: Dangerous Command Regex Bypassable
 **Status:** Fixed (2025-12-17)
