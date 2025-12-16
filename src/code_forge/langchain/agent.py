@@ -106,6 +106,7 @@ class CodeForgeAgent:
         max_iterations: int = 10,
         timeout: float = 300.0,
         iteration_timeout: float = 60.0,
+        tool_timeout: float = 30.0,
     ) -> None:
         """
         Initialize agent.
@@ -117,6 +118,7 @@ class CodeForgeAgent:
             max_iterations: Maximum tool-calling iterations
             timeout: Overall timeout in seconds
             iteration_timeout: Timeout per iteration in seconds
+            tool_timeout: Timeout for individual tool execution in seconds
         """
         self.llm = llm
         self.tools = tools
@@ -124,6 +126,7 @@ class CodeForgeAgent:
         self.max_iterations = max_iterations
         self.timeout = timeout
         self.iteration_timeout = iteration_timeout
+        self.tool_timeout = tool_timeout
 
         # Create tool lookup
         self._tool_map: dict[str, Any] = {}
@@ -257,13 +260,48 @@ class CodeForgeAgent:
                                         )
                                         continue
 
-                                # Execute tool
-                                if isinstance(tool, LangChainToolAdapter):
-                                    result = await tool._arun(**tool_args)
-                                elif hasattr(tool, "ainvoke"):
-                                    result = await tool.ainvoke(tool_args)
-                                else:
-                                    result = tool.invoke(tool_args)
+                                # Execute tool with timeout
+                                try:
+                                    if isinstance(tool, LangChainToolAdapter):
+                                        result = await asyncio.wait_for(
+                                            tool._arun(**tool_args),
+                                            timeout=self.tool_timeout,
+                                        )
+                                    elif hasattr(tool, "ainvoke"):
+                                        result = await asyncio.wait_for(
+                                            tool.ainvoke(tool_args),
+                                            timeout=self.tool_timeout,
+                                        )
+                                    else:
+                                        # Sync tools run in executor with timeout
+                                        loop = asyncio.get_event_loop()
+                                        result = await asyncio.wait_for(
+                                            loop.run_in_executor(
+                                                None, lambda: tool.invoke(tool_args)
+                                            ),
+                                            timeout=self.tool_timeout,
+                                        )
+                                except TimeoutError:
+                                    result = (
+                                        f"Tool {tool_name} timed out after "
+                                        f"{self.tool_timeout}s"
+                                    )
+                                    success = False
+                                    tool_duration = time.time() - tool_start
+                                    tool_call_records.append(
+                                        ToolCallRecord(
+                                            id=tool_id or "",
+                                            name=tool_name,
+                                            arguments=tool_args,
+                                            result=result,
+                                            success=success,
+                                            duration=tool_duration,
+                                        )
+                                    )
+                                    self.memory.add_message(
+                                        Message.tool_result(tool_id or "", result)
+                                    )
+                                    continue
 
                                 success = True
                             except Exception as e:
