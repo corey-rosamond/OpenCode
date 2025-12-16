@@ -6,12 +6,17 @@ import asyncio
 import os
 import time
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, ClassVar
 
+from code_forge.core.logging import get_logger
+
 if TYPE_CHECKING:
     from asyncio.subprocess import Process
+
+logger = get_logger("shell")
 
 
 class ShellStatus(str, Enum):
@@ -31,6 +36,10 @@ class ShellProcess:
 
     Tracks process state, output buffers, and provides
     methods for reading output and controlling the process.
+
+    Uses deque-based chunk storage for O(1) append operations instead
+    of O(n) string concatenation. The stdout_buffer and stderr_buffer
+    properties compute the full string lazily when accessed.
     """
 
     # Maximum buffer size (10MB) to prevent memory exhaustion
@@ -42,8 +51,6 @@ class ShellProcess:
     process: Process | None = None
     status: ShellStatus = ShellStatus.PENDING
     exit_code: int | None = None
-    stdout_buffer: str = ""
-    stderr_buffer: str = ""
     stdout_truncated: bool = False
     stderr_truncated: bool = False
     last_read_stdout: int = 0
@@ -52,33 +59,48 @@ class ShellProcess:
     started_at: float | None = None
     completed_at: float | None = None
 
+    # Private chunk storage for O(1) appends (not exposed in init/repr)
+    _stdout_chunks: deque[str] = field(default_factory=deque, init=False, repr=False)
+    _stderr_chunks: deque[str] = field(default_factory=deque, init=False, repr=False)
+    _stdout_size: int = field(default=0, init=False, repr=False)
+    _stderr_size: int = field(default=0, init=False, repr=False)
+
+    @property
+    def stdout_buffer(self) -> str:
+        """Get stdout buffer as string (computed from chunks)."""
+        return "".join(self._stdout_chunks)
+
+    @property
+    def stderr_buffer(self) -> str:
+        """Get stderr buffer as string (computed from chunks)."""
+        return "".join(self._stderr_chunks)
+
     def _append_to_buffer(self, buffer_name: str, data: str) -> None:
         """Append data to buffer with size limit.
 
-        Uses a circular buffer approach: when max size is reached,
-        removes oldest data to make room for new data.
+        Uses deque-based storage for O(1) appends. When max size is reached,
+        removes oldest chunks to make room for new data.
 
         Args:
             buffer_name: 'stdout' or 'stderr'
             data: Data to append
         """
         if buffer_name == "stdout":
-            new_size = len(self.stdout_buffer) + len(data)
-            if new_size > self.MAX_BUFFER_SIZE:
-                # Truncate from beginning to stay within limit
-                overflow = new_size - self.MAX_BUFFER_SIZE
-                self.stdout_buffer = self.stdout_buffer[overflow:] + data
+            self._stdout_chunks.append(data)
+            self._stdout_size += len(data)
+            # Trim oldest chunks if over limit
+            while self._stdout_size > self.MAX_BUFFER_SIZE and self._stdout_chunks:
+                removed = self._stdout_chunks.popleft()
+                self._stdout_size -= len(removed)
                 self.stdout_truncated = True
-            else:
-                self.stdout_buffer += data
         else:
-            new_size = len(self.stderr_buffer) + len(data)
-            if new_size > self.MAX_BUFFER_SIZE:
-                overflow = new_size - self.MAX_BUFFER_SIZE
-                self.stderr_buffer = self.stderr_buffer[overflow:] + data
+            self._stderr_chunks.append(data)
+            self._stderr_size += len(data)
+            # Trim oldest chunks if over limit
+            while self._stderr_size > self.MAX_BUFFER_SIZE and self._stderr_chunks:
+                removed = self._stderr_chunks.popleft()
+                self._stderr_size -= len(removed)
                 self.stderr_truncated = True
-            else:
-                self.stderr_buffer += data
 
     def get_new_output(self, include_stderr: bool = True) -> str:
         """Get output since last read.
@@ -136,7 +158,16 @@ class ShellProcess:
                 except TimeoutError:
                     # No more data available right now
                     break
-                except Exception:
+                except OSError as e:
+                    # Pipe broken, process terminated, etc.
+                    logger.debug(f"stdout read OSError (shell {self.id}): {e}")
+                    break
+                except Exception as e:
+                    # Unexpected error - log for debugging
+                    logger.warning(
+                        f"Unexpected error reading stdout (shell {self.id}): "
+                        f"{type(e).__name__}: {e}"
+                    )
                     break
 
         # Read all available stderr
@@ -155,7 +186,16 @@ class ShellProcess:
                 except TimeoutError:
                     # No more data available right now
                     break
-                except Exception:
+                except OSError as e:
+                    # Pipe broken, process terminated, etc.
+                    logger.debug(f"stderr read OSError (shell {self.id}): {e}")
+                    break
+                except Exception as e:
+                    # Unexpected error - log for debugging
+                    logger.warning(
+                        f"Unexpected error reading stderr (shell {self.id}): "
+                        f"{type(e).__name__}: {e}"
+                    )
                     break
 
         return read_any
@@ -235,9 +275,24 @@ class ShellManager:
     def _get_lock(self) -> asyncio.Lock:
         """Get or create the async lock (lazy initialization).
 
-        asyncio.Lock() cannot be created outside of an async context,
-        so we defer creation until first use within an async context.
+        The lock is created on first use within an async context.
+        This ensures the lock is associated with the current event loop.
+
+        Returns:
+            asyncio.Lock instance.
+
+        Raises:
+            RuntimeError: If called outside of an async context.
         """
+        # Ensure we're in an async context before creating/using the lock
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            raise RuntimeError(
+                "ShellManager._get_lock() must be called from within an async context. "
+                "All ShellManager async methods must be awaited within a running event loop."
+            ) from None
+
         if self._lock is None:
             self._lock = asyncio.Lock()
         return self._lock

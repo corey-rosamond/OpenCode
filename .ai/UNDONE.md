@@ -149,25 +149,19 @@ _All critical issues have been addressed._
 **Fix:** Removed redundant `..` check on original path parts. The resolved path comparison with base_dir is the actual security boundary. Added error handling for symlink check on non-existent paths and invalid base_dir.
 
 #### SEC-013: Bare Exception in Stream Reading
-**Status:** Pending
-**File:** `src/code_forge/tools/execution/shell_manager.py:139-140`
-**Issue:** Catches all exceptions silently, masking real bugs
-**Impact:** Hard to debug when output mysteriously stops
-**Fix:** Catch specific exceptions, log unexpected ones
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/execution/shell_manager.py:140-180`
+**Fix:** Added specific OSError handling for pipe errors, log unexpected exceptions with type and message for debugging.
 
 #### SEC-014: O(n^2) Buffer Concatenation
-**Status:** Pending
-**File:** `src/code_forge/tools/execution/shell_manager.py:66-81`
-**Issue:** Python string concatenation creates new objects; repeated calls cause O(n^2)
-**Impact:** DoS via large output, performance degradation
-**Fix:** Use `collections.deque` with maxlen for O(1) appends
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/execution/shell_manager.py:33-103`
+**Fix:** Changed from string concatenation to deque-based chunk storage. Appends are O(1), stdout_buffer/stderr_buffer properties compute string lazily on access.
 
 #### SEC-015: Async Lock Initialization Race
-**Status:** Pending
-**File:** `src/code_forge/tools/execution/shell_manager.py:235-243`
-**Issue:** `asyncio.Lock()` requires running event loop; lazy init could fail
-**Impact:** Runtime errors if called from wrong context
-**Fix:** Check for running loop before creating lock
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/execution/shell_manager.py:275-298`
+**Fix:** Added explicit check for running event loop before creating lock. Raises clear RuntimeError if called from non-async context.
 
 #### SEC-016: Unsafe None Handling in Tool IDs
 **Status:** Pending
