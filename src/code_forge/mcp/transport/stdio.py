@@ -12,6 +12,19 @@ from code_forge.mcp.transport.base import MCPTransport
 
 logger = logging.getLogger(__name__)
 
+# Environment variables that could be used for code injection or privilege escalation
+# These are logged as warnings when set in MCP server configuration
+DANGEROUS_ENV_VARS = frozenset({
+    "LD_PRELOAD",
+    "LD_LIBRARY_PATH",
+    "DYLD_INSERT_LIBRARIES",
+    "DYLD_LIBRARY_PATH",
+    "PYTHONPATH",
+    "NODE_OPTIONS",
+    "PERL5LIB",
+    "RUBYLIB",
+})
+
 
 class StdioTransport(MCPTransport):
     """Transport using stdio for subprocess communication.
@@ -52,6 +65,14 @@ class StdioTransport(MCPTransport):
         # Build environment
         process_env = os.environ.copy()
         if self.env:
+            # Check for potentially dangerous environment variables
+            dangerous_vars = [k for k in self.env.keys() if k in DANGEROUS_ENV_VARS]
+            if dangerous_vars:
+                logger.warning(
+                    f"MCP server config sets potentially dangerous environment variables: "
+                    f"{', '.join(dangerous_vars)}. These could be used for code injection. "
+                    f"Ensure your MCP config is from a trusted source."
+                )
             # Expand environment variables in values
             for key, value in self.env.items():
                 expanded = os.path.expandvars(value)

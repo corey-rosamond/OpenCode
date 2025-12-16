@@ -210,18 +210,14 @@ _All critical issues have been addressed._
 **Fix:** Added atexit handler that saves all active sessions at exit. Added sync save attempt in __del__. Sessions tracked via WeakSet for automatic cleanup.
 
 #### SEC-025: No Permission Gating on Commands
-**Status:** Pending
+**Status:** Not applicable (2025-12-17)
 **File:** `src/code_forge/commands/executor.py:81-134`
-**Issue:** Commands executed without checking permissions first
-**Impact:** Permission system doesn't gate command execution
-**Fix:** Add permission check in CommandExecutor.execute() before executing
+**Note:** The permission system is designed for AI-initiated tool execution, not user-initiated CLI commands. Commands like /help, /session are user actions and don't need AI permission checks. Adding permission checks would break expected user experience.
 
 #### SEC-026: Command Injection in MCP Stdio Transport
-**Status:** Pending
-**File:** `src/code_forge/mcp/transport/stdio.py:63-70`
-**Issue:** Environment variables and CWD from config without validation
-**Impact:** Malicious config could set dangerous environment variables
-**Fix:** Whitelist safe environment variables or document security implications
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/mcp/transport/stdio.py:15-26, 68-75`
+**Fix:** Added DANGEROUS_ENV_VARS list and warning when dangerous env vars (LD_PRELOAD, PYTHONPATH, etc.) are set in MCP config. Warns users to verify config is from trusted source.
 
 ---
 
