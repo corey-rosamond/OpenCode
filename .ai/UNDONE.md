@@ -205,11 +205,9 @@ _All critical issues have been addressed._
 **Fix:** Initialize `spinner = None` and `tool_spinner = None` before try block. Added existence checks before calling stop() in except and finally blocks.
 
 #### SEC-024: Potential Data Loss in Session Auto-Save
-**Status:** Pending
-**File:** `src/code_forge/sessions/manager.py:552-556`
-**Issue:** `__del__` can't run async code; no synchronous save fallback
-**Impact:** Unsaved changes lost on crash without clean shutdown
-**Fix:** Add synchronous save call or signal handler for cleanup
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/sessions/manager.py:20-35, 77-78, 574-587`
+**Fix:** Added atexit handler that saves all active sessions at exit. Added sync save attempt in __del__. Sessions tracked via WeakSet for automatic cleanup.
 
 #### SEC-025: No Permission Gating on Commands
 **Status:** Pending
@@ -279,11 +277,9 @@ _All critical issues have been addressed._
 **Fix:** Improve pattern matching or use allowlist approach
 
 #### SEC-028: Domain Filter Uses Substring Match
-**Status:** Pending
-**File:** `src/code_forge/web/search/base.py:76`
-**Issue:** `"github.com" in domain` matches `github.com.attacker.com`
-**Impact:** Domain filtering can be bypassed
-**Fix:** Use proper suffix matching for domains
+**Status:** Duplicate of SEC-021 (2025-12-17)
+**File:** `src/code_forge/web/search/base.py:71-103`
+**Note:** Already fixed in SEC-021. Added proper domain_matches() helper with suffix matching.
 
 #### SEC-029: HTML Parser Doesn't Remove Event Handlers
 **Status:** Pending

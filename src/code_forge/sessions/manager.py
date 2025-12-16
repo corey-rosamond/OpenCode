@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import atexit
 import logging
 import threading
+import weakref
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -14,6 +16,23 @@ from .models import Session, SessionMessage, ToolInvocation
 from .storage import SessionNotFoundError, SessionStorage
 
 logger = logging.getLogger(__name__)
+
+# Track active managers for cleanup at exit
+_active_managers: weakref.WeakSet[SessionManager] = weakref.WeakSet()
+
+
+def _cleanup_managers() -> None:
+    """Cleanup all active session managers at exit."""
+    for manager in list(_active_managers):
+        try:
+            if manager.current_session:
+                manager.save()
+                logger.debug(f"Saved session {manager.current_session.id} at exit")
+        except Exception as e:
+            logger.warning(f"Failed to save session at exit: {e}")
+
+
+atexit.register(_cleanup_managers)
 
 
 class SessionManager:
@@ -54,6 +73,9 @@ class SessionManager:
             "session:message": [],
             "session:save": [],
         }
+
+        # Register for cleanup at exit
+        _active_managers.add(self)
 
     @classmethod
     def get_instance(cls) -> SessionManager:
@@ -550,7 +572,16 @@ class SessionManager:
             self._auto_save_task = None
 
     def __del__(self) -> None:
-        """Cleanup: ensure auto-save is stopped and session is saved."""
+        """Cleanup: ensure auto-save is stopped and session is saved.
+
+        Attempts a synchronous save as a last resort if session wasn't
+        closed properly. The atexit handler provides more reliable cleanup.
+        """
         self._stop_auto_save()
-        # Note: can't do async save in __del__, but that's ok - we trust
-        # close() was called properly before destruction
+        # Attempt sync save as last resort (atexit handler is more reliable)
+        try:
+            if self.current_session:
+                self.save()
+        except Exception:
+            # Can't do much in __del__ - atexit handler should have saved
+            pass
