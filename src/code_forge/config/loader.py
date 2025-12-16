@@ -6,11 +6,14 @@ configuration loading, merging, validation, and live reload.
 
 from __future__ import annotations
 
+import copy
 import threading
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from pydantic import ValidationError
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -133,7 +136,7 @@ class ConfigLoader(IConfigLoader):
         # 6. Validate and return
         try:
             return CodeForgeConfig.model_validate(config)
-        except Exception as e:
+        except ValidationError as e:
             logger.error("Configuration validation failed: %s", e)
             raise ConfigError(f"Configuration validation failed: {e}") from e
 
@@ -155,10 +158,16 @@ class ConfigLoader(IConfigLoader):
             if source.exists():
                 override = source.load()
                 if override:
+                    logger.debug("Loaded config from %s", source)
                     return self.merge(base, override)
-        except ConfigError:
-            # Log already happened in source, continue with base
-            pass
+                else:
+                    logger.debug("Config source %s exists but returned empty", source)
+        except ConfigError as e:
+            # Log and continue with base config
+            logger.debug("Skipped config source %s: %s", source, e)
+        except FileNotFoundError:
+            # File was deleted between exists() check and load() (TOCTOU race)
+            logger.debug("Config source %s disappeared before load", source)
         return base
 
     def load(self, path: Path) -> dict[str, Any]:
@@ -192,8 +201,12 @@ class ConfigLoader(IConfigLoader):
             New dictionary with override values merged into base.
             Nested dictionaries are merged recursively.
             Other values are replaced by override.
+
+        Note:
+            Uses deepcopy to ensure the result is fully independent of inputs.
+            Modifying the returned dict will not affect base or override.
         """
-        result = base.copy()
+        result = copy.deepcopy(base)
 
         for key, value in override.items():
             if (
@@ -203,7 +216,8 @@ class ConfigLoader(IConfigLoader):
             ):
                 result[key] = self.merge(result[key], value)
             else:
-                result[key] = value
+                # Deepcopy the override value to prevent shared references
+                result[key] = copy.deepcopy(value)
 
         return result
 
@@ -219,7 +233,7 @@ class ConfigLoader(IConfigLoader):
         try:
             CodeForgeConfig.model_validate(config)
             return True, []
-        except Exception as e:
+        except ValidationError as e:
             return False, [str(e)]
 
     def reload(self) -> None:
@@ -307,12 +321,27 @@ class ConfigLoader(IConfigLoader):
                 logger.error("Observer error: %s", e)
 
     def __del__(self) -> None:
-        """Cleanup: ensure file watcher is stopped."""
-        self.stop_watching()
+        """Cleanup: ensure file watcher is stopped.
+
+        Note: __del__ may be called with partially destroyed state,
+        so we wrap everything in try/except to avoid masking errors.
+        """
+        try:
+            self.stop_watching()
+        except Exception:
+            # Can't safely log in __del__ - interpreter may be shutting down
+            pass
 
 
 class _ConfigChangeHandler(FileSystemEventHandler):
-    """File system event handler for configuration changes."""
+    """File system event handler for configuration changes.
+
+    Includes debouncing to prevent rapid reload calls when files
+    are being modified quickly (e.g., editor auto-save).
+    """
+
+    # Debounce window in seconds
+    DEBOUNCE_SECONDS = 0.5
 
     def __init__(self, loader: ConfigLoader) -> None:
         """Initialize handler.
@@ -322,6 +351,49 @@ class _ConfigChangeHandler(FileSystemEventHandler):
         """
         super().__init__()
         self._loader = loader
+        self._last_event_time: float = 0
+        self._pending_reload: threading.Timer | None = None
+        self._lock = threading.Lock()
+
+    def _schedule_reload(self, src_path: str) -> None:
+        """Schedule a debounced reload.
+
+        Args:
+            src_path: Path that triggered the event (for logging).
+        """
+        with self._lock:
+            # Cancel any pending reload
+            if self._pending_reload is not None:
+                self._pending_reload.cancel()
+                self._pending_reload = None
+
+            # Schedule new reload after debounce period
+            def do_reload() -> None:
+                with self._lock:
+                    self._pending_reload = None
+                logger.debug("Debounced config reload triggered by: %s", src_path)
+                self._loader.reload()
+
+            self._pending_reload = threading.Timer(self.DEBOUNCE_SECONDS, do_reload)
+            self._pending_reload.daemon = True
+            self._pending_reload.start()
+            logger.debug("Config change detected, reload scheduled: %s", src_path)
+
+    def _is_config_file(self, path: str) -> bool:
+        """Check if path is a config file (not a temp file).
+
+        Args:
+            path: File path to check.
+
+        Returns:
+            True if this is a config file we should watch.
+        """
+        # Filter out temp files created by editors
+        if path.endswith((".swp", ".tmp", "~", ".bak")):
+            return False
+        if ".__" in path or path.startswith(".#"):
+            return False
+        return path.endswith((".json", ".yaml", ".yml"))
 
     def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events.
@@ -333,9 +405,8 @@ class _ConfigChangeHandler(FileSystemEventHandler):
             return
 
         src_path = str(event.src_path)
-        if src_path.endswith((".json", ".yaml", ".yml")):
-            logger.debug("Configuration file changed: %s", src_path)
-            self._loader.reload()
+        if self._is_config_file(src_path):
+            self._schedule_reload(src_path)
 
     def on_created(self, event: FileSystemEvent) -> None:
         """Handle file creation events.
@@ -347,6 +418,5 @@ class _ConfigChangeHandler(FileSystemEventHandler):
             return
 
         src_path = str(event.src_path)
-        if src_path.endswith((".json", ".yaml", ".yml")):
-            logger.debug("Configuration file created: %s", src_path)
-            self._loader.reload()
+        if self._is_config_file(src_path):
+            self._schedule_reload(src_path)

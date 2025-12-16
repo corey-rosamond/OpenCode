@@ -296,39 +296,29 @@ _All critical issues have been addressed._
 **Fix:** Added `recent_messages_to_keep` parameter (default 10) to SummaryMemory. Now configurable per instance.
 
 #### CFG-001: Memory Leak in ConfigLoader.__del__
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:309-311`
-**Issue:** `__del__` destructor calls `stop_watching()` which may fail if event loop no longer exists
-**Impact:** Observer thread may continue running after garbage collection
-**Fix:** Wrap in try/except, document lifecycle requirements
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:309-319`
+**Fix:** Wrapped stop_watching() in try/except to handle partially destroyed state. Added docstring explaining __del__ limitations.
 
 #### CFG-002: Thread-Safety Issue in File Watcher
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:243-265`
-**Issue:** File watcher monitors without filtering temp files; rapid changes cause race conditions
-**Impact:** Race conditions on concurrent config changes
-**Fix:** Add debouncing (500ms window) to file change events
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:336-422`
+**Fix:** Added debouncing (500ms window) via threading.Timer. Filter out temp files (.swp, .tmp, ~, .bak). Events schedule reload instead of calling directly.
 
 #### CFG-003: Race Condition in ConfigLoader.load_all()
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:94-138`
-**Issue:** Files can be deleted between `exists()` check and `load()` call
-**Impact:** Silent failure or file not found errors
-**Fix:** Log skipped config sources for debugging
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:143-171`
+**Fix:** Added logging for skipped/empty config sources. Added FileNotFoundError handler for TOCTOU race when file disappears between exists() and load().
 
 #### CFG-004: Overly Broad Exception Handling
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:134-138`
-**Issue:** Catches all `Exception` types during validation, masking bugs
-**Impact:** Potential bugs hidden
-**Fix:** Catch `ValidationError` explicitly; re-raise unexpected exceptions
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:136-141, 224-237`
+**Fix:** Changed to catch ValidationError explicitly in load_all() and validate(). Unexpected exceptions now propagate instead of being masked.
 
 #### CFG-005: Shallow Copy in Config Merge
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:184-208`
-**Issue:** Shallow copy means nested dicts are shared; modifications affect base
-**Impact:** Unexpected config mutation
-**Fix:** Use `copy.deepcopy()` for true independence
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:193-222`
+**Fix:** Use copy.deepcopy() for base dict and all override values. Returned dict is now fully independent of inputs.
 
 #### LLM-005: Retry Thundering Herd
 **Status:** Pending
