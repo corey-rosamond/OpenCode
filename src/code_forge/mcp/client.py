@@ -329,7 +329,7 @@ class MCPClient:
         if request.id is None:
             raise MCPClientError("Request ID is required")
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         future: asyncio.Future[dict[str, Any]] = loop.create_future()
         self._pending_requests[request.id] = future
 

@@ -714,11 +714,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added `on_disconnect` callback parameter to MCPClient. Receive loop now invokes callback when connection is lost unexpectedly, allowing manager to handle reconnection.
 
 #### MCP-007: asyncio.get_event_loop() Usage
-**Status:** Pending
-**File:** `src/code_forge/mcp/client.py:327`
-**Issue:** May not work correctly with multiple event loops
-**Impact:** Runtime errors in some async contexts
-**Fix:** Use `asyncio.get_running_loop()` instead
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/client.py:332`
+**Fix:** Changed `asyncio.get_event_loop()` to `asyncio.get_running_loop()` which is the correct pattern for async functions and avoids deprecation warnings in Python 3.10+.
 
 #### MCP-008: Missing Error Handling in SSE Listen
 **Status:** Pending
