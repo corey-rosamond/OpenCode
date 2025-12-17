@@ -5,10 +5,11 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal, get_args
 
 from langchain_core.tools import BaseTool as LangChainBaseTool
 from pydantic import BaseModel, Field, create_model
+from pydantic.fields import FieldInfo
 
 
 class LangChainToolAdapter(LangChainBaseTool):
@@ -58,37 +59,82 @@ class LangChainToolAdapter(LangChainBaseTool):
         """
         Generate Pydantic model from Code-Forge tool parameters.
 
+        Handles complex types including:
+        - Enum constraints (generates Literal types)
+        - String length constraints (min_length, max_length)
+        - Numeric constraints (minimum, maximum / ge, le)
+        - Array and object types
+
         Returns:
             Dynamically created Pydantic model for arguments
         """
         fields: dict[str, Any] = {}
         for param in self.forge_tool.parameters:
-            # Map Code-Forge types to Python types
-            type_map: dict[str, type] = {
-                "string": str,
-                "integer": int,
-                "number": float,
-                "boolean": bool,
-                "array": list,
-                "object": dict,
-            }
-            python_type = type_map.get(param.type, str)
+            python_type, field_info = self._param_to_field(param)
 
             # Create field with or without default
             if param.required:
-                fields[param.name] = (
-                    python_type,
-                    Field(description=param.description),
-                )
+                fields[param.name] = (python_type, field_info)
             else:
-                fields[param.name] = (
-                    python_type | None,
-                    Field(default=param.default, description=param.description),
-                )
+                fields[param.name] = (python_type | None, field_info)
 
         # Create dynamic model
         model_name = f"{self.forge_tool.name.title().replace('_', '')}Args"
         return create_model(model_name, **fields)
+
+    def _param_to_field(self, param: Any) -> tuple[type, FieldInfo]:
+        """
+        Convert a ToolParameter to a Python type and Pydantic FieldInfo.
+
+        Handles enum constraints, string/numeric limits, and all JSON Schema types.
+
+        Args:
+            param: ToolParameter to convert
+
+        Returns:
+            Tuple of (python_type, FieldInfo)
+        """
+        # Map Code-Forge types to Python types
+        type_map: dict[str, type] = {
+            "string": str,
+            "integer": int,
+            "number": float,
+            "boolean": bool,
+            "array": list,
+            "object": dict,
+        }
+
+        # Handle enum constraint - generate Literal type
+        if param.enum is not None and len(param.enum) > 0:
+            # Create Literal type from enum values
+            python_type: Any = Literal[tuple(param.enum)]  # type: ignore[valid-type]
+        else:
+            python_type = type_map.get(param.type, str)
+
+        # Build Field kwargs with all constraints
+        field_kwargs: dict[str, Any] = {
+            "description": param.description,
+        }
+
+        # Add default value if not required
+        if not param.required and param.default is not None:
+            field_kwargs["default"] = param.default
+        elif not param.required:
+            field_kwargs["default"] = None
+
+        # String constraints
+        if param.min_length is not None:
+            field_kwargs["min_length"] = param.min_length
+        if param.max_length is not None:
+            field_kwargs["max_length"] = param.max_length
+
+        # Numeric constraints (use ge/le for Pydantic v2)
+        if param.minimum is not None:
+            field_kwargs["ge"] = param.minimum
+        if param.maximum is not None:
+            field_kwargs["le"] = param.maximum
+
+        return python_type, Field(**field_kwargs)
 
     def _run(self, **kwargs: Any) -> str:
         """

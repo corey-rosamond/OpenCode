@@ -330,11 +330,9 @@ _All critical issues have been addressed._
 **Fix:** Added _execute_tool_with_retry() helper with exponential backoff and jitter. Retries on TimeoutError, OSError, ConnectionError. Used in both run() and stream().
 
 #### LLM-009: No Complex Type Support in Schema
-**Status:** Pending
-**File:** `src/code_forge/langchain/tools.py:57-91`
-**Issue:** Schema generation only covers basic types (string, int, float, boolean, array, object)
-**Impact:** Nested objects, union types, enums, custom types not supported
-**Fix:** Use Pydantic's `model_json_schema()` recursively
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/tools.py:58-137`
+**Fix:** Added `_param_to_field()` helper that handles enum constraints (Literal types), string length constraints (min_length/max_length), and numeric constraints (ge/le). All ToolParameter fields now properly converted to Pydantic schema.
 
 #### GIT-001: Lossy UTF-8 Decoding in Cache
 **Status:** Fixed (2025-12-17)
