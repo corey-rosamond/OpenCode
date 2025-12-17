@@ -749,11 +749,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added `_metadata` field to tool results containing tool_name, success status, duration_ms, and error message (if any) for debugging.
 
 #### MCP-014: No Server Request Handler
-**Status:** Pending
-**File:** `src/code_forge/mcp/client.py:409-412`
-**Issue:** Server requests acknowledged but not handled
-**Impact:** MCP spec not fully implemented
-**Fix:** Implement request handler callback system
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/client.py:57-59, 80-81, 427-444`
+**Fix:** Added `on_notification` and `on_server_request` callback parameters to MCPClient. Callbacks are invoked when server sends notifications or requests.
 
 #### MCP-015: No Resource Update Notifications
 **Status:** Pending

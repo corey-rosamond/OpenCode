@@ -55,6 +55,8 @@ class MCPClient:
         client_version: str = "1.0.0",
         request_timeout: float = 30.0,
         on_disconnect: Callable[[Exception | None], None] | None = None,
+        on_notification: Callable[[str, dict[str, Any] | None], None] | None = None,
+        on_server_request: Callable[[str, dict[str, Any] | None], dict[str, Any] | None] | None = None,
     ) -> None:
         """Initialize MCP client.
 
@@ -65,12 +67,18 @@ class MCPClient:
             request_timeout: Timeout for requests in seconds.
             on_disconnect: Optional callback invoked when connection is lost unexpectedly.
                           Receives the exception that caused the disconnect, or None.
+            on_notification: Optional callback for server notifications.
+                            Receives method name and params.
+            on_server_request: Optional callback for server requests.
+                              Receives method name and params, returns result dict or None.
         """
         self.transport = transport
         self.client_name = client_name
         self.client_version = client_version
         self.request_timeout = request_timeout
         self._on_disconnect = on_disconnect
+        self._on_notification = on_notification
+        self._on_server_request = on_server_request
         self._server_info: MCPServerInfo | None = None
         self._pending_requests: dict[str | int, asyncio.Future[dict[str, Any]]] = {}
         self._receive_task: asyncio.Task[None] | None = None
@@ -419,8 +427,18 @@ class MCPClient:
         elif isinstance(message, MCPNotification):
             # Handle server notification
             logger.debug(f"Received notification: {message.method}")
-            # Future: implement notification handlers
+            if self._on_notification is not None:
+                try:
+                    self._on_notification(message.method, message.params)
+                except Exception as e:
+                    logger.error(f"Notification handler error: {e}")
         elif isinstance(message, MCPRequest):
-            # Handle server request (rare)
+            # Handle server request
             logger.debug(f"Received request from server: {message.method}")
-            # Future: implement request handlers
+            if self._on_server_request is not None:
+                try:
+                    result = self._on_server_request(message.method, message.params)
+                    # Send response back (would need to implement response sending)
+                    logger.debug(f"Server request handled: {message.method} -> {result}")
+                except Exception as e:
+                    logger.error(f"Server request handler error: {e}")
