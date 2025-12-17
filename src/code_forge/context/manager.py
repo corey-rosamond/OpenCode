@@ -176,7 +176,11 @@ class ContextManager:
         return messages
 
     def _truncate(self) -> None:
-        """Truncate messages to fit within limit."""
+        """Truncate messages to fit within limit.
+
+        Validates that truncated result fits within budget.
+        Logs warning if truncation was insufficient.
+        """
         target_tokens = self.tracker.budget.conversation_budget
 
         truncated = self.strategy.truncate(
@@ -191,6 +195,21 @@ class ContextManager:
             )
             self._messages = truncated
             self.tracker.update(truncated)
+
+            # Validate truncation result
+            actual_tokens = sum(
+                self.counter.count_message(msg) for msg in truncated
+            )
+            if actual_tokens > target_tokens:
+                logger.warning(
+                    f"Truncation insufficient: {actual_tokens} tokens "
+                    f"exceeds target {target_tokens} by {actual_tokens - target_tokens}"
+                )
+        elif self.tracker.exceeds_limit():
+            # Truncation didn't reduce messages but we're still over limit
+            logger.warning(
+                "Truncation failed to reduce message count while over limit"
+            )
 
     async def compact_if_needed(self, threshold: float = 0.9) -> bool:
         """Compact context if usage exceeds threshold.

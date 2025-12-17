@@ -633,11 +633,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** load() now has auto_recover parameter (default True). On JSONDecodeError, automatically attempts recover_from_backup(). Logs warning on successful recovery. Improved error message on failure.
 
 #### SESS-016: No Validation of Truncation Results
-**Status:** Pending
-**File:** `src/code_forge/context/manager.py:178-193`
-**Issue:** No verification that truncated result fits the limit
-**Impact:** Potential overflow
-**Fix:** Add post-truncation validation
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/context/manager.py:178-212`
+**Fix:** Added post-truncation validation that counts tokens after truncation and logs warning if result exceeds target budget. Also logs warning if truncation fails to reduce messages while over limit.
 
 #### PERM-006: Unvalidated Argument Names in Rules
 **Status:** Pending
