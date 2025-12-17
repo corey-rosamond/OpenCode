@@ -321,35 +321,34 @@ class CodeForgeAgent:
 
                         tool = self._tool_map.get(tool_name)
                         if tool:
-                            try:
-                                # Validate arguments against tool schema (if available)
-                                if isinstance(tool, LangChainToolAdapter) and tool.args_schema:
-                                    try:
-                                        # Pydantic validation
-                                        tool.args_schema(**tool_args)
-                                    except Exception as validation_error:
-                                        result = f"Invalid arguments for {tool_name}: {validation_error}"
-                                        success = False
-                                        tool_duration = time.time() - tool_start
-                                        tool_call_records.append(
-                                            ToolCallRecord(
-                                                id=tool_id or "",
-                                                name=tool_name,
-                                                arguments=tool_args,
-                                                result=result,
-                                                success=success,
-                                                duration=tool_duration,
-                                            )
+                            # Validate arguments against tool schema (if available)
+                            if isinstance(tool, LangChainToolAdapter) and tool.args_schema:
+                                try:
+                                    # Pydantic validation
+                                    tool.args_schema(**tool_args)
+                                except Exception as validation_error:
+                                    result = f"Invalid arguments for {tool_name}: {validation_error}"
+                                    success = False
+                                    tool_duration = time.time() - tool_start
+                                    tool_call_records.append(
+                                        ToolCallRecord(
+                                            id=tool_id or "",
+                                            name=tool_name,
+                                            arguments=tool_args,
+                                            result=result,
+                                            success=success,
+                                            duration=tool_duration,
                                         )
-                                        self.memory.add_message(
-                                            Message.tool_result(tool_id or "", result)
-                                        )
-                                        continue
+                                    )
+                                    self.memory.add_message(
+                                        Message.tool_result(tool_id or "", result)
+                                    )
+                                    continue
 
-                                # Execute tool with retry logic
-                                result, success = await self._execute_tool_with_retry(
-                                    tool, tool_name, tool_args
-                                )
+                            # Execute tool with retry logic
+                            result, success = await self._execute_tool_with_retry(
+                                tool, tool_name, tool_args
+                            )
                         else:
                             result = f"Unknown tool: {tool_name}"
                             success = False
