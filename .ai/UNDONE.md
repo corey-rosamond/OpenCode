@@ -744,11 +744,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added fallback token estimation when `usage_metadata` is not available. Estimates tokens from response content length (~4 chars/token).
 
 #### MCP-013: Missing Tool Execution Metadata
-**Status:** Pending
-**File:** `src/code_forge/agents/executor.py:320-327`
-**Issue:** Tool execution results don't include timing or status codes
-**Impact:** Hard to debug
-**Fix:** Wrap execution to capture timing and success/failure
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/agents/executor.py:320-356`
+**Fix:** Added `_metadata` field to tool results containing tool_name, success status, duration_ms, and error message (if any) for debugging.
 
 #### MCP-014: No Server Request Handler
 **Status:** Pending

@@ -317,10 +317,16 @@ class AgentExecutor:
             tool_args = call.get("arguments", {})
             tool_id = call.get("id", "")
 
+            # Track execution timing and status
+            start_time = time.time()
+            success = False
+            error_msg: str | None = None
+
             try:
                 tool = self.tool_registry.get(tool_name)
                 if tool is None:
                     result = f"Tool not found: {tool_name}"
+                    error_msg = "Tool not found"
                 else:
                     # Execute the tool
                     tool_result = await tool.execute(**tool_args)
@@ -328,14 +334,25 @@ class AgentExecutor:
                         result = tool_result.output
                     else:
                         result = str(tool_result)
+                    success = True
             except Exception as e:
                 logger.warning(f"Tool execution error for {tool_name}: {e}")
                 result = f"Tool error: {e}"
+                error_msg = str(e)
+
+            duration = time.time() - start_time
 
             results.append({
                 "role": "tool",
                 "tool_call_id": tool_id,
                 "content": str(result),
+                # Metadata for debugging
+                "_metadata": {
+                    "tool_name": tool_name,
+                    "success": success,
+                    "duration_ms": round(duration * 1000, 2),
+                    "error": error_msg,
+                },
             })
 
         return results
