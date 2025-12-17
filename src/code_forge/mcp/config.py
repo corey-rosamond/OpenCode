@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
@@ -276,20 +276,20 @@ class MCPConfigLoader:
         merged_servers: dict[str, MCPServerConfig] = {}
         merged_settings = MCPSettings()
 
+        # Create default instance once for comparison
+        default_settings = MCPSettings()
+
         for config in configs:
             # Merge servers (later overrides)
             merged_servers.update(config.servers)
 
-            # Merge settings field by field
+            # Merge settings field by field using dataclass fields iteration
             settings = config.settings
-            if settings.auto_connect != MCPSettings().auto_connect:
-                merged_settings.auto_connect = settings.auto_connect
-            if settings.reconnect_attempts != MCPSettings().reconnect_attempts:
-                merged_settings.reconnect_attempts = settings.reconnect_attempts
-            if settings.reconnect_delay != MCPSettings().reconnect_delay:
-                merged_settings.reconnect_delay = settings.reconnect_delay
-            if settings.timeout != MCPSettings().timeout:
-                merged_settings.timeout = settings.timeout
+            for f in fields(MCPSettings):
+                current_value = getattr(settings, f.name)
+                default_value = getattr(default_settings, f.name)
+                if current_value != default_value:
+                    setattr(merged_settings, f.name, current_value)
 
         return MCPConfig(servers=merged_servers, settings=merged_settings)
 

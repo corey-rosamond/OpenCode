@@ -800,11 +800,10 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Documented defensive copy behavior in docstring with guidance to cache result
 
 #### MCP-023: Inefficient MCP Settings Merge
-**Status:** Pending
-**File:** `src/code_forge/mcp/config.py:283-292`
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/config.py:276-294`
 **Issue:** Compares each field with default values multiple times
-**Impact:** Unnecessary computation
-**Fix:** Use dataclasses.fields() iteration
+**Fix:** Created default instance once before loop and used dataclasses.fields() iteration for maintainability
 
 ---
 
