@@ -312,44 +312,44 @@ class SelectiveTruncationStrategy(TruncationStrategy):
         if not messages:
             return []
 
-        # Separate preserved and removable
-        preserved: list[dict[str, Any]] = []
-        removable: list[dict[str, Any]] = []
+        # Separate preserved and removable, tracking original indices
+        # Using indices instead of id() to avoid GC/copy issues
+        preserved: list[tuple[int, dict[str, Any]]] = []
+        removable: list[tuple[int, dict[str, Any]]] = []
 
-        for msg in messages:
+        for idx, msg in enumerate(messages):
             role = msg.get("role", "")
             marked = msg.get(self.mark_key, False)
 
             if role in self.preserve_roles or (self.preserve_marked and marked):
-                preserved.append(msg)
+                preserved.append((idx, msg))
             else:
-                removable.append(msg)
+                removable.append((idx, msg))
 
         # Check if preserved alone fits
-        preserved_tokens = self._count_messages(preserved, counter)
+        preserved_msgs = [msg for _, msg in preserved]
+        preserved_tokens = self._count_messages(preserved_msgs, counter)
         if preserved_tokens >= target_tokens:
             logger.warning("Preserved messages exceed budget")
-            return preserved
+            return preserved_msgs
 
         # Add removable from end until budget
         available = target_tokens - preserved_tokens
-        added: list[dict[str, Any]] = []
+        added: list[tuple[int, dict[str, Any]]] = []
 
-        for msg in reversed(removable):
-            test_list = [msg, *added]
+        for idx, msg in reversed(removable):
+            test_list = [msg] + [m for _, m in added]
             if self._count_messages(test_list, counter) <= available:
-                added.insert(0, msg)
+                added.insert(0, (idx, msg))
             else:
                 break
 
-        # Merge in order - create mapping for original messages
-        msg_order = {id(m): i for i, m in enumerate(messages)}
+        # Merge and sort by original index (stable ordering)
         result = preserved + added
+        result.sort(key=lambda item: item[0])
 
-        # Sort by original order
-        result.sort(key=lambda m: msg_order.get(id(m), 0))
-
-        return result
+        # Return just the messages
+        return [msg for _, msg in result]
 
 
 class CompositeStrategy(TruncationStrategy):

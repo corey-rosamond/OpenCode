@@ -603,11 +603,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** watch() now accepts user=True, project=True parameters for granular control. Returns count of directories watched.
 
 #### SESS-010: Inefficient Truncation Strategy
-**Status:** Pending
-**File:** `src/code_forge/context/strategies.py:334-340`
-**Issue:** Uses `id(m)` to map message order; fails after GC or message copy
-**Impact:** Incorrect message ordering
-**Fix:** Use message indices directly or stable identifier
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/context/strategies.py:315-352`
+**Fix:** Replaced id(m) mapping with tuple-based index tracking. Now stores (idx, msg) tuples and sorts by original index.
 
 #### SESS-011: Unnecessary Session Index Saves
 **Status:** Pending
