@@ -177,9 +177,11 @@ Usage:
             "limit": limit,
         }
 
-        if total_lines > offset + limit - 1:
+        # Check if there are more lines after what we read
+        # If we read from offset to offset+limit-1, remaining starts at offset+limit
+        if total_lines > offset + limit:
             metadata["truncated"] = True
-            metadata["remaining_lines"] = total_lines - (offset + limit - 1)
+            metadata["remaining_lines"] = total_lines - (offset + limit)
 
         return ToolResult.ok(content, **metadata)
 

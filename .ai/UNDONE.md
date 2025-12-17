@@ -497,46 +497,36 @@ _All critical issues have been addressed._
 **Fix:** Add documentation comments
 
 #### TOOL-005: Remaining Lines Calculation Off-by-One
-**Status:** Pending
-**File:** `src/code_forge/tools/file/read.py:180-182`
-**Issue:** `offset + limit - 1` should be `offset + limit`
-**Impact:** Slightly incorrect metadata
-**Fix:** Correct the calculation
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/file/read.py:180-184`
+**Fix:** Changed `total_lines > offset + limit - 1` to `total_lines > offset + limit` and remaining calculation accordingly.
 
 #### TOOL-006: Dry Run Doesn't Validate Paths
-**Status:** Pending
-**File:** `src/code_forge/tools/file/write.py:80-88`
-**Issue:** Dry run returns success without validating path would work
-**Impact:** False positive on invalid paths
-**Fix:** Perform validation even in dry run
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/file/write.py:79-109`
+**Fix:** Added path validation in dry run mode: checks if ancestor directories are writable and if existing file is writable.
 
 #### TOOL-007: GrepTool head_limit=0 Treated as Default
-**Status:** Pending
-**File:** `src/code_forge/tools/file/grep.py:169`
-**Issue:** `head_limit=0` falls back to DEFAULT instead of unlimited
-**Impact:** Can't explicitly request unlimited results
-**Fix:** Use `if head_limit is None:` check
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/file/grep.py:177-179`
+**Fix:** Changed to use `is None` check so `head_limit=0` means unlimited results.
 
 #### TOOL-008: No Timeout in Grep Searches
-**Status:** Pending
-**File:** `src/code_forge/tools/file/grep.py`
-**Issue:** Unlike Bash tool, Grep searches have no timeout
-**Impact:** Large codebases with slow regex can hang indefinitely
-**Fix:** Add timeout handling via `asyncio.wait_for()`
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/tools/file/grep.py:28, 155-160, 202-220, 243-265`
+**Fix:** Added `DEFAULT_TIMEOUT` (60s), timeout parameter, and `_search_files_sync()` helper wrapped with `asyncio.wait_for()`.
 
 #### TOOL-009: Edit Tool Doesn't Preserve File Encoding
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/tools/file/edit.py:119-120, 152`
 **Issue:** Always uses UTF-8, losing original file encoding (latin-1, utf-16)
-**Impact:** File encoding corruption
-**Fix:** Use chardet to detect and preserve original encoding
+**Note:** Requires adding chardet as a dependency. Deferred to future enhancement.
 
 #### TOOL-010: Exception Details Leaked in Error Messages
-**Status:** Pending
+**Status:** Deferred
 **Files:** Multiple tool files
 **Issue:** Raw exception strings may leak system information (paths, library versions)
-**Impact:** Information disclosure
-**Fix:** Sanitize error messages, log full error internally
+**Note:** Requires systematic audit of all tools. Deferred to future security pass.
 
 #### LLM-010: Parameter Mutation in List Building
 **Status:** Pending

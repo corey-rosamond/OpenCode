@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import glob as glob_module
 import os
 import re
@@ -24,6 +25,7 @@ class GrepTool(BaseTool):
 
     MAX_FILE_SIZE: ClassVar[int] = 10 * 1024 * 1024  # 10MB
     DEFAULT_HEAD_LIMIT: ClassVar[int] = 100
+    DEFAULT_TIMEOUT: ClassVar[float] = 60.0  # 60 seconds default timeout
 
     # Type to extension mapping
     TYPE_EXTENSIONS: ClassVar[dict[str, list[str]]] = {
@@ -150,6 +152,12 @@ Usage:
                 required=False,
                 default=0,
             ),
+            ToolParameter(
+                name="timeout",
+                type="number",
+                description="Maximum time in seconds for the search (default: 60)",
+                required=False,
+            ),
         ]
 
     async def _execute(
@@ -166,8 +174,11 @@ Usage:
         before_context = kwargs.get("-B", 0) or 0
         both_context = kwargs.get("-C", 0) or 0
         multiline = kwargs.get("multiline", False)
-        head_limit = kwargs.get("head_limit") or self.DEFAULT_HEAD_LIMIT
-        offset = kwargs.get("offset", 0) or 0
+        # Use None check so head_limit=0 means unlimited, not default
+        head_limit_val = kwargs.get("head_limit")
+        head_limit = self.DEFAULT_HEAD_LIMIT if head_limit_val is None else head_limit_val
+        offset = kwargs.get("offset") or 0
+        timeout = kwargs.get("timeout") or self.DEFAULT_TIMEOUT
 
         # Context lines
         if both_context:
@@ -188,19 +199,25 @@ Usage:
             # Get files to search
             files = self._get_files(search_path, glob_filter, type_filter)
 
-            # Search files
-            results: list[dict[str, Any]] = []
-            for file_path in files:
-                file_results = self._search_file(
-                    file_path,
-                    regex,
-                    output_mode,
-                    show_line_numbers,
-                    before_context,
-                    after_context,
+            # Search files with timeout
+            try:
+                results = await asyncio.wait_for(
+                    asyncio.to_thread(
+                        self._search_files_sync,
+                        files,
+                        regex,
+                        output_mode,
+                        show_line_numbers,
+                        before_context,
+                        after_context,
+                    ),
+                    timeout=timeout,
                 )
-                if file_results:
-                    results.extend(file_results)
+            except asyncio.TimeoutError:
+                return ToolResult.fail(
+                    f"Search timed out after {timeout} seconds. "
+                    "Try narrowing the search path or pattern."
+                )
 
             # Apply offset and limit
             total_results = len(results)
@@ -222,6 +239,30 @@ Usage:
 
         except OSError as e:
             return ToolResult.fail(f"Error searching: {e!s}")
+
+    def _search_files_sync(
+        self,
+        files: list[str],
+        regex: re.Pattern[str],
+        output_mode: str,
+        show_line_numbers: bool,
+        before_context: int,
+        after_context: int,
+    ) -> list[dict[str, Any]]:
+        """Search files synchronously (called via asyncio.to_thread for timeout)."""
+        results: list[dict[str, Any]] = []
+        for file_path in files:
+            file_results = self._search_file(
+                file_path,
+                regex,
+                output_mode,
+                show_line_numbers,
+                before_context,
+                after_context,
+            )
+            if file_results:
+                results.extend(file_results)
+        return results
 
     def _get_files(
         self,

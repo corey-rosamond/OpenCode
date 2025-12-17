@@ -76,10 +76,31 @@ Usage:
         if not is_valid:
             return ToolResult.fail(error or "Invalid path")
 
-        # Dry run mode
+        # Dry run mode - still validate that path would be writable
         if context.dry_run:
             byte_count = len(content.encode("utf-8"))
             exists = "overwrite" if os.path.exists(file_path) else "create"
+
+            # Validate parent directory exists or can be created
+            parent_dir = os.path.dirname(file_path)
+            if parent_dir:
+                # Find the first existing ancestor
+                check_dir = parent_dir
+                while check_dir and not os.path.exists(check_dir):
+                    check_dir = os.path.dirname(check_dir)
+
+                # If we found an existing ancestor, check it's writable
+                if check_dir and not os.access(check_dir, os.W_OK):
+                    return ToolResult.fail(
+                        f"[Dry Run] Cannot write: parent directory not writable: {check_dir}"
+                    )
+
+            # If file exists, check it's writable
+            if os.path.exists(file_path) and not os.access(file_path, os.W_OK):
+                return ToolResult.fail(
+                    f"[Dry Run] Cannot write: file not writable: {file_path}"
+                )
+
             return ToolResult.ok(
                 f"[Dry Run] Would {exists} {file_path} with {byte_count} bytes",
                 file_path=file_path,
