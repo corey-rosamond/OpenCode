@@ -724,11 +724,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added try-except around `.decode()` call to catch UnicodeDecodeError. Invalid UTF-8 data is now logged and skipped instead of crashing the listener.
 
 #### MCP-009: Insufficient MCP Tool Name Validation
-**Status:** Pending
-**File:** `src/code_forge/mcp/tools.py:113-115`
-**Issue:** Simple split without edge case checking
-**Impact:** Tool name confusion
-**Fix:** Add stricter validation or use regex pattern
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/tools.py:112-128`
+**Fix:** Added detailed validation for MCP tool name format with specific error messages for: wrong number of parts, wrong prefix, empty server name, empty tool name.
 
 #### MCP-010: Silent Entry Point Loading Failures
 **Status:** Pending

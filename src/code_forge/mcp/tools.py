@@ -110,9 +110,22 @@ class MCPToolAdapter:
             ValueError: If tool name is invalid.
         """
         # Extract original tool name
+        # Format: mcp__<server>__<tool_name>
         parts = tool_name.split("__")
-        if len(parts) != 3 or parts[0] != "mcp":
-            raise ValueError(f"Invalid MCP tool name: {tool_name}")
+        if len(parts) != 3:
+            raise ValueError(
+                f"Invalid MCP tool name format: {tool_name}. "
+                f"Expected 'mcp__<server>__<tool>', got {len(parts)} parts"
+            )
+        if parts[0] != "mcp":
+            raise ValueError(
+                f"Invalid MCP tool name prefix: {tool_name}. "
+                f"Expected 'mcp__', got '{parts[0]}__'"
+            )
+        if not parts[1]:
+            raise ValueError(f"Invalid MCP tool name: empty server name in {tool_name}")
+        if not parts[2]:
+            raise ValueError(f"Invalid MCP tool name: empty tool name in {tool_name}")
 
         # The original name might have underscores replaced
         # We stored the mapping, so use the original
