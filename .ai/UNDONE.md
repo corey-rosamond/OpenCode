@@ -704,11 +704,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Add `dry_run` parameter to execute_hooks()
 
 #### PERM-018: No Hook Working Directory Validation
-**Status:** Pending
-**File:** `src/code_forge/hooks/executor.py:202-203`
-**Issue:** Hook working_dir used without validation
-**Impact:** Execution in sensitive directories
-**Fix:** Validate exists and is directory
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/hooks/executor.py:249-272`
+**Fix:** Added validation that working directory exists and is actually a directory before executing hook. Returns early with descriptive error if validation fails.
 
 #### MCP-006: Unhandled Message Loop Exception
 **Status:** Pending

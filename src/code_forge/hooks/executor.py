@@ -246,8 +246,29 @@ class HookExecutor:
         env = os.environ.copy()
         env.update(event.to_env())
 
-        # Add working directory
+        # Add working directory with validation
         work_dir = hook.working_dir or str(self.working_dir)
+        work_dir_path = Path(work_dir)
+        if not work_dir_path.exists():
+            duration = time.time() - start_time
+            return HookResult(
+                hook=hook,
+                exit_code=-1,
+                stdout="",
+                stderr="",
+                duration=duration,
+                error=f"Working directory does not exist: {work_dir}",
+            )
+        if not work_dir_path.is_dir():
+            duration = time.time() - start_time
+            return HookResult(
+                hook=hook,
+                exit_code=-1,
+                stdout="",
+                stderr="",
+                duration=duration,
+                error=f"Working directory is not a directory: {work_dir}",
+            )
         env["FORGE_WORKING_DIR"] = work_dir
 
         # Add hook-specific env vars (filtered for security)
