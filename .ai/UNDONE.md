@@ -623,11 +623,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added DOCS_URL and OPENROUTER_URL constants. Show OpenRouter link on empty key. Added troubleshooting links on all error paths. Separate PermissionError handling with specific hints.
 
 #### SESS-014: Incomplete Spinner State in Error Cases
-**Status:** Pending
-**File:** `src/code_forge/cli/main.py:368-372`
-**Issue:** Exception after spinner starts may not properly clean up
-**Impact:** Visual artifacts
-**Fix:** Use try-finally for spinner initialization
+**Status:** Already fixed (2025-12-17)
+**File:** `src/code_forge/cli/main.py:266-412`
+**Note:** Spinners initialized to None before try block (lines 266-268). Cleanup in both except (395-399) and finally (401-412) blocks with try-except wrappers.
 
 #### SESS-015: No Context About Session Recovery
 **Status:** Pending
