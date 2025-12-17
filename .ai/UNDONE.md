@@ -794,11 +794,10 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Documented defensive copy behavior in docstring with guidance to cache result in local variable when needed repeatedly
 
 #### MCP-022: Skill Context Copying
-**Status:** Pending
-**File:** `src/code_forge/skills/base.py:356`
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/skills/base.py:367-376`
 **Issue:** Returns copy on every call
-**Impact:** Inefficient if called frequently
-**Fix:** Document behavior in docstring
+**Fix:** Documented defensive copy behavior in docstring with guidance to cache result
 
 #### MCP-023: Inefficient MCP Settings Merge
 **Status:** Pending

@@ -365,7 +365,14 @@ class Skill:
         return self.definition.tools.copy()
 
     def get_context(self) -> dict[str, Any]:
-        """Get current skill context."""
+        """Get current skill context.
+
+        Returns a defensive copy to prevent external modification of internal
+        state. Cache the result if you need to access context multiple times.
+
+        Returns:
+            Copy of the context dictionary.
+        """
         return self._context.copy()
 
     def set_context(self, key: str, value: Any) -> None:
