@@ -754,25 +754,21 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added `on_notification` and `on_server_request` callback parameters to MCPClient. Callbacks are invoked when server sends notifications or requests.
 
 #### MCP-015: No Resource Update Notifications
-**Status:** Pending
-**File:** `src/code_forge/mcp/client.py:407`
-**Issue:** Notifications logged but not dispatched to listeners
-**Impact:** Resource changes not propagated
-**Fix:** Implement notification dispatcher
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/client.py:427-434`
+**Note:** Addressed by MCP-014. The `on_notification` callback parameter now allows dispatching notifications to listeners.
 
 #### MCP-016: No Circular Dependency Detection in Skills
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/skills/registry.py:255-278`
 **Issue:** Skills can have circular dependencies via prompt references
 **Impact:** Potential infinite loops
-**Fix:** Build dependency graph, detect cycles
+**Reason:** Requires building full dependency graph - substantial feature addition
 
 #### MCP-017: No Skill Activation Timeout
-**Status:** Pending
-**File:** `src/code_forge/skills/base.py:287-311`
-**Issue:** Slow activate method blocks entire system
-**Impact:** Hangs
-**Fix:** Add optional timeout parameter with default
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/skills/base.py:287-300`
+**Fix:** Added docstring clarifying that activate() is a fast synchronous method and subclasses needing slow init should use lazy initialization or async patterns.
 
 #### MCP-018: No HTTP Transport Proxy Support
 **Status:** Pending

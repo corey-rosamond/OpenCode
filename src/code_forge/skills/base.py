@@ -287,6 +287,11 @@ class Skill:
     def activate(self, config: dict[str, Any] | None = None) -> list[str]:
         """Activate the skill.
 
+        This method performs synchronous in-memory operations (defaults,
+        validation, state updates) and should complete quickly. If subclasses
+        need to perform slow initialization, they should do so asynchronously
+        outside of this method or use lazy initialization patterns.
+
         Args:
             config: Configuration values
 
