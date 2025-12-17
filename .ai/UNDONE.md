@@ -734,11 +734,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added explicit validation before split() with specific error messages for: missing colon, empty module name, empty class name. Includes example of correct format in error message.
 
 #### MCP-011: No State Transition Validation in Agents
-**Status:** Pending
-**File:** `src/code_forge/agents/base.py:277-283`
-**Issue:** Can cancel a completed agent
-**Impact:** Confusing state
-**Fix:** Add state machine validation
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/agents/base.py:280-299`
+**Fix:** Added state validation in `cancel()` method. Returns False and logs warning if agent is already in terminal state (COMPLETED, FAILED, CANCELLED). Changed return type from None to bool.
 
 #### MCP-012: No Token Usage Tracking from LLM
 **Status:** Pending

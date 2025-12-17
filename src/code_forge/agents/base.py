@@ -7,6 +7,7 @@ autonomous subagents that execute specialized tasks.
 
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -14,6 +15,8 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from .result import AgentResult
@@ -274,12 +277,26 @@ class Agent(ABC):
         """
         ...
 
-    def cancel(self) -> None:
-        """Request cancellation of agent execution."""
+    def cancel(self) -> bool:
+        """Request cancellation of agent execution.
+
+        Returns:
+            True if cancellation was applied, False if agent already complete.
+        """
+        # Validate state transition - can only cancel PENDING or RUNNING agents
+        if self.state in (AgentState.COMPLETED, AgentState.FAILED, AgentState.CANCELLED):
+            logger.warning(
+                "Cannot cancel agent %s: already in terminal state %s",
+                self.id,
+                self.state.value,
+            )
+            return False
+
         self._cancelled = True
         if self.state == AgentState.RUNNING:
             self.state = AgentState.CANCELLED
             self.completed_at = datetime.now()
+        return True
 
     @property
     def is_cancelled(self) -> bool:
