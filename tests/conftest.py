@@ -5,6 +5,53 @@ This module provides comprehensive fixtures for:
 - Integration tests (tool registry, session manager, hooks)
 - End-to-end tests (full component setup)
 - Performance tests (benchmarking utilities)
+
+Fixture Dependency Hierarchy
+============================
+
+The fixtures are organized in a dependency tree. When using a fixture,
+all its dependencies are automatically created and cleaned up.
+
+::
+
+    temp_dir (base temporary directory)
+    ├── temp_home (isolated HOME with XDG paths)
+    │   ├── forge_data_dir (~/.local/share/forge)
+    │   │   └── session_storage
+    │   │       └── session_manager
+    │   │           └── session
+    │   ├── forge_config_dir (~/.config/forge)
+    │   ├── sample_plugin_dir (~/.forge/plugins/test-plugin)
+    │   ├── broken_plugin_dir (~/.forge/plugins/broken-plugin)
+    │   └── minimal_config
+    │
+    └── temp_project (isolated project directory)
+        ├── sample_file (sample.py)
+        ├── sample_config_file (config.yaml)
+        ├── sample_json_file (data.json)
+        ├── multiple_python_files (main.py, utils.py, package/)
+        ├── execution_context
+        ├── minimal_config
+        └── git_repo (initialized git repository)
+            └── git_repo_with_changes (uncommitted changes)
+
+    tool_registry (singleton-aware)
+    └── tool_registry_with_tools (all built-in tools registered)
+        └── tool_executor
+
+    hook_registry (singleton-aware, preserves state)
+
+    mock_llm_response (factory function)
+    mock_openrouter_client (MagicMock)
+    benchmark_timer (Timer class factory)
+    event_loop (fresh asyncio loop)
+
+Notes:
+- Fixtures with `temp_` prefix create isolated filesystem locations
+- Fixtures ending with `_with_*` extend base fixtures with additional setup
+- Singleton fixtures (tool_registry, hook_registry, session_manager) preserve
+  and restore original state to avoid test pollution
+- Async fixtures (session) must be used with pytest-asyncio
 """
 
 from __future__ import annotations

@@ -493,11 +493,10 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Add tests or remove placeholder module
 
 #### DOC-001: Fixture Dependency Chains Not Documented
-**Status:** Pending
-**File:** `tests/conftest.py`
+**Status:** Fixed (2025-12-18)
+**File:** `tests/conftest.py:9-54`
 **Issue:** Complex fixture relationships not documented
-**Impact:** Hard to understand test setup
-**Fix:** Add documentation comments
+**Fix:** Added ASCII dependency tree diagram in module docstring showing all fixture relationships and notes about naming conventions
 
 #### TOOL-005: Remaining Lines Calculation Off-by-One
 **Status:** Fixed (2025-12-17)
