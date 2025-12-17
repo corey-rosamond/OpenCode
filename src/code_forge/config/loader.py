@@ -236,58 +236,124 @@ class ConfigLoader(IConfigLoader):
         except ValidationError as e:
             return False, [str(e)]
 
-    def reload(self) -> None:
+    def reload(self) -> bool:
         """Reload configuration from all sources.
 
         Thread-safe: uses lock to prevent races during reload.
         Observers are notified outside the lock to prevent deadlocks.
         If reload fails, the old configuration is preserved.
+        Only notifies observers if configuration actually changed.
+
+        Returns:
+            True if config changed and was reloaded, False otherwise.
         """
         try:
             new_config = self.load_all()
             with self._lock:
+                # Check if config actually changed
+                old_config = self._config
+                if old_config is not None:
+                    # Compare serialized forms for equality
+                    if old_config.model_dump() == new_config.model_dump():
+                        logger.debug("Configuration unchanged, skipping reload")
+                        return False
                 self._config = new_config
             # Notify outside lock to prevent deadlocks
             self._notify_observers(new_config)
             logger.info("Configuration reloaded successfully")
+            return True
         except Exception as e:
             logger.error("Failed to reload configuration: %s", e)
             # Keep old config on error
+            return False
 
-    def watch(self) -> None:
+    def watch(
+        self,
+        *,
+        user: bool = True,
+        project: bool = True,
+    ) -> int:
         """Start watching configuration files for changes.
 
-        Creates a file watcher that monitors user and project
+        Creates a file watcher that monitors user and/or project
         configuration directories. When a .json or .yaml file
         changes, the configuration is automatically reloaded.
+
+        Args:
+            user: Watch user config directory (~/.forge). Default True.
+            project: Watch project config directory (./.forge). Default True.
+
+        Returns:
+            Number of directories now being watched.
         """
         if self._file_watcher is not None:
-            return
+            logger.debug("File watcher already running")
+            return 0
 
         handler = _ConfigChangeHandler(self)
         self._file_watcher = Observer()
+        watched_count = 0
+
+        # Build list of directories to watch based on parameters
+        dirs_to_watch: list[Path] = []
+        if user:
+            dirs_to_watch.append(self._user_dir)
+        if project:
+            dirs_to_watch.append(self._project_dir)
 
         # Watch directories that exist
-        for path in [self._user_dir, self._project_dir]:
+        for path in dirs_to_watch:
             if path.exists() and path.is_dir():
                 self._file_watcher.schedule(  # type: ignore[no-untyped-call]
                     handler, str(path), recursive=False
                 )
                 logger.debug("Watching %s for configuration changes", path)
+                watched_count += 1
 
-        self._file_watcher.start()  # type: ignore[no-untyped-call]
-        logger.info("Configuration file watcher started")
+        if watched_count > 0:
+            self._file_watcher.start()  # type: ignore[no-untyped-call]
+            logger.info(
+                "Configuration file watcher started (%d directories)", watched_count
+            )
+        else:
+            # No directories to watch, clean up
+            self._file_watcher = None
+            logger.debug("No configuration directories to watch")
 
-    def stop_watching(self) -> None:
+        return watched_count
+
+    # Default timeout for stopping file watcher (seconds)
+    WATCHER_STOP_TIMEOUT: float = 10.0
+
+    def stop_watching(self, timeout: float | None = None) -> bool:
         """Stop watching configuration files.
 
         Safe to call multiple times. Waits for watcher thread to finish.
+
+        Args:
+            timeout: Maximum time to wait for watcher to stop.
+                     Defaults to WATCHER_STOP_TIMEOUT (10 seconds).
+
+        Returns:
+            True if watcher stopped within timeout, False if it timed out.
         """
-        if self._file_watcher is not None:
-            self._file_watcher.stop()  # type: ignore[no-untyped-call]
-            self._file_watcher.join(timeout=5.0)
-            self._file_watcher = None
-            logger.info("Configuration file watcher stopped")
+        if self._file_watcher is None:
+            return True
+
+        timeout = timeout if timeout is not None else self.WATCHER_STOP_TIMEOUT
+        self._file_watcher.stop()  # type: ignore[no-untyped-call]
+        self._file_watcher.join(timeout=timeout)
+
+        # Check if thread actually stopped
+        if self._file_watcher.is_alive():
+            logger.warning(
+                "File watcher did not stop within %s seconds", timeout
+            )
+            return False
+
+        self._file_watcher = None
+        logger.info("Configuration file watcher stopped")
+        return True
 
     def add_observer(self, callback: Callable[[CodeForgeConfig], None]) -> None:
         """Add observer for configuration changes.
@@ -308,17 +374,25 @@ class ConfigLoader(IConfigLoader):
         if callback in self._observers:
             self._observers.remove(callback)
 
-    def _notify_observers(self, config: CodeForgeConfig) -> None:
+    def _notify_observers(self, config: CodeForgeConfig) -> tuple[int, int]:
         """Notify all observers of configuration change.
 
         Args:
             config: New configuration to pass to observers.
+
+        Returns:
+            Tuple of (success_count, failure_count).
         """
+        success_count = 0
+        failure_count = 0
         for observer in self._observers:
             try:
                 observer(config)
+                success_count += 1
             except Exception as e:
-                logger.error("Observer error: %s", e)
+                failure_count += 1
+                logger.error("Observer %s error: %s", observer.__name__, e)
+        return success_count, failure_count
 
     def __del__(self) -> None:
         """Cleanup: ensure file watcher is stopped.

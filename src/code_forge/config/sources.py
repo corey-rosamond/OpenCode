@@ -218,6 +218,18 @@ class EnvironmentSource(IConfigSource):
                 d[section] = {}
             d[section][key] = value
 
+    # Known keys and their expected types for validation
+    BOOLEAN_KEYS: ClassVar[frozenset[str]] = frozenset({
+        "vim_mode", "streaming", "show_tokens", "show_cost", "auto_save"
+    })
+    INTEGER_KEYS: ClassVar[frozenset[str]] = frozenset({
+        "max_tokens", "save_interval", "max_history", "compress_after"
+    })
+    FLOAT_KEYS: ClassVar[frozenset[str]] = frozenset({"temperature"})
+    STRING_KEYS: ClassVar[frozenset[str]] = frozenset({
+        "api_key", "default", "theme"  # Known string keys
+    })
+
     def _convert_value(self, value: str, path: str | tuple[str, str]) -> Any:
         """Convert string value to appropriate type.
 
@@ -232,11 +244,11 @@ class EnvironmentSource(IConfigSource):
         key = path[1] if isinstance(path, tuple) else path
 
         # Boolean conversion
-        if key in ("vim_mode", "streaming", "show_tokens", "show_cost", "auto_save"):
+        if key in self.BOOLEAN_KEYS:
             return value.lower() in ("true", "1", "yes", "on")
 
         # Integer conversion
-        if key in ("max_tokens", "save_interval", "max_history", "compress_after"):
+        if key in self.INTEGER_KEYS:
             try:
                 return int(value)
             except ValueError:
@@ -244,11 +256,19 @@ class EnvironmentSource(IConfigSource):
                 return value
 
         # Float conversion
-        if key == "temperature":
+        if key in self.FLOAT_KEYS:
             try:
                 return float(value)
             except ValueError:
                 logger.warning("Invalid float value for %s: %s", key, value)
                 return value
 
+        # String keys pass through
+        if key in self.STRING_KEYS:
+            return value
+
+        # Unknown key - log debug and pass through as string
+        logger.debug(
+            "Unknown config key '%s' from environment, treating as string", key
+        )
         return value

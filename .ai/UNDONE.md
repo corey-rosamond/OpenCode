@@ -575,39 +575,29 @@ _All critical issues have been addressed._
 **Fix:** Added logger.warning() for unexpected content types, showing the actual type received.
 
 #### CFG-006: Missing Null Check in EnvironmentSource
-**Status:** Pending
-**File:** `src/code_forge/config/sources.py:221-254`
-**Issue:** No validation that config structure matches expectations
-**Impact:** Type conversion failures
-**Fix:** Add explicit handling for unknown keys
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/sources.py:221-274`
+**Fix:** Added explicit type key sets (BOOLEAN_KEYS, INTEGER_KEYS, etc.) and debug logging for unknown keys.
 
 #### CFG-007: Inconsistent Error Handling in Observer Notification
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:297-307`
-**Issue:** Observer exceptions silently logged but never propagated
-**Impact:** System left in inconsistent state
-**Fix:** Return boolean success/failure or provide status method
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:330-348`
+**Fix:** _notify_observers() now returns (success_count, failure_count) tuple and logs observer name on error.
 
 #### CFG-008: Missing Timeout for File Watcher Stop
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:267-276`
-**Issue:** Hardcoded 5.0 second timeout may be insufficient
-**Impact:** Potential hangs on slow systems
-**Fix:** Make timeout configurable or increase to 10+ seconds
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:325-355`
+**Fix:** stop_watching() now accepts optional timeout parameter (default 10s via WATCHER_STOP_TIMEOUT) and returns bool indicating success.
 
 #### CFG-009: No Configuration Change Diff Detection
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:225-241`
-**Issue:** Observers notified even if nothing changed
-**Impact:** Expensive re-initialization unnecessarily triggered
-**Fix:** Compare old and new config; only notify if different
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:239-268`
+**Fix:** reload() now compares old and new config via model_dump() and skips notification if unchanged. Returns bool.
 
 #### CFG-010: No Mechanism to Unwatch Specific Directories
-**Status:** Pending
-**File:** `src/code_forge/config/loader.py:243-265`
-**Issue:** Once watch() called, both directories watched together
-**Impact:** No granular control
-**Fix:** Add `watch(user=True, project=True)` parameters
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/config/loader.py:270-323`
+**Fix:** watch() now accepts user=True, project=True parameters for granular control. Returns count of directories watched.
 
 #### SESS-010: Inefficient Truncation Strategy
 **Status:** Pending
