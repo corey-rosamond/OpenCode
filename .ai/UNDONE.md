@@ -709,11 +709,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added validation that working directory exists and is actually a directory before executing hook. Returns early with descriptive error if validation fails.
 
 #### MCP-006: Unhandled Message Loop Exception
-**Status:** Pending
-**File:** `src/code_forge/mcp/client.py:371`
-**Issue:** Receive loop catches all exceptions without reconnection or notification
-**Impact:** Unexpected disconnections unnoticed
-**Fix:** Add callback to notify manager for reconnection
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/client.py:51-77, 363-390`
+**Fix:** Added `on_disconnect` callback parameter to MCPClient. Receive loop now invokes callback when connection is lost unexpectedly, allowing manager to handle reconnection.
 
 #### MCP-007: asyncio.get_event_loop() Usage
 **Status:** Pending

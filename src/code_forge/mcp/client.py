@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from typing import Any
 
 from code_forge.mcp.protocol import (
@@ -53,6 +54,7 @@ class MCPClient:
         client_name: str = "forge",
         client_version: str = "1.0.0",
         request_timeout: float = 30.0,
+        on_disconnect: Callable[[Exception | None], None] | None = None,
     ) -> None:
         """Initialize MCP client.
 
@@ -61,11 +63,14 @@ class MCPClient:
             client_name: Client name for initialization.
             client_version: Client version.
             request_timeout: Timeout for requests in seconds.
+            on_disconnect: Optional callback invoked when connection is lost unexpectedly.
+                          Receives the exception that caused the disconnect, or None.
         """
         self.transport = transport
         self.client_name = client_name
         self.client_version = client_version
         self.request_timeout = request_timeout
+        self._on_disconnect = on_disconnect
         self._server_info: MCPServerInfo | None = None
         self._pending_requests: dict[str | int, asyncio.Future[dict[str, Any]]] = {}
         self._receive_task: asyncio.Task[None] | None = None
@@ -357,6 +362,7 @@ class MCPClient:
 
     async def _receive_loop(self) -> None:
         """Receive and dispatch messages."""
+        disconnect_error: Exception | None = None
         try:
             while self.transport.is_connected:
                 try:
@@ -364,16 +370,24 @@ class MCPClient:
                     await self._handle_message(message)
                 except ConnectionError as e:
                     logger.error(f"Receive error: {e}")
+                    disconnect_error = e
                     break
         except asyncio.CancelledError:
-            pass
+            pass  # Normal shutdown, not an unexpected disconnect
         except Exception as e:
             logger.error(f"Receive loop error: {e}")
+            disconnect_error = e
         finally:
             # Cancel all pending requests
             for future in self._pending_requests.values():
                 if not future.done():
                     future.set_exception(MCPClientError("Connection closed"))
+            # Notify disconnect callback if provided
+            if disconnect_error is not None and self._on_disconnect is not None:
+                try:
+                    self._on_disconnect(disconnect_error)
+                except Exception as callback_err:
+                    logger.error(f"Disconnect callback error: {callback_err}")
 
     async def _handle_message(self, data: dict[str, Any]) -> None:
         """Handle incoming message.
