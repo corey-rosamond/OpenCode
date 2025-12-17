@@ -24,6 +24,7 @@ class HTTPTransport(MCPTransport):
         url: str,
         headers: dict[str, str] | None = None,
         timeout: int = 30,
+        proxy: str | None = None,
     ) -> None:
         """Initialize HTTP transport.
 
@@ -31,10 +32,12 @@ class HTTPTransport(MCPTransport):
             url: Base URL of MCP server.
             headers: HTTP headers to include.
             timeout: Request timeout in seconds.
+            proxy: Optional proxy URL (e.g., 'http://proxy:8080').
         """
         self.url = url.rstrip("/")
         self.headers = headers or {}
         self.timeout = timeout
+        self.proxy = proxy
         self._session: Any | None = None  # aiohttp.ClientSession
         self._sse_task: asyncio.Task[None] | None = None
         self._message_queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
@@ -57,15 +60,20 @@ class HTTPTransport(MCPTransport):
 
         try:
             timeout = aiohttp.ClientTimeout(total=self.timeout)
+            # Configure connector with proxy if specified
+            connector = None
+            if self.proxy:
+                connector = aiohttp.TCPConnector()
             self._session = aiohttp.ClientSession(
                 headers=self.headers,
                 timeout=timeout,
+                connector=connector,
             )
 
             # Try to connect to verify the server is reachable
             # Most MCP HTTP servers expose an endpoint we can check
             try:
-                async with self._session.get(f"{self.url}/health"):
+                async with self._session.get(f"{self.url}/health", proxy=self.proxy):
                     # We don't require a specific response, just that we can connect
                     pass
             except aiohttp.ClientError:
@@ -121,6 +129,7 @@ class HTTPTransport(MCPTransport):
             async with self._session.post(
                 f"{self.url}/message",
                 json=message,
+                proxy=self.proxy,
             ) as response:
                 response.raise_for_status()
                 result = await response.json()
@@ -165,6 +174,7 @@ class HTTPTransport(MCPTransport):
             async with self._session.get(
                 f"{self.url}/sse",
                 headers={"Accept": "text/event-stream"},
+                proxy=self.proxy,
             ) as response:
                 async for line in response.content:
                     if self._closing:

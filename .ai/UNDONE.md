@@ -771,11 +771,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added docstring clarifying that activate() is a fast synchronous method and subclasses needing slow init should use lazy initialization or async patterns.
 
 #### MCP-018: No HTTP Transport Proxy Support
-**Status:** Pending
-**File:** `src/code_forge/mcp/transport/http.py:59-63`
-**Issue:** aiohttp ClientSession created without proxy configuration
-**Impact:** Can't use behind proxy
-**Fix:** Add proxy parameter to HTTPTransport
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/transport/http.py:22-40, 75-79, 131-135, 176-180`
+**Fix:** Added `proxy` parameter to HTTPTransport. Proxy URL is passed to all HTTP requests (POST, GET, SSE).
 
 #### MCP-019: Inefficient Plugin Unregister
 **Status:** Pending
