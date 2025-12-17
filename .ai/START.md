@@ -63,6 +63,18 @@ ruff check src/code_forge/
 
 ---
 
+## Git Commit Rules
+
+**NEVER add any of the following to commit messages:**
+- "Generated with Claude Code" or any AI tool references
+- "Co-Authored-By" headers with AI names
+- Any attribution suggesting AI authorship
+- Links to claude.com or any AI service
+
+**Commits are authored by the human developer, not AI assistants.**
+
+---
+
 ## Remember
 
 > "The code is the source of truth. Read it before changing it."

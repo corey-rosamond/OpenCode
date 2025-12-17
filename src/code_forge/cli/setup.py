@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 
 console = Console()
 
+# Documentation URLs for troubleshooting
+DOCS_URL = "https://github.com/corey-rosamond/Code-Forge"
+OPENROUTER_URL = "https://openrouter.ai/keys"
+
 
 def run_setup_wizard(config_dir: Path | None = None) -> str | None:
     """Run the interactive setup wizard.
@@ -67,8 +71,10 @@ def run_setup_wizard(config_dir: Path | None = None) -> str | None:
         # Check for empty input
         if not api_key:
             console.print("[red]API key cannot be empty.[/red]")
+            console.print(f"[dim]Get your key at: {OPENROUTER_URL}[/dim]")
             if Confirm.ask("Would you like to exit setup?", default=False):
                 console.print("[yellow]Setup cancelled. Run 'forge' again to retry.[/yellow]")
+                console.print(f"[dim]Troubleshooting: {DOCS_URL}#troubleshooting[/dim]")
                 return None
             continue
 
@@ -87,11 +93,17 @@ def run_setup_wizard(config_dir: Path | None = None) -> str | None:
     try:
         save_api_key(api_key, config_dir)
         console.print(f"[green]API key saved to {config_dir / 'settings.json'}[/green]")
+    except PermissionError as e:
+        console.print(f"[red]Permission denied saving configuration: {e}[/red]")
+        console.print("[yellow]Hint: Check file/directory permissions for ~/.forge/[/yellow]")
+        console.print("[yellow]Alternative: Set OPENROUTER_API_KEY environment variable[/yellow]")
+        console.print(f"[dim]Troubleshooting: {DOCS_URL}#troubleshooting[/dim]")
+        return None
     except Exception as e:
         console.print(f"[red]Failed to save configuration: {e}[/red]")
-        console.print("[yellow]Warning: Your API key is NOT saved and will need to be re-entered next time.[/yellow]")
+        console.print("[yellow]Warning: Your API key is NOT saved and will need to be re-entered.[/yellow]")
         console.print("[yellow]Hint: Set OPENROUTER_API_KEY environment variable for persistent configuration.[/yellow]")
-        # Return None to signal save failure - caller can decide whether to continue
+        console.print(f"[dim]Troubleshooting: {DOCS_URL}#troubleshooting[/dim]")
         return None
 
     # Success message
