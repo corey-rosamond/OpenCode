@@ -673,11 +673,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added warning logging for all regex rejection cases: exceeds max length, potential ReDoS pattern, and invalid regex syntax. Patterns are truncated in logs for safety.
 
 #### PERM-013: Type Validation Without Coercion
-**Status:** Pending
-**File:** `src/code_forge/commands/base.py:47-75`
-**Issue:** INTEGER and BOOLEAN types validated but not converted
-**Impact:** Command code still gets strings
-**Fix:** Return converted value or store in ParsedCommand
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/commands/base.py:77-98`
+**Fix:** Added `convert()` method to `CommandArgument` that converts validated values to proper types (int for INTEGER, bool for BOOLEAN). Command handlers can call this after validation.
 
 #### PERM-014: Inconsistent Timeout Handling in Prompts
 **Status:** Pending

@@ -74,6 +74,29 @@ class CommandArgument:
 
         return True, None
 
+    def convert(self, value: str | None) -> Any:
+        """Convert a validated argument value to its proper type.
+
+        Should only be called after validate() returns success.
+
+        Args:
+            value: Value to convert.
+
+        Returns:
+            Converted value (int, bool, or str depending on type).
+        """
+        if value is None:
+            return self.default
+
+        if self.type == ArgumentType.INTEGER:
+            return int(value)
+
+        if self.type == ArgumentType.BOOLEAN:
+            return value.lower() in ("true", "yes", "1")
+
+        # STRING, CHOICE, and PATH types stay as strings
+        return value
+
 
 @dataclass
 class CommandResult:
