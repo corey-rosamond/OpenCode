@@ -1,6 +1,7 @@
 """Tests for Thinking mode."""
 
 import time
+from datetime import datetime
 
 import pytest
 
@@ -53,7 +54,7 @@ class TestThinkingResult:
         assert result.thinking_tokens == 0
         assert result.response_tokens == 0
         assert result.time_seconds == 0.0
-        assert result.timestamp is not None
+        assert isinstance(result.timestamp, datetime)
 
     def test_with_metrics(self) -> None:
         """Test result with metrics."""
@@ -137,7 +138,7 @@ class TestThinkingPattern:
         text = "<thinking>Analysis</thinking><response>Answer</response>"
         match = THINKING_PATTERN.search(text)
 
-        assert match is not None
+        assert match and match.group(0)
         assert match.group(1).strip() == "Analysis"
         assert match.group(2).strip() == "Answer"
 
@@ -155,7 +156,7 @@ class TestThinkingPattern:
         """
         match = THINKING_PATTERN.search(text)
 
-        assert match is not None
+        assert match and match.group(0)
         assert "Multi-line" in match.group(1)
         assert "Multi-line" in match.group(2)
 
@@ -164,7 +165,7 @@ class TestThinkingPattern:
         text = "<THINKING>Analysis</THINKING><RESPONSE>Answer</RESPONSE>"
         match = THINKING_PATTERN.search(text)
 
-        assert match is not None
+        assert match and match.group(0)
         assert match.group(1).strip() == "Analysis"
 
     def test_no_match(self) -> None:
@@ -226,7 +227,7 @@ class TestThinkingMode:
         mode.activate(context)
 
         assert mode.is_active is True
-        assert mode._start_time is not None
+        assert isinstance(mode._start_time, float)
 
     def test_activate_deep_mode(self, context: ModeContext) -> None:
         """Test activation in deep mode."""
@@ -352,7 +353,7 @@ class TestThinkingMode:
 
         result = mode.get_last_thinking()
 
-        assert result is not None
+        assert isinstance(result, ThinkingResult)
         assert result.thinking == "Analysis"
         assert result.response == "Answer"
 

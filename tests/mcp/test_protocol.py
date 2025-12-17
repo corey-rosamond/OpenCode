@@ -101,7 +101,7 @@ class TestMCPRequest:
         request = MCPRequest(method="tools/list")
         assert request.method == "tools/list"
         assert request.params is None
-        assert request.id is not None
+        assert isinstance(request.id, str) and len(request.id) > 0
 
     def test_creation_with_params(self) -> None:
         """Test creation with parameters."""
@@ -173,7 +173,7 @@ class TestMCPResponse:
         response = MCPResponse(id="456", error=error)
         assert response.id == "456"
         assert response.result is None
-        assert response.error is not None
+        assert isinstance(response.error, MCPError)
         assert response.is_error
 
     def test_to_dict_success(self) -> None:
@@ -219,7 +219,7 @@ class TestMCPResponse:
         }
         response = MCPResponse.from_dict(d)
         assert response.id == "def"
-        assert response.error is not None
+        assert isinstance(response.error, MCPError)
         assert response.error.code == -32600
 
     def test_factory_methods(self) -> None:
@@ -231,7 +231,7 @@ class TestMCPResponse:
         error = MCPError(code=-1, message="fail")
         failure = MCPResponse.failure("id2", error)
         assert failure.is_error
-        assert failure.error is not None
+        assert isinstance(failure.error, MCPError)
 
 
 class TestMCPNotification:
@@ -479,7 +479,7 @@ class TestMCPPrompt:
         )
         assert prompt.name == "summarize"
         assert prompt.description == "Summarize text"
-        assert prompt.arguments is not None
+        assert isinstance(prompt.arguments, list)
         assert len(prompt.arguments) == 1
 
     def test_from_dict(self) -> None:
@@ -495,7 +495,7 @@ class TestMCPPrompt:
         prompt = MCPPrompt.from_dict(d)
         assert prompt.name == "translate"
         assert prompt.description == "Translate text"
-        assert prompt.arguments is not None
+        assert isinstance(prompt.arguments, list)
         assert len(prompt.arguments) == 2
         assert prompt.arguments[0].name == "text"
         assert prompt.arguments[1].name == "target_lang"
@@ -648,7 +648,7 @@ class TestParseMessage:
         msg = parse_message(data)
         assert isinstance(msg, MCPResponse)
         assert msg.is_error
-        assert msg.error is not None
+        assert isinstance(msg.error, MCPError)
         assert msg.error.code == -32600
 
     def test_parse_invalid_message(self) -> None:

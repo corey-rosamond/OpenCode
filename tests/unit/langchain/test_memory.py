@@ -66,7 +66,7 @@ class TestConversationMemory:
         memory = ConversationMemory()
         memory.set_system_message(Message.system("You are helpful"))
 
-        assert memory.system_message is not None
+        assert isinstance(memory.system_message, Message)
         assert memory.system_message.content == "You are helpful"
 
     def test_set_system_message_converts_role(self) -> None:
@@ -75,7 +75,7 @@ class TestConversationMemory:
         # Pass a message with content but wrong role
         memory.set_system_message(Message.user("Be helpful"))
 
-        assert memory.system_message is not None
+        assert isinstance(memory.system_message, Message)
         assert memory.system_message.role == MessageRole.SYSTEM
 
     def test_get_messages_order(self) -> None:
@@ -124,7 +124,7 @@ class TestConversationMemory:
         memory.clear_history()
 
         assert len(memory.get_history()) == 0
-        assert memory.system_message is not None
+        assert isinstance(memory.system_message, Message)
 
     def test_trim_by_tokens(self) -> None:
         """Test trimming messages by token count."""
@@ -166,7 +166,7 @@ class TestConversationMemory:
         ]
         memory.from_langchain_messages(lc_msgs)
 
-        assert memory.system_message is not None
+        assert isinstance(memory.system_message, Message)
         assert memory.system_message.content == "Be helpful"
         assert len(memory.get_history()) == 2
 
@@ -323,7 +323,7 @@ class TestSummaryMemory:
         await memory.maybe_summarize()
 
         # Should have created summary
-        assert memory.summary is not None
+        assert isinstance(memory.summary, str)
         assert "Summary" in memory.summary
         # Should have trimmed messages
         assert len(memory.messages) == 10  # Keeps last 10
@@ -406,7 +406,7 @@ class TestConversationMemoryEdgeCases:
 
         memory.set_system_message(msg)
 
-        assert memory.system_message is not None
+        assert isinstance(memory.system_message, Message)
         assert memory.system_message.role == MessageRole.SYSTEM
         assert memory.system_message.content == "Hello World"
 

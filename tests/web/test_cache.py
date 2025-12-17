@@ -83,7 +83,7 @@ class TestWebCache:
         cache.set("key1", response)
         cached = cache.get("key1")
 
-        assert cached is not None
+        assert isinstance(cached, FetchResponse)
         assert cached.url == response.url
         assert cached.content == response.content
         assert cached.from_cache is True
@@ -180,7 +180,7 @@ class TestWebCache:
         cache.set("key1", make_response(content="updated"))
 
         cached = cache.get("key1")
-        assert cached is not None
+        assert isinstance(cached, FetchResponse)
         assert cached.content == "updated"
         assert cache.count == 1
 
@@ -202,7 +202,7 @@ class TestWebCache:
             cache._current_size = 0
 
             cached = cache.get("key1")
-            assert cached is not None
+            assert isinstance(cached, FetchResponse)
             assert cached.content == response.content
 
     def test_file_cache_clear(self) -> None:
@@ -263,7 +263,7 @@ class TestWebCache:
         cache.set("key1", response)
         cached = cache.get("key1")
 
-        assert cached is not None
+        assert isinstance(cached, FetchResponse)
         # Binary content is decoded when cached
         assert isinstance(cached.content, str)
 

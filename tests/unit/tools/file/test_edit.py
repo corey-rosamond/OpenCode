@@ -155,7 +155,7 @@ class TestEditToolReplaceAll:
             new_string="qux",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str) and len(result.error) > 0
         assert "3 times" in result.error or "found 3" in result.error.lower()
         # File should be unchanged
         assert file_path.read_text() == "foo bar foo baz foo"
@@ -221,7 +221,7 @@ class TestEditToolErrorHandling:
             new_string="bar",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str) and len(result.error) > 0
         assert "not found" in result.error.lower()
 
     @pytest.mark.asyncio
@@ -235,7 +235,7 @@ class TestEditToolErrorHandling:
             new_string="replacement",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str) and len(result.error) > 0
         assert "not found" in result.error.lower()
 
     @pytest.mark.asyncio
@@ -249,7 +249,7 @@ class TestEditToolErrorHandling:
             new_string="hello",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str) and len(result.error) > 0
         assert "different" in result.error.lower()
 
     @pytest.mark.asyncio
@@ -263,7 +263,7 @@ class TestEditToolErrorHandling:
             new_string="bar",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str) and len(result.error) > 0
         assert "absolute path" in result.error.lower()
 
 
@@ -316,5 +316,5 @@ class TestEditToolSecurityValidation:
             new_string="admin",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str) and len(result.error) > 0
         assert "traversal" in result.error.lower() or "not found" in result.error.lower()

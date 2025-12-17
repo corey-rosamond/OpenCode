@@ -47,9 +47,11 @@ class TestInputHandler:
 
     def test_bindings_created(self, temp_history_path: Path) -> None:
         """Test that key bindings are created."""
+        from prompt_toolkit.key_binding import KeyBindings
+
         handler = InputHandler(temp_history_path)
         bindings = handler._bindings
-        assert bindings is not None
+        assert isinstance(bindings, KeyBindings)
 
     @pytest.mark.asyncio
     async def test_get_input_returns_none_on_eof(self, temp_history_path: Path) -> None:
@@ -94,10 +96,12 @@ class TestInputHandler:
 
     def test_session_lazy_creation(self, temp_history_path: Path) -> None:
         """Test that session is created lazily."""
+        from prompt_toolkit import PromptSession
+
         handler = InputHandler(temp_history_path)
         assert handler._session is None
         session = handler._get_session()
-        assert session is not None
+        assert isinstance(session, PromptSession)
         assert handler._session is session
 
 
@@ -201,12 +205,14 @@ class TestCodeForgeREPL:
 
     def test_init(self, repl: CodeForgeREPL) -> None:
         """Test REPL initialization."""
-        assert repl._config is not None
-        assert repl._theme is not None
-        assert repl._console is not None
-        assert repl._status is not None
-        assert repl._input is not None
-        assert repl._output is not None
+        from code_forge.cli.themes import Theme
+
+        assert isinstance(repl._config, CodeForgeConfig)
+        assert isinstance(repl._theme, Theme)
+        assert isinstance(repl._console, Console)
+        assert isinstance(repl._status, StatusBar)
+        assert isinstance(repl._input, InputHandler)
+        assert isinstance(repl._output, OutputRenderer)
         assert repl._running is False
 
     def test_status_bar_property(self, repl: CodeForgeREPL) -> None:
