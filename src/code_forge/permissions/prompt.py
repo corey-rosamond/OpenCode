@@ -117,8 +117,11 @@ class PermissionPrompt:
         """
         Prompt user for confirmation (synchronous).
 
+        Note: This method does NOT support timeouts. The `request.timeout`
+        parameter is ignored. Use `confirm_async()` for timeout support.
+
         Args:
-            request: The confirmation request
+            request: The confirmation request (timeout is ignored)
 
         Returns:
             User's choice

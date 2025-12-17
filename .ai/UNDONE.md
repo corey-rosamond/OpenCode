@@ -678,11 +678,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added `convert()` method to `CommandArgument` that converts validated values to proper types (int for INTEGER, bool for BOOLEAN). Command handlers can call this after validation.
 
 #### PERM-014: Inconsistent Timeout Handling in Prompts
-**Status:** Pending
-**File:** `src/code_forge/permissions/prompt.py:136-170`
-**Issue:** Sync version has no timeout; `request.timeout` ignored
-**Impact:** Potential hangs
-**Fix:** Document that sync method ignores timeout
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/permissions/prompt.py:116-128`
+**Fix:** Added docstring note clarifying that `confirm()` does NOT support timeouts and recommending `confirm_async()` for timeout support.
 
 #### PERM-015: No Rate Limiting on Permission Denials
 **Status:** Pending
