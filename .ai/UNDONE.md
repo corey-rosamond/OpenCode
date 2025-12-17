@@ -613,11 +613,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added 5-second debounce to save_if_dirty(). Added force_save() for critical operations. Tracks last save time with time.monotonic().
 
 #### SESS-012: Confusing Thinking Mode Toggle UX
-**Status:** Pending
-**File:** `src/code_forge/cli/main.py:183-199`
-**Issue:** Thinking toggle replaces function instead of extending; no user feedback
-**Impact:** Non-obvious behavior
-**Fix:** Use decorator or composition pattern, add feedback message
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/cli/main.py:200-223`
+**Fix:** Added user feedback messages when toggling ("Thinking mode enabled/disabled (Ctrl+T to toggle)"). Improved docstring explaining the wrapper pattern.
 
 #### SESS-013: Poor Error Context on Setup Failure
 **Status:** Pending

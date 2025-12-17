@@ -197,23 +197,29 @@ async def run_with_agent(
 
     update_system_prompt()
 
-    # Connect thinking toggle to mode manager
+    # Connect thinking toggle to mode manager with user feedback
     original_toggle = repl._toggle_thinking
 
     def thinking_toggle_with_mode() -> None:
-        """Toggle thinking mode in both UI and mode manager."""
+        """Toggle thinking mode in both UI and mode manager.
+
+        Wraps the original toggle to sync with mode manager and
+        provides user feedback about the mode change.
+        """
         original_toggle()
-        # Switch mode based on new state
+        # Switch mode based on new state and provide feedback
         if repl.thinking_enabled:
             mode_manager.switch_mode(ModeName.THINKING, mode_context_obj)
             repl._status.set_mode("Thinking")
+            repl.output.print_dim("Thinking mode enabled (Ctrl+T to toggle)")
         else:
             mode_manager.switch_mode(ModeName.NORMAL, mode_context_obj)
             repl._status.set_mode("Normal")
+            repl.output.print_dim("Thinking mode disabled (Ctrl+T to toggle)")
         # Update the system prompt
         update_system_prompt()
 
-    # Replace the toggle function
+    # Wrap toggle function (preserves original for testing)
     repl._toggle_thinking = thinking_toggle_with_mode
 
     # Create session
