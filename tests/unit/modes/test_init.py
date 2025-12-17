@@ -1,5 +1,8 @@
 """Tests for modes package initialization."""
 
+from enum import Enum
+from inspect import isclass
+
 import pytest
 
 from code_forge.modes import (
@@ -22,44 +25,49 @@ class TestPackageExports:
 
     def test_mode_exported(self) -> None:
         """Test Mode class is exported."""
-        assert Mode is not None
+        assert isclass(Mode)
 
     def test_mode_config_exported(self) -> None:
         """Test ModeConfig class is exported."""
-        assert ModeConfig is not None
+        assert isclass(ModeConfig)
 
     def test_mode_context_exported(self) -> None:
         """Test ModeContext class is exported."""
-        assert ModeContext is not None
+        assert isclass(ModeContext)
 
     def test_mode_name_exported(self) -> None:
         """Test ModeName enum is exported."""
-        assert ModeName is not None
-        assert ModeName.NORMAL is not None
+        assert isclass(ModeName)
+        assert issubclass(ModeName, Enum)
+        assert ModeName.NORMAL.value == "normal"
 
     def test_mode_state_exported(self) -> None:
         """Test ModeState class is exported."""
-        assert ModeState is not None
+        assert isclass(ModeState)
 
     def test_normal_mode_exported(self) -> None:
         """Test NormalMode class is exported."""
-        assert NormalMode is not None
+        assert isclass(NormalMode)
+        assert issubclass(NormalMode, Mode)
 
     def test_mode_manager_exported(self) -> None:
         """Test ModeManager class is exported."""
-        assert ModeManager is not None
+        assert isclass(ModeManager)
 
     def test_plan_mode_exported(self) -> None:
         """Test PlanMode class is exported."""
-        assert PlanMode is not None
+        assert isclass(PlanMode)
+        assert issubclass(PlanMode, Mode)
 
     def test_thinking_mode_exported(self) -> None:
         """Test ThinkingMode class is exported."""
-        assert ThinkingMode is not None
+        assert isclass(ThinkingMode)
+        assert issubclass(ThinkingMode, Mode)
 
     def test_headless_mode_exported(self) -> None:
         """Test HeadlessMode class is exported."""
-        assert HeadlessMode is not None
+        assert isclass(HeadlessMode)
+        assert issubclass(HeadlessMode, Mode)
 
 
 class TestSetupModes:
@@ -81,21 +89,18 @@ class TestSetupModes:
         """Test setup_modes registers PlanMode."""
         manager = setup_modes()
         mode = manager.get_mode(ModeName.PLAN)
-        assert mode is not None
         assert isinstance(mode, PlanMode)
 
     def test_setup_modes_registers_thinking(self) -> None:
         """Test setup_modes registers ThinkingMode."""
         manager = setup_modes()
         mode = manager.get_mode(ModeName.THINKING)
-        assert mode is not None
         assert isinstance(mode, ThinkingMode)
 
     def test_setup_modes_registers_headless(self) -> None:
         """Test setup_modes registers HeadlessMode."""
         manager = setup_modes()
         mode = manager.get_mode(ModeName.HEADLESS)
-        assert mode is not None
         assert isinstance(mode, HeadlessMode)
 
     def test_setup_modes_uses_singleton(self) -> None:
@@ -117,9 +122,9 @@ class TestSetupModes:
         manager = setup_modes(manager)
 
         # Should still have exactly one of each mode
-        assert manager.get_mode(ModeName.PLAN) is not None
-        assert manager.get_mode(ModeName.THINKING) is not None
-        assert manager.get_mode(ModeName.HEADLESS) is not None
+        assert isinstance(manager.get_mode(ModeName.PLAN), PlanMode)
+        assert isinstance(manager.get_mode(ModeName.THINKING), ThinkingMode)
+        assert isinstance(manager.get_mode(ModeName.HEADLESS), HeadlessMode)
 
     def test_setup_modes_total_count(self) -> None:
         """Test setup_modes registers correct number of modes."""

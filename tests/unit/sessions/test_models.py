@@ -19,7 +19,7 @@ class TestToolInvocation:
     def test_create_with_defaults(self) -> None:
         """Test creating invocation with default values."""
         inv = ToolInvocation()
-        assert inv.id is not None
+        assert isinstance(inv.id, str) and len(inv.id) > 0
         assert inv.tool_name == ""
         assert inv.arguments == {}
         assert inv.result is None
@@ -99,7 +99,7 @@ class TestToolInvocation:
         data: dict[str, Any] = {"tool_name": "bash"}
         inv = ToolInvocation.from_dict(data)
         assert inv.tool_name == "bash"
-        assert inv.id is not None
+        assert isinstance(inv.id, str) and len(inv.id) > 0
         assert inv.arguments == {}
         assert inv.success is True
 
@@ -125,7 +125,7 @@ class TestSessionMessage:
     def test_create_with_defaults(self) -> None:
         """Test creating message with defaults."""
         msg = SessionMessage()
-        assert msg.id is not None
+        assert isinstance(msg.id, str) and len(msg.id) > 0
         assert msg.role == "user"
         assert msg.content == ""
         assert msg.tool_calls is None
@@ -230,7 +230,7 @@ class TestSessionMessage:
         msg = SessionMessage.from_llm_message(llm_msg)
         assert msg.role == "user"
         assert msg.content == "Hello!"
-        assert msg.id is not None  # New ID generated
+        assert isinstance(msg.id, str) and len(msg.id) > 0  # New ID generated
 
     def test_from_dict(self) -> None:
         """Test deserialization from dictionary."""
@@ -267,7 +267,7 @@ class TestSession:
     def test_create_with_defaults(self) -> None:
         """Test creating session with defaults."""
         session = Session()
-        assert session.id is not None
+        assert isinstance(session.id, str) and len(session.id) > 0
         assert session.title == ""
         assert session.working_dir == ""
         assert session.model == ""
@@ -436,7 +436,7 @@ class TestSession:
         data: dict[str, Any] = {"title": "Minimal"}
         session = Session.from_dict(data)
         assert session.title == "Minimal"
-        assert session.id is not None
+        assert isinstance(session.id, str) and len(session.id) > 0
         assert session.messages == []
         assert session.tags == []
 
@@ -479,8 +479,12 @@ class TestSession:
     def test_datetime_timezone_aware(self) -> None:
         """Test that datetimes are timezone-aware UTC."""
         session = Session()
-        assert session.created_at.tzinfo is not None
-        assert session.updated_at.tzinfo is not None
+        # Check that tzinfo is set (timezone-aware datetime)
+        assert session.created_at.tzinfo is not None, "created_at should be timezone-aware"
+        assert session.updated_at.tzinfo is not None, "updated_at should be timezone-aware"
+        # Verify they can be formatted as ISO strings without error
+        assert isinstance(session.created_at.isoformat(), str)
+        assert isinstance(session.updated_at.isoformat(), str)
 
     def test_metadata_isolation(self) -> None:
         """Test that metadata dicts are independent."""
@@ -568,7 +572,7 @@ class TestToolInvocationEdgeCases:
             "timestamp": None,
         }
         inv = ToolInvocation.from_dict(data)
-        assert inv.timestamp is not None
+        assert isinstance(inv.timestamp, datetime)
 
 
 class TestSessionEdgeCases:
@@ -582,5 +586,5 @@ class TestSessionEdgeCases:
             "updated_at": None,
         }
         session = Session.from_dict(data)
-        assert session.created_at is not None
-        assert session.updated_at is not None
+        assert isinstance(session.created_at, datetime)
+        assert isinstance(session.updated_at, datetime)

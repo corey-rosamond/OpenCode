@@ -25,6 +25,7 @@ from code_forge.agents import (
     ResourceLimits,
     ResourceUsage,
 )
+from code_forge.agents.types import AgentTypeDefinition
 from code_forge.agents.builtin import (
     CodeReviewAgent,
     ExploreAgent,
@@ -47,10 +48,10 @@ class TestAgentLifecycle:
         registry = AgentTypeRegistry.get_instance()
 
         # Built-in types should be registered
-        assert registry.get("explore") is not None
-        assert registry.get("plan") is not None
-        assert registry.get("code-review") is not None
-        assert registry.get("general") is not None
+        assert isinstance(registry.get("explore"), AgentTypeDefinition)
+        assert isinstance(registry.get("plan"), AgentTypeDefinition)
+        assert isinstance(registry.get("code-review"), AgentTypeDefinition)
+        assert isinstance(registry.get("general"), AgentTypeDefinition)
 
     def test_create_explore_agent(self) -> None:
         """Test creating an explore agent."""
@@ -63,7 +64,7 @@ class TestAgentLifecycle:
             context=AgentContext(working_directory="."),
         )
 
-        assert agent is not None
+        assert isinstance(agent, ExploreAgent)
         assert agent.config.agent_type == "explore"
 
     def test_create_plan_agent(self) -> None:
@@ -77,7 +78,7 @@ class TestAgentLifecycle:
             context=AgentContext(working_directory="."),
         )
 
-        assert agent is not None
+        assert isinstance(agent, PlanAgent)
         assert agent.config.agent_type == "plan"
 
 
@@ -91,7 +92,7 @@ class TestAgentConfig:
             description="Test description",
         )
 
-        assert config.limits is not None
+        assert isinstance(config.limits, ResourceLimits)
         assert config.limits.max_tokens > 0
         assert config.limits.max_tool_calls > 0
 
@@ -228,7 +229,7 @@ class TestAgentTypeDefinitions:
         registry = AgentTypeRegistry.get_instance()
         definition = registry.get("explore")
 
-        assert definition is not None
+        assert isinstance(definition, AgentTypeDefinition)
         assert "explore" in definition.prompt_template.lower() or "search" in definition.prompt_template.lower() or "find" in definition.prompt_template.lower()
 
     def test_plan_agent_definition(self) -> None:
@@ -236,7 +237,7 @@ class TestAgentTypeDefinitions:
         registry = AgentTypeRegistry.get_instance()
         definition = registry.get("plan")
 
-        assert definition is not None
+        assert isinstance(definition, AgentTypeDefinition)
         assert "plan" in definition.prompt_template.lower() or "design" in definition.prompt_template.lower()
 
     def test_code_review_agent_definition(self) -> None:
@@ -244,7 +245,7 @@ class TestAgentTypeDefinitions:
         registry = AgentTypeRegistry.get_instance()
         definition = registry.get("code-review")
 
-        assert definition is not None
+        assert isinstance(definition, AgentTypeDefinition)
 
 
 class TestAgentWithMockedLLM:
@@ -269,7 +270,7 @@ class TestAgentWithMockedLLM:
         )
 
         # Agent should be created successfully
-        assert agent is not None
+        assert isinstance(agent, GeneralAgent)
         assert agent.state == AgentState.PENDING
 
 
@@ -281,7 +282,7 @@ class TestAgentToolAccess:
         registry = AgentTypeRegistry.get_instance()
         definition = registry.get("explore")
 
-        assert definition is not None
+        assert isinstance(definition, AgentTypeDefinition)
         # Explore agent should have access to Read, Glob, Grep
 
     def test_general_agent_has_all_tools(self) -> None:
@@ -289,5 +290,5 @@ class TestAgentToolAccess:
         registry = AgentTypeRegistry.get_instance()
         definition = registry.get("general")
 
-        assert definition is not None
+        assert isinstance(definition, AgentTypeDefinition)
         # General agent should have broad tool access

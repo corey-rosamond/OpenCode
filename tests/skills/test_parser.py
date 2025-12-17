@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile
 
 import pytest
 
+from code_forge.skills.base import SkillDefinition
 from code_forge.skills.parser import (
     ParseResult,
     SkillParseError,
@@ -34,7 +35,7 @@ tags:
 """
         result = parser.parse_yaml(content)
         assert result.errors == []
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.metadata.name == "test-skill"
         assert result.definition.metadata.description == "A test skill"
         assert result.definition.prompt == "You are a test assistant."
@@ -99,7 +100,7 @@ config:
 """
         result = parser.parse_yaml(content)
         assert result.errors == []
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert len(result.definition.config) == 1
         assert result.definition.config[0].name == "format"
         assert result.definition.config[0].type == "choice"
@@ -121,7 +122,7 @@ prompt: Test
 """
         result = parser.parse_yaml(content)
         assert result.errors == []
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.metadata.author == "Test Author"
         assert result.definition.metadata.version == "2.0.0"
         assert result.definition.metadata.aliases == ["t", "tst"]
@@ -135,7 +136,7 @@ description: Test
 prompt: Test
 """
         result = parser.parse_yaml(content, "/path/to/skill.yaml")
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.source_path == "/path/to/skill.yaml"
 
     def test_parse_markdown_valid(self, parser: SkillParser) -> None:
@@ -153,7 +154,7 @@ Handle markdown files carefully.
 """
         result = parser.parse_markdown(content)
         assert result.errors == []
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.metadata.name == "md-skill"
         assert "markdown processing" in result.definition.prompt
 
@@ -189,7 +190,7 @@ prompt: Frontmatter prompt
 Body content.
 """
         result = parser.parse_markdown(content)
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.prompt == "Frontmatter prompt"
 
     def test_parse_markdown_prompt_from_body(self, parser: SkillParser) -> None:
@@ -202,7 +203,7 @@ description: Test
 Body is the prompt.
 """
         result = parser.parse_markdown(content)
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.prompt == "Body is the prompt."
 
     def test_parse_file_yaml(self, parser: SkillParser, tmp_path: Path) -> None:
@@ -215,7 +216,7 @@ prompt: File prompt
 """)
         result = parser.parse_file(skill_file)
         assert result.errors == []
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.metadata.name == "file-skill"
 
     def test_parse_file_md(self, parser: SkillParser, tmp_path: Path) -> None:
@@ -230,7 +231,7 @@ Markdown prompt.
 """)
         result = parser.parse_file(skill_file)
         assert result.errors == []
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.metadata.name == "md-file-skill"
 
     def test_parse_file_unknown_extension(
@@ -251,10 +252,10 @@ description: Test
 prompt: Test
 """
         result = parser.parse(content, ".yaml")
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
 
         result = parser.parse(content, "yml")  # Without dot
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
 
     def test_validate_invalid_name(self, parser: SkillParser) -> None:
         """Test validation of invalid skill name."""
@@ -319,7 +320,7 @@ config:
         assert len(result.warnings) > 0
         assert "unknown config type" in result.warnings[0].lower()
         # Definition should still be created with string type
-        assert result.definition is not None
+        assert isinstance(result.definition, SkillDefinition)
         assert result.definition.config[0].type == "string"
 
     def test_validate_choice_without_choices(self, parser: SkillParser) -> None:

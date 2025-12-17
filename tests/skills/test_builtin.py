@@ -193,11 +193,11 @@ class TestRegisterBuiltinSkills:
         count = register_builtin_skills(registry)
         assert count == 5
 
-        assert registry.get("pdf") is not None
-        assert registry.get("excel") is not None
-        assert registry.get("database") is not None
-        assert registry.get("api") is not None
-        assert registry.get("testing") is not None
+        assert isinstance(registry.get("pdf"), Skill)
+        assert isinstance(registry.get("excel"), Skill)
+        assert isinstance(registry.get("database"), Skill)
+        assert isinstance(registry.get("api"), Skill)
+        assert isinstance(registry.get("testing"), Skill)
 
     def test_uses_singleton_if_none(self) -> None:
         """Test that singleton is used if no registry provided."""
@@ -205,7 +205,7 @@ class TestRegisterBuiltinSkills:
         assert count == 5
 
         registry = SkillRegistry.get_instance()
-        assert registry.get("pdf") is not None
+        assert isinstance(registry.get("pdf"), Skill)
 
     def test_skips_already_registered(self) -> None:
         """Test that already registered skills are skipped."""
@@ -225,11 +225,11 @@ class TestRegisterBuiltinSkills:
         register_builtin_skills(registry)
 
         # Excel aliases
-        assert registry.get("xlsx") is not None
-        assert registry.get("csv") is not None
+        assert isinstance(registry.get("xlsx"), Skill)
+        assert isinstance(registry.get("csv"), Skill)
 
         # Database alias
-        assert registry.get("db") is not None
+        assert isinstance(registry.get("db"), Skill)
 
         # Testing alias
-        assert registry.get("test") is not None
+        assert isinstance(registry.get("test"), Skill)
