@@ -6,8 +6,10 @@ from pathlib import Path
 import pytest
 
 from code_forge.plugins.base import Plugin, PluginCapabilities, PluginMetadata
-from code_forge.plugins.config import PluginConfig
+from code_forge.plugins.config import PluginConfig, PluginConfigManager
+from code_forge.plugins.discovery import PluginDiscovery
 from code_forge.plugins.exceptions import PluginNotFoundError
+from code_forge.plugins.loader import LoadedPlugin, PluginLoader
 from code_forge.plugins.manager import PluginManager
 from code_forge.plugins.registry import PluginRegistry
 
@@ -43,11 +45,11 @@ class TestPluginManager:
     def test_init_default(self) -> None:
         """Test default initialization."""
         manager = PluginManager()
-        assert manager.config is not None
-        assert manager.registry is not None
-        assert manager.config_manager is not None
-        assert manager.discovery is not None
-        assert manager.loader is not None
+        assert isinstance(manager.config, PluginConfig)
+        assert isinstance(manager.registry, PluginRegistry)
+        assert isinstance(manager.config_manager, PluginConfigManager)
+        assert isinstance(manager.discovery, PluginDiscovery)
+        assert isinstance(manager.loader, PluginLoader)
 
     def test_init_with_custom_config(self) -> None:
         """Test initialization with custom config."""
@@ -164,7 +166,7 @@ class MyPlugin(Plugin):
         manager.discover_and_load()
 
         plugin = manager.get_plugin("my-plugin")
-        assert plugin is not None
+        assert isinstance(plugin, LoadedPlugin)
         assert plugin.id == "my-plugin"
 
         # Cleanup
@@ -207,7 +209,7 @@ class DisabledPlugin(Plugin):
         manager.discover_and_load()
 
         plugin = manager.get_plugin("disabled-plugin")
-        assert plugin is not None
+        assert isinstance(plugin, LoadedPlugin)
         assert plugin.enabled is False
 
         manager.enable("disabled-plugin")
@@ -287,7 +289,7 @@ class Plugin(Plugin):
         manager.discover_and_load()
 
         plugin = manager.get_plugin("to-disable")
-        assert plugin is not None
+        assert isinstance(plugin, LoadedPlugin)
         assert plugin.enabled is True
 
         manager.disable("to-disable")
@@ -532,7 +534,7 @@ class DeactivateFailPlugin(Plugin):
 
         manager.discover_and_load()
         plugin = manager.get_plugin("deactivate-fail")
-        assert plugin is not None
+        assert isinstance(plugin, LoadedPlugin)
         assert plugin.active
 
         # Disable should handle error gracefully
@@ -574,7 +576,7 @@ class AlreadyDisabledPlugin(Plugin):
 
         manager.discover_and_load()
         plugin = manager.get_plugin("already-disabled")
-        assert plugin is not None
+        assert isinstance(plugin, LoadedPlugin)
         assert not plugin.enabled
 
         # Disable again should not raise

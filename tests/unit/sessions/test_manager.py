@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 
+from code_forge.sessions.index import SessionIndex
 from code_forge.sessions.manager import SessionManager
+from code_forge.sessions.models import Session
 from code_forge.sessions.storage import SessionNotFoundError, SessionStorage
-
-if TYPE_CHECKING:
-    from code_forge.sessions.models import Session, SessionMessage
 
 
 class TestSessionManagerSingleton:
@@ -60,8 +59,8 @@ class TestSessionManager:
 
     def test_init(self, manager: SessionManager) -> None:
         """Test manager initialization."""
-        assert manager.storage is not None
-        assert manager.index is not None
+        assert isinstance(manager.storage, SessionStorage)
+        assert isinstance(manager.index, SessionIndex)
         assert manager.current_session is None
         assert manager.has_current is False
 
@@ -69,7 +68,7 @@ class TestSessionManager:
         """Test creating a new session."""
         session = manager.create(title="Test Session", model="gpt-4")
 
-        assert session is not None
+        assert isinstance(session, Session)
         assert session.title == "Test Session"
         assert session.model == "gpt-4"
         assert manager.current_session is session
@@ -165,7 +164,7 @@ class TestSessionManager:
         manager.close()
 
         resumed = manager.resume_latest()
-        assert resumed is not None
+        assert isinstance(resumed, Session)
         assert resumed.id == s2.id
 
     def test_resume_latest_no_sessions(self, manager: SessionManager) -> None:
@@ -184,7 +183,7 @@ class TestSessionManager:
     def test_resume_or_create_creates(self, manager: SessionManager) -> None:
         """Test resume_or_create creates new when none exist."""
         result = manager.resume_or_create(model="gpt-4")
-        assert result is not None
+        assert isinstance(result, Session)
         assert result.model == "gpt-4"
 
     def test_save_session(self, manager: SessionManager) -> None:
@@ -294,7 +293,7 @@ class TestSessionManager:
         manager.close()
 
         loaded = manager.get_session(session_id)
-        assert loaded is not None
+        assert isinstance(loaded, Session)
         assert loaded.id == session_id
         assert loaded.title == "Test"
 
@@ -506,7 +505,7 @@ class TestSessionManagerHooks:
 
         # Should not raise
         session = manager.create()
-        assert session is not None
+        assert isinstance(session, Session)
 
     def test_multiple_hooks(self, manager: SessionManager) -> None:
         """Test multiple hooks for same event."""
@@ -577,7 +576,7 @@ class TestSessionManagerAutoSave:
             manager.create()
 
             # Task should be created since we're in async context
-            assert manager._auto_save_task is not None
+            assert isinstance(manager._auto_save_task, asyncio.Task)
 
             # Stop it cleanly
             manager._stop_auto_save()
@@ -592,7 +591,7 @@ class TestSessionManagerAutoSave:
 
             manager.create()
             task = manager._auto_save_task
-            assert task is not None
+            assert isinstance(task, asyncio.Task)
 
             manager.close()
             assert manager._auto_save_task is None
