@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from code_forge.skills.base import Skill
 from code_forge.skills.loader import (
     SkillLoadError,
     SkillLoader,
@@ -53,7 +54,7 @@ Work with spreadsheets.
         """Test creating a loader."""
         loader = SkillLoader()
         assert loader.search_paths == []
-        assert loader.parser is not None
+        assert isinstance(loader.parser, SkillParser)
 
     def test_create_loader_with_paths(self, tmp_path: Path) -> None:
         """Test creating loader with search paths."""
@@ -80,7 +81,7 @@ Work with spreadsheets.
     ) -> None:
         """Test loading a YAML skill file."""
         skill = loader.load_from_file(skills_dir / "pdf.yaml")
-        assert skill is not None
+        assert isinstance(skill, Skill)
         assert skill.name == "pdf"
         assert skill.description == "PDF skill"
 
@@ -89,7 +90,7 @@ Work with spreadsheets.
     ) -> None:
         """Test loading a Markdown skill file."""
         skill = loader.load_from_file(skills_dir / "excel.md")
-        assert skill is not None
+        assert isinstance(skill, Skill)
         assert skill.name == "excel"
 
     def test_load_from_file_nonexistent(self, loader: SkillLoader) -> None:
@@ -240,7 +241,7 @@ prompt: Test
         """Test reloading a skill."""
         loader.add_search_path(skills_dir)
         skill = loader.reload_skill("pdf")
-        assert skill is not None
+        assert isinstance(skill, Skill)
         assert skill.name == "pdf"
 
     def test_reload_skill_not_found(self, loader: SkillLoader) -> None:
@@ -264,7 +265,7 @@ prompt: Test
 
         loader.add_search_path(skills_dir)
         skill = loader.reload_skill("skill")
-        assert skill is not None
+        assert isinstance(skill, Skill)
         assert skill.name == "skill"
 
     def test_on_error_callback(

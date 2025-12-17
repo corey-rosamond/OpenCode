@@ -371,7 +371,7 @@ prompt: Test
 
         count = registry.load_skills([skills_dir])
         assert count == 1
-        assert registry.get("test") is not None
+        assert isinstance(registry.get("test"), Skill)
 
     def test_load_skills_uses_defaults(self, registry: SkillRegistry) -> None:
         """Test that load_skills uses default paths if none provided."""
@@ -395,7 +395,7 @@ prompt: Test
 
         registry.load_skills([skills_dir])
         original = registry.get("test")
-        assert original is not None
+        assert isinstance(original, Skill)
         assert original.description == "Original"
 
         # Modify file
@@ -406,7 +406,7 @@ prompt: Test
 """)
 
         reloaded = registry.reload_skill("test")
-        assert reloaded is not None
+        assert isinstance(reloaded, Skill)
         assert reloaded.description == "Updated"
         assert registry.get("test").description == "Updated"
 
@@ -430,10 +430,10 @@ prompt: Test
 
         registry.load_skills([skills_dir])
         registry.activate("test")
-        assert registry.active_skill is not None
+        assert isinstance(registry.active_skill, Skill)
 
         registry.reload_skill("test")
-        assert registry.active_skill is not None
+        assert isinstance(registry.active_skill, Skill)
         assert registry.active_skill.name == "test"
 
     def test_reload_all(
@@ -478,7 +478,7 @@ prompt: Test
         registry.activate("test")
 
         registry.reload_all()
-        assert registry.active_skill is not None
+        assert isinstance(registry.active_skill, Skill)
         assert registry.active_skill.name == "test"
 
     def test_reload_all_no_loader(self, registry: SkillRegistry) -> None:

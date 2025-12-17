@@ -69,15 +69,15 @@ class TestCommandRegistry:
         """Test registering a command."""
         registry = CommandRegistry()
         registry.register(DummyCommand())
-        assert registry.get("dummy") is not None
+        assert isinstance(registry.get("dummy"), Command)
         assert len(registry) == 1
 
     def test_register_adds_aliases(self) -> None:
         """Test register adds aliases."""
         registry = CommandRegistry()
         registry.register(DummyCommand())
-        assert registry.resolve("d") is not None
-        assert registry.resolve("dum") is not None
+        assert isinstance(registry.resolve("d"), Command)
+        assert isinstance(registry.resolve("dum"), Command)
 
     def test_register_duplicate_raises(self) -> None:
         """Test registering duplicate name raises ValueError."""
@@ -141,8 +141,8 @@ class TestCommandRegistry:
         """Test get is case-insensitive."""
         registry = CommandRegistry()
         registry.register(DummyCommand())
-        assert registry.get("DUMMY") is not None
-        assert registry.get("Dummy") is not None
+        assert isinstance(registry.get("DUMMY"), Command)
+        assert isinstance(registry.get("Dummy"), Command)
 
     def test_resolve_by_name(self) -> None:
         """Test resolving command by name."""
