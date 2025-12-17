@@ -5,6 +5,7 @@ from __future__ import annotations
 import builtins
 import json
 import logging
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -115,6 +116,7 @@ class SessionIndex:
 
     INDEX_FILE = "index.json"
     INDEX_VERSION = 1
+    SAVE_DEBOUNCE_SECONDS = 5.0  # Minimum seconds between saves
 
     def __init__(self, storage: SessionStorage) -> None:
         """Initialize session index.
@@ -125,6 +127,7 @@ class SessionIndex:
         self.storage = storage
         self._index: dict[str, SessionSummary] = {}
         self._dirty = False
+        self._last_save_time: float = 0.0
         self._load_index()
 
     @property
@@ -334,10 +337,43 @@ class SessionIndex:
         """
         return self.list(working_dir=working_dir, limit=1000)
 
-    def save_if_dirty(self) -> None:
-        """Save the index if it has been modified."""
-        if self._dirty:
-            self._save_index()
+    def save_if_dirty(self, force: bool = False) -> bool:
+        """Save the index if modified and debounce period has passed.
+
+        Uses debouncing to avoid excessive disk I/O when multiple
+        operations happen in quick succession.
+
+        Args:
+            force: If True, save immediately regardless of debounce.
+
+        Returns:
+            True if index was saved, False if skipped.
+        """
+        if not self._dirty:
+            return False
+
+        current_time = time.monotonic()
+        time_since_last = current_time - self._last_save_time
+
+        if not force and time_since_last < self.SAVE_DEBOUNCE_SECONDS:
+            logger.debug(
+                "Skipping index save (%.1fs since last save, debounce=%.1fs)",
+                time_since_last,
+                self.SAVE_DEBOUNCE_SECONDS,
+            )
+            return False
+
+        self._save_index()
+        self._last_save_time = current_time
+        return True
+
+    def force_save(self) -> bool:
+        """Force save the index immediately, bypassing debounce.
+
+        Returns:
+            True if index was saved, False if not dirty.
+        """
+        return self.save_if_dirty(force=True)
 
     def __len__(self) -> int:
         """Number of indexed sessions."""

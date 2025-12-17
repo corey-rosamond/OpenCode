@@ -608,11 +608,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Replaced id(m) mapping with tuple-based index tracking. Now stores (idx, msg) tuples and sorts by original index.
 
 #### SESS-011: Unnecessary Session Index Saves
-**Status:** Pending
-**File:** `src/code_forge/sessions/manager.py:209-210`
-**Issue:** Calls `save_if_dirty()` after every operation
-**Impact:** Frequent disk I/O
-**Fix:** Batch index updates and save periodically
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/sessions/index.py:340-376`
+**Fix:** Added 5-second debounce to save_if_dirty(). Added force_save() for critical operations. Tracks last save time with time.monotonic().
 
 #### SESS-012: Confusing Thinking Mode Toggle UX
 **Status:** Pending
