@@ -9,6 +9,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from code_forge import __version__
+from code_forge.cli.dependencies import Dependencies
 from code_forge.cli.repl import CodeForgeREPL
 from code_forge.config import ConfigLoader
 from code_forge.core import get_logger
@@ -130,6 +131,8 @@ async def run_with_agent(
     config: CodeForgeConfig,
     api_key: str,
     stdin_input: str | None = None,
+    *,
+    deps: Dependencies | None = None,
 ) -> int:
     """Run REPL with agent and command handling.
 
@@ -138,59 +141,47 @@ async def run_with_agent(
         config: Application configuration.
         api_key: OpenRouter API key.
         stdin_input: Optional input from stdin (batch mode).
+        deps: Optional pre-configured dependencies (for testing).
 
     Returns:
         Exit code.
     """
-    from code_forge.commands import CommandExecutor, CommandContext, register_builtin_commands
-    from code_forge.langchain.llm import OpenRouterLLM
-    from code_forge.langchain.agent import CodeForgeAgent
     from code_forge.langchain.tools import adapt_tools_for_langchain
-    from code_forge.llm import OpenRouterClient
-    from code_forge.tools import ToolRegistry, register_all_tools
-    from code_forge.sessions import SessionManager
-    from code_forge.modes import ModeManager, ModeName, ModeContext, setup_modes
+    from code_forge.modes import ModeName, ModeContext
 
-    # Register tools
-    register_all_tools()
-    tool_registry = ToolRegistry()
+    # Create dependencies if not provided (allows injection for testing)
+    if deps is None:
+        deps = Dependencies.create(config, api_key)
 
-    # Create OpenRouter client and LLM
-    from code_forge.llm.routing import get_model_context_limit
-
-    client = OpenRouterClient(api_key=api_key)
-    llm = OpenRouterLLM(
-        client=client,
-        model=config.model.default,
-    )
+    # Extract dependencies
+    llm = deps.llm
+    agent = deps.agent
+    tool_registry = deps.tool_registry
+    session_manager = deps.session_manager
+    mode_manager = deps.mode_manager
+    command_executor = deps.command_executor
+    command_context = deps.command_context
 
     # Update status bar with model info
+    from code_forge.llm.routing import get_model_context_limit
+
     model_context = get_model_context_limit(config.model.default)
     repl._status.set_model(config.model.default)
     repl._status.set_tokens(0, model_context)
-
-    # Create agent with tools (wrapped for LangChain compatibility)
-    raw_tools = [tool_registry.get(name) for name in tool_registry.list_names()]
-    raw_tools = [t for t in raw_tools if t is not None]
-    tools = adapt_tools_for_langchain(raw_tools)
-    agent = CodeForgeAgent(
-        llm=llm,
-        tools=tools,
-    )
-
-    # Set up mode manager with thinking mode
-    mode_manager = setup_modes()
 
     # Create mode context for mode switching
     def mode_output(msg: str) -> None:
         repl.output.print_dim(msg)
 
-    mode_context = ModeContext(output=mode_output)
+    mode_context_obj = ModeContext(output=mode_output)
 
     # Set system prompt to instruct the LLM to use tools
     from code_forge.llm.models import Message
     from code_forge.langchain.prompts import get_system_prompt
 
+    raw_tools = [tool_registry.get(name) for name in tool_registry.list_names()]
+    raw_tools = [t for t in raw_tools if t is not None]
+    tools = adapt_tools_for_langchain(raw_tools)
     tool_names = [t.name for t in tools if t is not None and hasattr(t, "name")]
     base_system_prompt = get_system_prompt(
         tool_names=tool_names,
@@ -214,10 +205,10 @@ async def run_with_agent(
         original_toggle()
         # Switch mode based on new state
         if repl.thinking_enabled:
-            mode_manager.switch_mode(ModeName.THINKING, mode_context)
+            mode_manager.switch_mode(ModeName.THINKING, mode_context_obj)
             repl._status.set_mode("Thinking")
         else:
-            mode_manager.switch_mode(ModeName.NORMAL, mode_context)
+            mode_manager.switch_mode(ModeName.NORMAL, mode_context_obj)
             repl._status.set_mode("Normal")
         # Update the system prompt
         update_system_prompt()
@@ -225,22 +216,8 @@ async def run_with_agent(
     # Replace the toggle function
     repl._toggle_thinking = thinking_toggle_with_mode
 
-    # Create session manager
-    session_manager = SessionManager.get_instance()
+    # Create session
     session = session_manager.create(title="CLI Session")
-
-    # Register commands
-    register_builtin_commands()
-
-    # Create command context
-    command_context = CommandContext(
-        session_manager=session_manager,
-        config=config,
-        llm=llm,
-    )
-
-    # Create command executor (uses default registry and parser)
-    command_executor = CommandExecutor()
 
     # Track cumulative token usage (use list for mutable closure)
     total_tokens = [0]

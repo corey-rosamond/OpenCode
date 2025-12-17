@@ -105,11 +105,9 @@ _All critical issues have been addressed._
 ### High Priority (P1)
 
 #### ARCH-003: Tight Coupling in CLI Entry Point
-**Status:** Pending
-**File:** `src/code_forge/cli/main.py`
-**Issue:** Direct instantiation of ConfigLoader, OpenRouterClient, etc.
-**Impact:** Hard to test, difficult to swap implementations
-**Fix:** Implement dependency injection pattern
+**Status:** Fixed (2025-12-17)
+**Files:** `src/code_forge/cli/main.py`, `src/code_forge/cli/dependencies.py`
+**Fix:** Created Dependencies container class with factory method. run_with_agent() now accepts optional deps parameter for injection. Protocols defined for ILLMClient and IAgent for testing.
 
 #### ARCH-004: Configuration System Fragmentation
 **Status:** Pending
