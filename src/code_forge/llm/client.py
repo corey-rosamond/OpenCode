@@ -246,6 +246,11 @@ class OpenRouterClient:
 
         Returns:
             List of model information dicts
+
+        Note:
+            Returns all models without pagination. For providers with many
+            models (1000+), consider filtering client-side or implementing
+            pagination if memory becomes a concern.
         """
         client = await self._get_client()
         response = await client.get("/models")

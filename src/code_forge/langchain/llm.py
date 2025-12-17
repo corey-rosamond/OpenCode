@@ -94,10 +94,8 @@ class OpenRouterLLM(BaseChatModel):
 
         forge_messages = langchain_messages_to_forge(messages)
 
-        # Merge stop sequences
-        all_stops = list(self.stop or [])
-        if stop:
-            all_stops.extend(stop)
+        # Merge stop sequences (clearer than list() + extend())
+        all_stops = list(self.stop or []) + list(stop or [])
 
         # Build tools list if bound
         tools = None
@@ -424,5 +422,9 @@ class OpenRouterLLM(BaseChatModel):
                 [tool], tool_choice={"type": "function", "function": {"name": name}}
             )
 
-        # JSON mode - just return self (response format handled at API level)
-        return self
+        # JSON mode requires response_format parameter support
+        # This would need to be passed through to the API request
+        raise NotImplementedError(
+            "json_mode is not yet implemented. Use method='function_calling' instead, "
+            "or configure JSON mode directly on the API request."
+        )

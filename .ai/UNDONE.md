@@ -529,67 +529,50 @@ _All critical issues have been addressed._
 **Note:** Requires systematic audit of all tools. Deferred to future security pass.
 
 #### LLM-010: Parameter Mutation in List Building
-**Status:** Pending
-**File:** `src/code_forge/langchain/llm.py:113`
-**Issue:** `all_stops = list(self.stop or []); if stop: all_stops.extend(stop)` pattern confusing
-**Impact:** Maintenance confusion
-**Fix:** Use clearer approach: `all_stops = (self.stop or []) + (stop or [])`
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/llm.py:98`
+**Fix:** Simplified to `all_stops = list(self.stop or []) + list(stop or [])` on single line.
 
 #### LLM-011: Silent Failure on Missing Content Keys
-**Status:** Pending
+**Status:** Fixed (2025-12-17)
 **File:** `src/code_forge/langchain/memory.py:127`
-**Issue:** Content list without "text" keys silently returns empty string
-**Impact:** Data loss without warning
-**Fix:** Add validation or log warning when content structure unexpected
+**Fix:** Added logging.warning() when content part dict is missing 'text' key, showing available keys.
 
 #### LLM-012: Type Hint Forward Reference Issue
-**Status:** Pending
+**Status:** Not a bug (2025-12-17)
 **File:** `src/code_forge/langchain/memory.py:41`
-**Issue:** Import is TYPE_CHECKING only but field uses `Message` at runtime
-**Impact:** Forward reference issue
-**Fix:** Import unconditionally or use string annotation
+**Note:** The file uses `from __future__ import annotations` which makes all annotations strings by default (PEP 563). The TYPE_CHECKING pattern is correct and works properly.
 
 #### LLM-013: O(n) Tool Call Lookup in Streaming
-**Status:** Pending
+**Status:** Not a bug (2025-12-17)
 **File:** `src/code_forge/llm/streaming.py:63-90`
-**Issue:** Tool calls accumulated in list, linearly searched by index
-**Impact:** Slow with many tool calls
-**Fix:** Use dict keyed by index for O(1) lookup
+**Note:** The code uses O(1) list index access (`tool_calls[index]`), not linear search. The list is extended to size as needed, and direct index access is constant time.
 
 #### LLM-014: Thread Overhead Per Call
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/langchain/llm.py:246-260`
 **Issue:** Creates new thread for every streaming operation
-**Impact:** Thread creation overhead on many small operations
-**Fix:** Use module-level thread pool
+**Note:** Requires design work for module-level thread pool with proper lifecycle management. Deferred to future optimization pass.
 
 #### LLM-015: Unused Token Tracking in Stream
-**Status:** Pending
-**File:** `src/code_forge/langchain/agent.py:206`
-**Issue:** Token counters in stream() method never incremented; metrics always 0
-**Impact:** Inaccurate usage metrics
-**Fix:** Implement proper token tracking or remove unused variables
+**Status:** Not a bug (2025-12-17)
+**File:** `src/code_forge/langchain/agent.py:534-592`
+**Note:** Token tracking IS implemented. Lines 587-592 increment counters from usage_metadata, and lines 674-676 use them in the AGENT_END event.
 
 #### LLM-016: Incomplete json_mode Implementation
-**Status:** Pending
-**File:** `src/code_forge/langchain/llm.py:373-418`
-**Issue:** `with_structured_output()` only handles `function_calling`, not `json_mode`
-**Impact:** JSON mode enforcement not implemented
-**Fix:** Implement JSON mode or raise NotImplementedError
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/langchain/llm.py:425-430`
+**Fix:** Now raises NotImplementedError with clear message explaining to use function_calling method instead.
 
 #### LLM-017: No Pagination in list_models()
-**Status:** Pending
-**File:** `src/code_forge/llm/client.py:214-226`
-**Issue:** Returns all models at once without pagination
-**Impact:** Memory issues with 1000+ models
-**Fix:** Add pagination support or document limitation
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/llm/client.py:250-253`
+**Fix:** Added documentation Note in docstring explaining the limitation and suggesting client-side filtering for large model lists.
 
 #### LLM-018: Silent Type Coercion in Content Handling
-**Status:** Pending
-**File:** `src/code_forge/llm/models.py:78`
-**Issue:** Undefined content types silently converted
-**Impact:** Bugs masked
-**Fix:** Raise explicit error for unsupported content types
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/llm/models.py:86-93`
+**Fix:** Added logger.warning() for unexpected content types, showing the actual type received.
 
 #### CFG-006: Missing Null Check in EnvironmentSource
 **Status:** Pending

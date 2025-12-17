@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 class MessageRole(str, Enum):
@@ -78,7 +81,15 @@ class Message:
             msg["content"] = [p.to_dict() for p in self.content]
         elif self.content is None and self.tool_calls:
             msg["content"] = None
+        elif self.content is None:
+            msg["content"] = None
         else:
+            # Log warning for unexpected content types to avoid silent bugs
+            logger.warning(
+                "Unexpected content type %s in Message.to_dict(), "
+                "passing through as-is. Expected str, list[ContentPart], or None.",
+                type(self.content).__name__,
+            )
             msg["content"] = self.content
 
         if self.name:

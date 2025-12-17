@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -15,6 +16,8 @@ from code_forge.langchain.messages import (
 
 if TYPE_CHECKING:
     from code_forge.llm.models import Message
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -123,10 +126,20 @@ class ConversationMemory:
             # Extract string content
             content = message.content
             if isinstance(content, list):
-                content = "".join(
-                    part.get("text", "") if isinstance(part, dict) else str(part)
-                    for part in content
-                )
+                parts_text = []
+                for part in content:
+                    if isinstance(part, dict):
+                        if "text" in part:
+                            parts_text.append(part["text"])
+                        else:
+                            # Log unexpected content structure
+                            logger.warning(
+                                "Content part missing 'text' key, skipping: %s",
+                                list(part.keys()),
+                            )
+                    else:
+                        parts_text.append(str(part))
+                content = "".join(parts_text)
             message = Msg.system(content or "")
 
         self.system_message = message
