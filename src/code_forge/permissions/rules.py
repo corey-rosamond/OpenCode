@@ -59,16 +59,29 @@ class PatternMatcher:
         """
         # Length limit
         if len(pattern) > PatternMatcher.MAX_PATTERN_LENGTH:
+            logger.warning(
+                "Regex pattern rejected: exceeds max length of %d chars",
+                PatternMatcher.MAX_PATTERN_LENGTH,
+            )
             return None
 
         # Check for known ReDoS patterns
         for redos_pattern in PatternMatcher.REDOS_PATTERNS:
             if re.search(redos_pattern, pattern):
+                logger.warning(
+                    "Regex pattern rejected as potential ReDoS: %s",
+                    pattern[:100],  # Truncate for safety
+                )
                 return None
 
         try:
             return re.compile(pattern)
-        except re.error:
+        except re.error as e:
+            logger.warning(
+                "Invalid regex pattern '%s': %s",
+                pattern[:100],  # Truncate for safety
+                e,
+            )
             return None
 
     @classmethod

@@ -663,18 +663,14 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Separate JSONDecodeError handling to include file path, line number, and column number. Other errors now also include file path in message.
 
 #### PERM-011: Uncaught Subprocess Errors in Hooks
-**Status:** Pending
-**File:** `src/code_forge/hooks/executor.py:268-279`
-**Issue:** Generic Exception catch-all hides programming errors
-**Impact:** Hard to distinguish expected from unexpected failures
-**Fix:** Catch specific exceptions, log stack traces for unexpected
+**Status:** Already fixed (2025-12-18)
+**File:** `src/code_forge/hooks/executor.py:318-341`
+**Note:** Code already catches `OSError` specifically for subprocess errors. The catch-all `Exception` handler uses `logger.exception()` which logs full stack traces for unexpected errors. This is the correct pattern for distinguishing expected from unexpected failures.
 
 #### PERM-012: Silent Regex Pattern Failures
-**Status:** Pending
-**File:** `src/code_forge/permissions/rules.py:38-46`
-**Issue:** Invalid regex patterns return None silently
-**Impact:** Users creating bad rules get no feedback
-**Fix:** Log warning when regex compilation fails
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/permissions/rules.py:60-85`
+**Fix:** Added warning logging for all regex rejection cases: exceeds max length, potential ReDoS pattern, and invalid regex syntax. Patterns are truncated in logs for safety.
 
 #### PERM-013: Type Validation Without Coercion
 **Status:** Pending
