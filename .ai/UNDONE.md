@@ -110,11 +110,16 @@ _All critical issues have been addressed._
 **Fix:** Created Dependencies container class with factory method. run_with_agent() now accepts optional deps parameter for injection. Protocols defined for ILLMClient and IAgent for testing.
 
 #### ARCH-004: Configuration System Fragmentation
-**Status:** Pending
+**Status:** Deferred
 **Files:** `config/`, `mcp/config.py`, `hooks/config.py`, `permissions/config.py`, `web/config.py`
 **Issue:** 6+ modules use different config patterns (Pydantic vs dataclass vs custom)
 **Impact:** Inconsistent API, hard to compose/test configurations
-**Fix:** Standardize on Pydantic models with common base class
+**Note:** Large refactoring task requiring careful migration:
+- config/models.py uses Pydantic (canonical)
+- mcp/config.py uses dataclasses (MCPServerConfig duplicates Pydantic version)
+- hooks/config.py and permissions/config.py use class methods
+- web/config.py uses dataclasses (currently unused)
+Migration plan: Create common base, migrate one module at a time with tests. Deferred to avoid breaking changes.
 
 #### TOOL-004: Symlink Parameter Creates Escape Route
 **Status:** Fixed (2025-12-17)
