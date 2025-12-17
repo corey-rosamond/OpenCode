@@ -628,11 +628,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Note:** Spinners initialized to None before try block (lines 266-268). Cleanup in both except (395-399) and finally (401-412) blocks with try-except wrappers.
 
 #### SESS-015: No Context About Session Recovery
-**Status:** Pending
-**File:** `src/code_forge/sessions/storage.py:294-315`
-**Issue:** `recover_from_backup()` exists but never called automatically
-**Impact:** Manual recovery required
-**Fix:** Integrate recovery into load() with user notification
+**Status:** Fixed (2025-12-17)
+**File:** `src/code_forge/sessions/storage.py:197-240`
+**Fix:** load() now has auto_recover parameter (default True). On JSONDecodeError, automatically attempts recover_from_backup(). Logs warning on successful recovery. Improved error message on failure.
 
 #### SESS-016: No Validation of Truncation Results
 **Status:** Pending

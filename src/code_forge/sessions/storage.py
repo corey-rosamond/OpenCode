@@ -194,18 +194,19 @@ class SessionStorage:
 
         logger.debug(f"Saved session {session.id}")
 
-    def load(self, session_id: str) -> Session:
+    def load(self, session_id: str, auto_recover: bool = True) -> Session:
         """Load a session from storage.
 
         Args:
             session_id: The session ID to load.
+            auto_recover: If True, attempt recovery from backup on corruption.
 
         Returns:
             The loaded Session.
 
         Raises:
             SessionNotFoundError: If session doesn't exist.
-            SessionCorruptedError: If session file is corrupted.
+            SessionCorruptedError: If session file is corrupted and recovery failed.
         """
         from .models import Session
 
@@ -223,8 +224,17 @@ class SessionStorage:
             return session
 
         except json.JSONDecodeError as e:
+            # Attempt automatic recovery from backup
+            if auto_recover and self.recover_from_backup(session_id):
+                logger.warning(
+                    f"Session {session_id} was corrupted, recovered from backup"
+                )
+                # Retry load after recovery (with auto_recover=False to prevent loops)
+                return self.load(session_id, auto_recover=False)
+
             raise SessionCorruptedError(
-                f"Session file corrupted: {session_id}"
+                f"Session file corrupted: {session_id}. "
+                f"Backup recovery {'failed' if auto_recover else 'disabled'}."
             ) from e
         except Exception as e:
             raise SessionStorageError(f"Failed to load session: {e}") from e
