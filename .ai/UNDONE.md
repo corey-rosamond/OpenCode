@@ -638,11 +638,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added post-truncation validation that counts tokens after truncation and logs warning if result exceeds target budget. Also logs warning if truncation fails to reduce messages while over limit.
 
 #### PERM-006: Unvalidated Argument Names in Rules
-**Status:** Pending
-**File:** `src/code_forge/permissions/rules.py:113-119`
-**Issue:** Argument patterns don't validate if argument name is valid for tool
-**Impact:** Ineffective rules created silently
-**Fix:** Log warning for unrecognized argument names
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/permissions/rules.py:96-105`
+**Fix:** Added debug logging when argument name in rule pattern doesn't exist in the tool's arguments. Shows which argument name was expected and what arguments are available.
 
 #### PERM-007: Non-atomic Rule Updates
 **Status:** Pending

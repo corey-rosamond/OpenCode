@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import fnmatch
 import functools
+import logging
 import os
 import re
 from collections.abc import Iterator
@@ -16,6 +17,8 @@ from code_forge.permissions.models import (
     PermissionRule,
     get_tool_category,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class PatternMatcher:
@@ -91,6 +94,15 @@ class PatternMatcher:
                     return False
 
             elif comp_type == "arg":
+                if comp_name not in arguments:
+                    # Argument name doesn't exist for this tool
+                    logger.debug(
+                        "Rule argument '%s' not found in tool '%s' arguments: %s",
+                        comp_name,
+                        tool_name,
+                        list(arguments.keys()),
+                    )
+                    return False
                 arg_value = arguments.get(comp_name)
                 if arg_value is None:
                     return False
