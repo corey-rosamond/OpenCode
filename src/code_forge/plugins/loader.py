@@ -91,7 +91,24 @@ class PluginLoader:
                     added_path = plugin_path  # Remember for cleanup
 
             # Import plugin module
-            module_name, class_name = manifest.entry_point.split(":")
+            # Entry point format: "module.path:ClassName"
+            if ":" not in manifest.entry_point:
+                raise PluginLoadError(
+                    f"Invalid entry point format: '{manifest.entry_point}'. "
+                    f"Expected 'module.path:ClassName' (e.g., 'my_plugin.main:MyPlugin')",
+                    plugin_id=plugin_id,
+                )
+            module_name, class_name = manifest.entry_point.split(":", 1)
+            if not module_name:
+                raise PluginLoadError(
+                    f"Invalid entry point: empty module name in '{manifest.entry_point}'",
+                    plugin_id=plugin_id,
+                )
+            if not class_name:
+                raise PluginLoadError(
+                    f"Invalid entry point: empty class name in '{manifest.entry_point}'",
+                    plugin_id=plugin_id,
+                )
             module = importlib.import_module(module_name)
 
             # Get plugin class
@@ -138,9 +155,9 @@ class PluginLoader:
                 plugin_id=plugin_id,
             ) from e
         except ValueError as e:
-            # Raised by split if entry_point doesn't contain ":"
+            # Raised by other validation errors
             raise PluginLoadError(
-                f"Invalid entry point format: {e}",
+                f"Plugin validation error: {e}",
                 plugin_id=plugin_id,
             ) from e
         except Exception as e:

@@ -729,11 +729,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added detailed validation for MCP tool name format with specific error messages for: wrong number of parts, wrong prefix, empty server name, empty tool name.
 
 #### MCP-010: Silent Entry Point Loading Failures
-**Status:** Pending
-**File:** `src/code_forge/plugins/manifest.py:141-145`
-**Issue:** ValueError from split() caught with unclear error message
-**Impact:** Hard to diagnose entry point format issues
-**Fix:** Provide specific error messages about format requirements
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/plugins/loader.py:93-111`
+**Fix:** Added explicit validation before split() with specific error messages for: missing colon, empty module name, empty class name. Includes example of correct format in error message.
 
 #### MCP-011: No State Transition Validation in Agents
 **Status:** Pending
