@@ -739,11 +739,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added state validation in `cancel()` method. Returns False and logs warning if agent is already in terminal state (COMPLETED, FAILED, CANCELLED). Changed return type from None to bool.
 
 #### MCP-012: No Token Usage Tracking from LLM
-**Status:** Pending
-**File:** `src/code_forge/agents/executor.py:272-275`
-**Issue:** Token usage only captured if LLM includes `usage_metadata`
-**Impact:** Missing metrics for some providers
-**Fix:** Add fallback estimation based on prompt/response length
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/agents/executor.py:272-281`
+**Fix:** Added fallback token estimation when `usage_metadata` is not available. Estimates tokens from response content length (~4 chars/token).
 
 #### MCP-013: Missing Tool Execution Metadata
 **Status:** Pending

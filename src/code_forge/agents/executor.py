@@ -273,6 +273,12 @@ class AgentExecutor:
         if hasattr(response, "usage_metadata") and response.usage_metadata:
             usage = response.usage_metadata
             agent._usage.tokens_used += usage.get("total_tokens", 0)
+        else:
+            # Fallback: estimate tokens from content length (rough ~4 chars/token)
+            content = response.content if hasattr(response, "content") else ""
+            if isinstance(content, str):
+                estimated_tokens = len(content) // 4
+                agent._usage.tokens_used += estimated_tokens
 
         # Convert response back to dict format
         result: dict[str, Any] = {"content": response.content}
