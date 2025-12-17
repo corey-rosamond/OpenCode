@@ -345,7 +345,7 @@ class TestAgent:
         agent.cancel()
         assert agent.is_cancelled is True
         assert agent.state == AgentState.CANCELLED
-        assert agent.completed_at is not None
+        assert isinstance(agent.completed_at, datetime)
 
     def test_is_complete_states(self) -> None:
         """Test is_complete for different states."""
@@ -441,7 +441,7 @@ class TestAgent:
         agent._start_execution()
 
         assert agent.state == AgentState.RUNNING
-        assert agent.started_at is not None
+        assert isinstance(agent.started_at, datetime)
 
     def test_complete_execution_success(self) -> None:
         """Test _complete_execution with success."""
@@ -453,7 +453,7 @@ class TestAgent:
         agent._complete_execution(result, success=True)
 
         assert agent.state == AgentState.COMPLETED
-        assert agent.completed_at is not None
+        assert isinstance(agent.completed_at, datetime)
         assert agent.result == result
 
     def test_complete_execution_failure(self) -> None:
@@ -491,7 +491,7 @@ class TestAgent:
         agent._result = AgentResult.ok("Done")
 
         d = agent.to_dict()
-        assert d["result"] is not None
+        assert isinstance(d["result"], dict)
         assert d["result"]["success"] is True
 
 

@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from code_forge.agents.base import AgentConfig, AgentContext, AgentState
+from code_forge.agents.base import Agent, AgentConfig, AgentContext, AgentState
 from code_forge.agents.manager import AgentManager
 from code_forge.agents.result import AgentResult, AggregatedResult
 from code_forge.agents.types import AgentTypeRegistry
@@ -68,7 +68,7 @@ class TestAgentManager:
 
         agent = await manager.spawn("explore", "Find files")
 
-        assert agent is not None
+        assert isinstance(agent, Agent)
         assert agent.task == "Find files"
         assert agent.id in manager._agents
 

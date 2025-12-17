@@ -78,7 +78,7 @@ class TestBuiltinAgentTypes:
         assert EXPLORE_AGENT.name == "explore"
         assert "explore" in EXPLORE_AGENT.description.lower()
         assert EXPLORE_AGENT.prompt_template != ""
-        assert EXPLORE_AGENT.default_tools is not None
+        assert isinstance(EXPLORE_AGENT.default_tools, list)
         assert "glob" in EXPLORE_AGENT.default_tools
         assert "grep" in EXPLORE_AGENT.default_tools
         assert "read" in EXPLORE_AGENT.default_tools
@@ -90,7 +90,7 @@ class TestBuiltinAgentTypes:
         assert PLAN_AGENT.name == "plan"
         assert "plan" in PLAN_AGENT.description.lower()
         assert PLAN_AGENT.prompt_template != ""
-        assert PLAN_AGENT.default_tools is not None
+        assert isinstance(PLAN_AGENT.default_tools, list)
         assert PLAN_AGENT.default_max_tokens == 40000
         assert PLAN_AGENT.default_max_time == 240
 
@@ -99,7 +99,7 @@ class TestBuiltinAgentTypes:
         assert CODE_REVIEW_AGENT.name == "code-review"
         assert "review" in CODE_REVIEW_AGENT.description.lower()
         assert CODE_REVIEW_AGENT.prompt_template != ""
-        assert CODE_REVIEW_AGENT.default_tools is not None
+        assert isinstance(CODE_REVIEW_AGENT.default_tools, list)
         assert "bash" in CODE_REVIEW_AGENT.default_tools
         assert CODE_REVIEW_AGENT.default_max_tokens == 40000
         assert CODE_REVIEW_AGENT.default_max_time == 300
@@ -153,7 +153,7 @@ class TestAgentTypeRegistry:
         registry = AgentTypeRegistry.get_instance()
         type_def = registry.get("explore")
 
-        assert type_def is not None
+        assert isinstance(type_def, AgentTypeDefinition)
         assert type_def.name == "explore"
 
     def test_get_nonexistent_type(self) -> None:
