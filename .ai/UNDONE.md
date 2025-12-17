@@ -658,11 +658,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added explicit `asyncio.CancelledError` handling in both `execute_hooks()` and `_execute_hook()`. Ensures processes are killed on cancellation and error is properly propagated.
 
 #### PERM-010: Missing Error Context in Permission Config Loading
-**Status:** Pending
-**File:** `src/code_forge/permissions/config.py:153-154`
-**Issue:** JSON parsing errors don't indicate file or line
-**Impact:** Hard to debug config issues
-**Fix:** Add file path to error message
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/permissions/config.py:153-162, 185-196`
+**Fix:** Separate JSONDecodeError handling to include file path, line number, and column number. Other errors now also include file path in message.
 
 #### PERM-011: Uncaught Subprocess Errors in Hooks
 **Status:** Pending

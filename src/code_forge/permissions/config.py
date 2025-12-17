@@ -150,8 +150,16 @@ class PermissionConfig:
                 rules = RuleSet.from_dict(data)
                 logger.debug("Loaded %d global permission rules", len(rules))
                 return rules
-            except (json.JSONDecodeError, KeyError, ValueError) as e:
-                logger.warning("Error loading global permissions: %s", e)
+            except json.JSONDecodeError as e:
+                logger.warning(
+                    "JSON parse error in %s (line %d, column %d): %s",
+                    path,
+                    e.lineno,
+                    e.colno,
+                    e.msg,
+                )
+            except (KeyError, ValueError) as e:
+                logger.warning("Error loading global permissions from %s: %s", path, e)
 
         # Return default rules
         return cls.get_default_rules()
@@ -174,8 +182,17 @@ class PermissionConfig:
             rules = RuleSet.from_dict(data)
             logger.debug("Loaded %d project permission rules", len(rules))
             return rules
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
-            logger.warning("Error loading project permissions: %s", e)
+        except json.JSONDecodeError as e:
+            logger.warning(
+                "JSON parse error in %s (line %d, column %d): %s",
+                path,
+                e.lineno,
+                e.colno,
+                e.msg,
+            )
+            return None
+        except (KeyError, ValueError) as e:
+            logger.warning("Error loading project permissions from %s: %s", path, e)
             return None
 
     @classmethod
