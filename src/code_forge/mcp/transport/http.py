@@ -170,7 +170,11 @@ class HTTPTransport(MCPTransport):
                     if self._closing:
                         break
                     if line.startswith(b"data: "):
-                        data = line[6:].decode().strip()
+                        try:
+                            data = line[6:].decode("utf-8").strip()
+                        except UnicodeDecodeError:
+                            logger.warning("Invalid UTF-8 in SSE data, skipping")
+                            continue
                         if data:
                             try:
                                 message = json.loads(data)

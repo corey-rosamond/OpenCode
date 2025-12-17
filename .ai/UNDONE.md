@@ -719,11 +719,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Changed `asyncio.get_event_loop()` to `asyncio.get_running_loop()` which is the correct pattern for async functions and avoids deprecation warnings in Python 3.10+.
 
 #### MCP-008: Missing Error Handling in SSE Listen
-**Status:** Pending
-**File:** `src/code_forge/mcp/transport/http.py:169`
-**Issue:** SSE listener doesn't handle chunk decode errors
-**Impact:** Binary data in SSE causes exceptions
-**Fix:** Add try-except around line.decode() call
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/mcp/transport/http.py:173-177`
+**Fix:** Added try-except around `.decode()` call to catch UnicodeDecodeError. Invalid UTF-8 data is now logged and skipped instead of crashing the listener.
 
 #### MCP-009: Insufficient MCP Tool Name Validation
 **Status:** Pending
