@@ -643,18 +643,14 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added debug logging when argument name in rule pattern doesn't exist in the tool's arguments. Shows which argument name was expected and what arguments are available.
 
 #### PERM-007: Non-atomic Rule Updates
-**Status:** Pending
-**File:** `src/code_forge/permissions/checker.py:102-104`
-**Issue:** `remove_rule` then `add_rule` not atomic
-**Impact:** Race condition with concurrent calls
-**Fix:** Make atomic or document thread-safety guarantees
+**Status:** Already fixed (2025-12-18)
+**File:** `src/code_forge/permissions/checker.py:157-160`
+**Note:** Fixed as part of PERM-003. The `add_session_rule()` method already performs both remove and add within a single `with self._session_lock:` block, making the operation atomic.
 
 #### PERM-008: Ambiguous Argument Parsing
-**Status:** Pending
-**File:** `src/code_forge/commands/parser.py:168-178`
-**Issue:** Positional arguments starting with `-` misinterpreted as flags
-**Impact:** Parsing errors
-**Fix:** Better parsing of `--` separator
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/commands/parser.py:171-188`
+**Fix:** Added support for POSIX `--` separator. After `--`, all remaining tokens are treated as positional arguments regardless of whether they start with `-`.
 
 #### PERM-009: Missing Async Exception Handling in Hooks
 **Status:** Pending

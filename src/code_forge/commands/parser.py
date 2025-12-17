@@ -168,9 +168,24 @@ class CommandParser:
         kwargs: dict[str, str] = {}
         flags: set[str] = set()
 
+        # Track if we've seen "--" separator (end of options)
+        end_of_options = False
+
         i = 0
         while i < len(tokens):
             token = tokens[i]
+
+            # Check for "--" separator (POSIX convention: end of options)
+            if token == "--" and not end_of_options:
+                end_of_options = True
+                i += 1
+                continue
+
+            # After "--", treat everything as positional arguments
+            if end_of_options:
+                args.append(token)
+                i += 1
+                continue
 
             # Check for --key=value or --key value
             if token.startswith("--"):
