@@ -199,6 +199,11 @@ class HookExecutor:
                     )
                     break
 
+            except asyncio.CancelledError:
+                # Task was cancelled - log and re-raise to allow proper cleanup
+                logger.debug("Hook '%s' cancelled", hook.event_pattern)
+                raise
+
             except Exception as e:
                 logger.error("Hook '%s' error: %s", hook.event_pattern, e)
                 results.append(
@@ -303,6 +308,12 @@ class HookExecutor:
                     timed_out=True,
                     error=f"Hook timed out after {timeout}s",
                 )
+
+            except asyncio.CancelledError:
+                # Task was cancelled - kill process and re-raise
+                process.kill()
+                await process.wait()
+                raise
 
         except OSError as e:
             # Handle subprocess creation failures (invalid command, bad path, etc.)

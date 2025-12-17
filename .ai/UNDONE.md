@@ -653,11 +653,9 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added support for POSIX `--` separator. After `--`, all remaining tokens are treated as positional arguments regardless of whether they start with `-`.
 
 #### PERM-009: Missing Async Exception Handling in Hooks
-**Status:** Pending
-**File:** `src/code_forge/hooks/executor.py:180-220`
-**Issue:** `CancelledError` not caught explicitly
-**Impact:** Potential unhandled exceptions
-**Fix:** Add explicit handling for `asyncio.CancelledError`
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/hooks/executor.py:202-205, 312-316`
+**Fix:** Added explicit `asyncio.CancelledError` handling in both `execute_hooks()` and `_execute_hook()`. Ensures processes are killed on cancellation and error is properly propagated.
 
 #### PERM-010: Missing Error Context in Permission Config Loading
 **Status:** Pending
