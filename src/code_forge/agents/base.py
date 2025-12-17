@@ -329,7 +329,15 @@ class Agent(ABC):
 
     @property
     def messages(self) -> list[dict[str, Any]]:
-        """Get agent message history."""
+        """Get agent message history.
+
+        Returns a defensive copy to prevent external modification of internal
+        state. If you need to access messages frequently in a loop, consider
+        storing the result in a local variable to avoid repeated copies.
+
+        Returns:
+            Copy of the message history list.
+        """
         return self._messages.copy()
 
     def on_progress(self, callback: Callable[[str], None]) -> None:

@@ -776,25 +776,22 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Fix:** Added `proxy` parameter to HTTPTransport. Proxy URL is passed to all HTTP requests (POST, GET, SSE).
 
 #### MCP-019: Inefficient Plugin Unregister
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/plugins/registry.py:153-168`
 **Issue:** Dictionary comprehensions iterate entire collection for each type
-**Impact:** O(n*m) complexity with many plugins
-**Fix:** Maintain reverse index mapping plugin_id -> items
+**Reason:** Current O(n) per collection is acceptable for typical plugin counts. Reverse indexing adds complexity for marginal gains.
 
 #### MCP-020: Linear Search in Skills Registry
-**Status:** Pending
+**Status:** Deferred
 **File:** `src/code_forge/skills/registry.py:136-150`
 **Issue:** `search()` iterates all skills
-**Impact:** Slow with hundreds of skills
-**Fix:** Build search index or cache results
+**Reason:** Linear search is acceptable for typical skill counts. Search indexing would add complexity for marginal gains.
 
 #### MCP-021: Unnecessary Message Copies in Agent
-**Status:** Pending
-**File:** `src/code_forge/agents/base.py:316`
+**Status:** Fixed (2025-12-18)
+**File:** `src/code_forge/agents/base.py:330-341`
 **Issue:** `messages` property returns copy; inefficient if called repeatedly
-**Impact:** Performance overhead
-**Fix:** Document in docstring, consider read-only wrapper
+**Fix:** Documented defensive copy behavior in docstring with guidance to cache result in local variable when needed repeatedly
 
 #### MCP-022: Skill Context Copying
 **Status:** Pending
