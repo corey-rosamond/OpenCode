@@ -30,7 +30,7 @@
 - LangChain integration for agent orchestration
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.1.0
+**Version:** 1.5.0
 **Status:** Production/Stable
 **Tests:** 3400+ (90%+ coverage)
 
@@ -60,6 +60,45 @@ ruff check src/code_forge/
 
 # All must pass before any PR
 ```
+
+---
+
+## Version and Changelog Management
+
+**When completing any milestone or significant work:**
+
+1. **Update version number** in both files:
+   - `pyproject.toml` - line 3: `version = "X.Y.Z"`
+   - `src/code_forge/__init__.py` - line 3: `__version__ = "X.Y.Z"`
+   - This `START.md` file - line 33: `**Version:** X.Y.Z`
+
+2. **Update CHANGELOG.md** with changes:
+   ```markdown
+   ## [X.Y.Z] - YYYY-MM-DD
+
+   ### Added
+   - New features
+
+   ### Fixed
+   - Bug fixes
+
+   ### Improved
+   - Enhancements
+   ```
+
+3. **Version numbering guide** (Semantic Versioning):
+   - **Major (X.0.0)**: Breaking changes, major rewrites
+   - **Minor (0.X.0)**: New features, significant improvements
+   - **Patch (0.0.X)**: Bug fixes, small improvements
+
+4. **Commit and push** version changes:
+   ```bash
+   git add pyproject.toml src/code_forge/__init__.py CHANGELOG.md .ai/START.md
+   git commit -m "Bump version to X.Y.Z"
+   git push origin main
+   ```
+
+**Do this BEFORE marking work as complete in UNDONE.md.**
 
 ---
 
