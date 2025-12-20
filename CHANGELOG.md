@@ -5,6 +5,23 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2025-12-21
+
+### Fixed
+- **Session File Locking**: Added cross-platform file locking (fcntl/msvcrt) to prevent concurrent access corruption
+- **Permission Rate Limiting**: Added DoS protection with sliding window rate limiter (10 denials/60s, 5min backoff)
+- **Hook Retry Logic**: Added exponential backoff retry for transient failures (OSError, ConnectionError, TimeoutError)
+
+### Added
+- **Hook Dry-Run Mode**: Simulate hook execution without running commands for testing
+
+## [1.4.0] - 2025-12-21
+
+### Improved
+- **Test Quality**: Replaced 116 weak assertions with specific type checks across 53 test files
+- **Test Coverage**: Added 35+ parametrized tests generating 150+ test cases
+- **Concurrency Tests**: Added 23 concurrent/race condition tests for thread safety validation
+
 ## [1.3.0] - 2025-12-17
 
 ### Fixed
