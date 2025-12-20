@@ -465,25 +465,22 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 ### Low Priority (P3)
 
 #### TEST-001: 555 Weak Assertions
-**Status:** Pending
+**Status:** Fixed (2025-12-21)
 **Location:** Throughout test suite
-**Issue:** Heavy use of `assert is not None` instead of specific value checks
-**Impact:** Tests may pass when they shouldn't
-**Fix:** Replace with specific assertions
+**Fix:** Replaced all 116 weak `assert is not None` with specific isinstance() type checks and value validations
+**Commit:** a58961f
 
 #### TEST-002: Only 1 Parametrized Test
-**Status:** Pending
+**Status:** Fixed (2025-12-21)
 **Location:** Tests throughout
-**Issue:** Could benefit from `@pytest.mark.parametrize` for variations
-**Impact:** Missing edge case coverage
-**Fix:** Add parametrization for HTTP codes, error scenarios, file formats
+**Fix:** Added 35+ parametrized tests across 9 files generating 150+ test cases covering HTTP codes, error scenarios, file formats, permission patterns
+**Commit:** 8f0968f
 
 #### TEST-003: No Concurrent/Race Condition Tests
-**Status:** Pending
-**Location:** Test suite
-**Issue:** No tests for simultaneous operations or race conditions
-**Impact:** Concurrency bugs may exist
-**Fix:** Add tests for parallel tool execution, concurrent sessions
+**Status:** Fixed (2025-12-21)
+**Location:** tests/integration/test_concurrency.py
+**Fix:** Added 23 comprehensive concurrent/race condition tests covering registries, singletons, shared state, and cross-component concurrency
+**Commit:** 5928cb4
 
 #### TEST-004: providers/ Module Has No Tests
 **Status:** Not applicable (2025-12-18)
