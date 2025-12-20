@@ -5,6 +5,24 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2025-12-21
+
+### Added
+- **16 New Specialized Agent Types**: Expanded agent system from 4 to 20 agent types
+  - **Coding Agents**: test-generation, documentation, refactoring, debug
+  - **Writing & Communication Agents**: writing, communication, tutorial
+  - **Visual & Design Agents**: diagram
+  - **Testing & QA Agents**: qa-manual
+  - **Research & Analysis Agents**: research, log-analysis, performance-analysis
+  - **Security & Dependencies Agents**: security-audit, dependency-analysis
+  - **Project Management Agents**: migration-planning, configuration
+
+### Improved
+- Agent system now covers comprehensive software development workflows beyond just code exploration
+- Each agent type has specialized system prompts optimized for its domain
+- Tool access restrictions tailored to each agent's purpose for better security
+- Resource limits configured per agent type based on typical usage patterns
+
 ## [1.5.0] - 2025-12-21
 
 ### Fixed

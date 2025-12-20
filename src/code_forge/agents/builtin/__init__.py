@@ -6,10 +6,26 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .communication import CommunicationAgent
+from .configuration import ConfigurationAgent
+from .debug import DebugAgent
+from .dependency_analysis import DependencyAnalysisAgent
+from .diagram import DiagramAgent
+from .documentation import DocumentationAgent
 from .explore import ExploreAgent
 from .general import GeneralAgent
+from .log_analysis import LogAnalysisAgent
+from .migration_planning import MigrationPlanningAgent
+from .performance_analysis import PerformanceAnalysisAgent
 from .plan import PlanAgent
+from .qa_manual import QAManualAgent
+from .refactoring import RefactoringAgent
+from .research import ResearchAgent
 from .review import CodeReviewAgent
+from .security_audit import SecurityAuditAgent
+from .test_generation import TestGenerationAgent
+from .tutorial import TutorialAgent
+from .writing import WritingAgent
 
 if TYPE_CHECKING:
     from ..base import Agent, AgentConfig, AgentContext
@@ -18,10 +34,34 @@ if TYPE_CHECKING:
 
 # Agent class registry
 AGENT_CLASSES: dict[str, type[Agent]] = {
+    # Original agents
     "explore": ExploreAgent,
     "plan": PlanAgent,
     "code-review": CodeReviewAgent,
     "general": GeneralAgent,
+    # Coding agents
+    "test-generation": TestGenerationAgent,
+    "documentation": DocumentationAgent,
+    "refactoring": RefactoringAgent,
+    "debug": DebugAgent,
+    # Writing & Communication agents
+    "writing": WritingAgent,
+    "communication": CommunicationAgent,
+    "tutorial": TutorialAgent,
+    # Visual & Design agents
+    "diagram": DiagramAgent,
+    # Testing & QA agents
+    "qa-manual": QAManualAgent,
+    # Research & Analysis agents
+    "research": ResearchAgent,
+    "log-analysis": LogAnalysisAgent,
+    "performance-analysis": PerformanceAnalysisAgent,
+    # Security & Dependencies agents
+    "security-audit": SecurityAuditAgent,
+    "dependency-analysis": DependencyAnalysisAgent,
+    # Project Management agents
+    "migration-planning": MigrationPlanningAgent,
+    "configuration": ConfigurationAgent,
 }
 
 
@@ -88,9 +128,25 @@ def list_agent_classes() -> list[str]:
 __all__ = [
     "AGENT_CLASSES",
     "CodeReviewAgent",
+    "CommunicationAgent",
+    "ConfigurationAgent",
+    "DebugAgent",
+    "DependencyAnalysisAgent",
+    "DiagramAgent",
+    "DocumentationAgent",
     "ExploreAgent",
     "GeneralAgent",
+    "LogAnalysisAgent",
+    "MigrationPlanningAgent",
+    "PerformanceAnalysisAgent",
     "PlanAgent",
+    "QAManualAgent",
+    "RefactoringAgent",
+    "ResearchAgent",
+    "SecurityAuditAgent",
+    "TestGenerationAgent",
+    "TutorialAgent",
+    "WritingAgent",
     "create_agent",
     "list_agent_classes",
     "register_agent_class",

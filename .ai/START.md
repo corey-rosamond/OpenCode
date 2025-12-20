@@ -30,7 +30,7 @@
 - LangChain integration for agent orchestration
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.5.0
+**Version:** 1.6.0
 **Status:** Production/Stable
 **Tests:** 3400+ (90%+ coverage)
 
