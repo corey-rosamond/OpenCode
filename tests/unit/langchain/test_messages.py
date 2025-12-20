@@ -62,7 +62,7 @@ class TestLangchainToForge:
         oc_msg = langchain_to_forge(lc_msg)
 
         assert oc_msg.role == MessageRole.ASSISTANT
-        assert oc_msg.tool_calls is not None
+        assert isinstance(oc_msg.tool_calls, list)
         assert len(oc_msg.tool_calls) == 1
         assert oc_msg.tool_calls[0].id == "call_123"
         assert oc_msg.tool_calls[0].function["name"] == "read_file"

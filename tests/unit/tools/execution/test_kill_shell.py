@@ -153,7 +153,7 @@ class TestKillShellToolExecution:
 
         result = await tool.execute(context, shell_id=bash_id)
         assert result.success
-        assert result.metadata.get("duration_ms") is not None
+        assert isinstance(result.metadata.get("duration_ms"), (int, float))
         assert result.metadata["duration_ms"] >= 0
 
     @pytest.mark.asyncio

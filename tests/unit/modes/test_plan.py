@@ -533,5 +533,5 @@ class TestPlanMode:
 
         mode.restore_state(state)
 
-        assert mode.current_plan is not None
+        assert isinstance(mode.current_plan, Plan)
         assert mode.current_plan.title == "Restored"

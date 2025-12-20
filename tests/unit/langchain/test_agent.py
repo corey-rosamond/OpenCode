@@ -323,7 +323,7 @@ class TestCodeForgeAgentReset:
         agent = CodeForgeAgent(llm=mock_llm, tools=[], memory=memory)
         agent.reset()
 
-        assert agent.memory.system_message is not None
+        assert isinstance(agent.memory.system_message, Message)
         assert agent.memory.system_message.content == "Be helpful"
 
 

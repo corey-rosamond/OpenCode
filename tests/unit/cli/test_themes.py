@@ -84,12 +84,12 @@ class TestBuiltInThemes:
 
     def test_dark_theme_exists(self) -> None:
         """Test DARK_THEME is defined."""
-        assert DARK_THEME is not None
+        assert isinstance(DARK_THEME, Theme)
         assert DARK_THEME.name == "dark"
 
     def test_light_theme_exists(self) -> None:
         """Test LIGHT_THEME is defined."""
-        assert LIGHT_THEME is not None
+        assert isinstance(LIGHT_THEME, Theme)
         assert LIGHT_THEME.name == "light"
 
     def test_dark_theme_has_all_colors(self) -> None:
@@ -154,7 +154,6 @@ class TestThemeRegistry:
     def test_get_default(self) -> None:
         """Test getting default theme."""
         default = ThemeRegistry.get_default()
-        assert default is not None
         assert isinstance(default, Theme)
 
     def test_list_themes(self) -> None:

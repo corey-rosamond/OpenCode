@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import tempfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
 from typing import Any
 
@@ -194,7 +194,7 @@ class TestSessionIndex:
         index.update(session)
 
         summary = index.get(session.id)
-        assert summary is not None
+        assert isinstance(summary, SessionSummary)
         assert summary.title == "Updated"
 
     def test_remove_session(self, index: SessionIndex, storage: SessionStorage) -> None:
@@ -220,7 +220,7 @@ class TestSessionIndex:
         index.add(session)
 
         summary = index.get(session.id)
-        assert summary is not None
+        assert isinstance(summary, SessionSummary)
         assert summary.id == session.id
         assert summary.title == "Test"
         assert summary.model == "gpt-4"
@@ -459,7 +459,7 @@ class TestSessionIndex:
         index2 = SessionIndex(storage)
         assert index2.count() == 1
         summary = index2.get(session.id)
-        assert summary is not None
+        assert isinstance(summary, SessionSummary)
         assert summary.title == "Persistent"
 
     def test_index_version_mismatch_rebuilds(self, temp_dir: Path) -> None:
@@ -515,8 +515,10 @@ class TestSessionSummaryEdgeCases:
             "updated_at": None,
         }
         summary = SessionSummary.from_dict(data)
-        assert summary.created_at is not None
-        assert summary.updated_at is not None
+        assert isinstance(summary.created_at, datetime)
+        assert isinstance(summary.updated_at, datetime)
+        assert isinstance(summary.created_at.tzinfo, tzinfo)
+        assert isinstance(summary.updated_at.tzinfo, tzinfo)
 
 
 class TestSessionIndexEdgeCases:

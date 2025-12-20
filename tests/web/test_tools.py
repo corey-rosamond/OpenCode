@@ -302,7 +302,7 @@ class TestWebFetchTool:
 
         # Check cache was populated
         cached = cache.get(cache.generate_key("https://example.com"))
-        assert cached is not None
+        assert isinstance(cached, FetchResponse)
 
     @pytest.mark.asyncio
     async def test_execute_fetch_error(self) -> None:

@@ -25,7 +25,7 @@ class TestValidatePathSecurity:
         path_with_traversal = f"{tmp_path}/../../../etc/passwd"
         is_valid, error = validate_path_security(path_with_traversal)
         assert not is_valid
-        assert error is not None
+        assert isinstance(error, str)
         assert "traversal" in error.lower()
 
     def test_double_dot_in_middle(self, tmp_path: Path) -> None:
@@ -34,7 +34,8 @@ class TestValidatePathSecurity:
         path_with_traversal = f"{tmp_path}/subdir/../../../etc/passwd"
         is_valid, error = validate_path_security(path_with_traversal)
         assert not is_valid
-        assert error is not None
+        assert isinstance(error, str)
+        assert "traversal" in error.lower()
 
     def test_base_dir_enforcement(self, tmp_path: Path) -> None:
         # Create a file outside base_dir
@@ -51,7 +52,7 @@ class TestValidatePathSecurity:
             str(outside_file), base_dir=str(base_dir)
         )
         assert not is_valid
-        assert error is not None
+        assert isinstance(error, str)
         # Error message should indicate the path is outside the allowed base dir
         assert "outside" in error.lower() or "base" in error.lower()
 
@@ -76,7 +77,7 @@ class TestValidatePathSecurity:
 
         is_valid, error = validate_path_security(str(symlink))
         assert not is_valid
-        assert error is not None
+        assert isinstance(error, str)
         assert "symlink" in error.lower()
 
     def test_symlink_allowed_when_enabled(self, tmp_path: Path) -> None:
@@ -119,7 +120,8 @@ class TestPathTraversalPatterns:
     def test_various_traversal_patterns(self, malicious_path: str) -> None:
         is_valid, error = validate_path_security(malicious_path)
         assert not is_valid
-        assert error is not None
+        assert isinstance(error, str)
+        assert "traversal" in error.lower()
 
     def test_normalized_path_still_catches_traversal(self, tmp_path: Path) -> None:
         # Even if the path looks "clean" after normalization,

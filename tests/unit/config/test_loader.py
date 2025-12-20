@@ -7,6 +7,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from watchdog.observers.api import BaseObserver
 
 from code_forge.config.loader import ConfigLoader
 from code_forge.config.models import CodeForgeConfig
@@ -457,7 +458,7 @@ class TestConfigLoaderWatch:
 
         try:
             loader.watch()
-            assert loader._file_watcher is not None
+            assert isinstance(loader._file_watcher, BaseObserver)
         finally:
             loader.stop_watching()
 

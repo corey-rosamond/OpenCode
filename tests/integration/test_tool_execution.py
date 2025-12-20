@@ -567,7 +567,6 @@ class TestToolRegistry:
         register_all_tools()
 
         tool = tool_registry.get("Read")
-        assert tool is not None
         assert tool.name == "Read"
 
     def test_list_tools(self, tool_registry: ToolRegistry) -> None:

@@ -127,7 +127,7 @@ class TestBashOutputToolExecution:
         result = await tool.execute(context, bash_id=bash_id)
         assert result.success
         assert "Status:" in result.output
-        assert result.metadata.get("status") is not None
+        assert isinstance(result.metadata.get("status"), str)
 
     @pytest.mark.asyncio
     async def test_includes_exit_code(
@@ -152,7 +152,7 @@ class TestBashOutputToolExecution:
 
         result = await tool.execute(context, bash_id=bash_id)
         assert result.success
-        assert result.metadata.get("exit_code") is not None
+        assert isinstance(result.metadata.get("exit_code"), int)
 
     @pytest.mark.asyncio
     async def test_returns_only_new_output(

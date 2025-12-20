@@ -7,6 +7,8 @@ import time
 
 import pytest
 
+import subprocess
+
 from code_forge.tools.execution.shell_manager import (
     ShellManager,
     ShellProcess,
@@ -163,7 +165,7 @@ class TestShellProcess:
         )
         shell.started_at = time.time() - 1.0  # 1 second ago
         duration = shell.duration_ms
-        assert duration is not None
+        assert isinstance(duration, (int, float))
         assert duration >= 1000  # At least 1000ms
 
     def test_duration_ms_completed(self) -> None:
@@ -186,7 +188,8 @@ class TestShellProcess:
         )
         shell.kill()
         assert shell.status == ShellStatus.KILLED
-        assert shell.completed_at is not None
+        assert isinstance(shell.completed_at, float)
+        assert shell.completed_at > 0
 
 
 class TestShellManager:
@@ -221,7 +224,8 @@ class TestShellManager:
         assert shell.command == "echo hello"
         assert shell.working_dir == "/tmp"
         assert shell.status == ShellStatus.RUNNING
-        assert shell.process is not None
+        assert isinstance(shell.process, subprocess.Popen)
+        assert shell.process.returncode is None  # Still running
         # Clean up
         shell.kill()
 
@@ -233,7 +237,8 @@ class TestShellManager:
             working_dir="/tmp",
             env={"MY_VAR": "test_value"},
         )
-        assert shell.process is not None
+        assert isinstance(shell.process, subprocess.Popen)
+        assert hasattr(shell.process, 'wait')
         # Wait for completion
         await shell.process.wait()
         await shell.read_output()
@@ -303,7 +308,8 @@ class TestShellManager:
 
         count = await ShellManager.cleanup_completed(max_age_seconds=3600)
         assert count == 0
-        assert ShellManager.get_shell(shell.id) is not None
+        retrieved = ShellManager.get_shell(shell.id)
+        assert retrieved is shell
 
     @pytest.mark.asyncio
     async def test_kill_all(self) -> None:

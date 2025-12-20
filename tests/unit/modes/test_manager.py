@@ -59,7 +59,6 @@ class TestModeRegistration:
     def test_normal_mode_registered_by_default(self, manager: ModeManager) -> None:
         """Test NormalMode is registered by default."""
         mode = manager.get_mode(ModeName.NORMAL)
-        assert mode is not None
         assert isinstance(mode, NormalMode)
 
     def test_register_mode(self, manager: ModeManager) -> None:
@@ -68,7 +67,6 @@ class TestModeRegistration:
         manager.register_mode(plan_mode)
 
         mode = manager.get_mode(ModeName.PLAN)
-        assert mode is not None
         assert isinstance(mode, PlanMode)
 
     def test_register_duplicate_raises(self, manager: ModeManager) -> None:
@@ -95,7 +93,7 @@ class TestModeRegistration:
         """Test cannot unregister normal mode."""
         result = manager.unregister_mode(ModeName.NORMAL)
         assert result is False
-        assert manager.get_mode(ModeName.NORMAL) is not None
+        assert isinstance(manager.get_mode(ModeName.NORMAL), Mode)
 
 
 class TestModeQueries:
@@ -182,7 +180,7 @@ class TestModeSwitching:
 
         # Activate normal mode explicitly
         normal = manager.get_mode(ModeName.NORMAL)
-        assert normal is not None
+        assert isinstance(normal, Mode)
         normal.activate(context)
         assert normal.is_active is True
 

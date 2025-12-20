@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, tzinfo
 from typing import Any
 
 from code_forge.sessions.models import (
@@ -480,8 +480,8 @@ class TestSession:
         """Test that datetimes are timezone-aware UTC."""
         session = Session()
         # Check that tzinfo is set (timezone-aware datetime)
-        assert session.created_at.tzinfo is not None, "created_at should be timezone-aware"
-        assert session.updated_at.tzinfo is not None, "updated_at should be timezone-aware"
+        assert isinstance(session.created_at.tzinfo, tzinfo), "created_at should be timezone-aware"
+        assert isinstance(session.updated_at.tzinfo, tzinfo), "updated_at should be timezone-aware"
         # Verify they can be formatted as ISO strings without error
         assert isinstance(session.created_at.isoformat(), str)
         assert isinstance(session.updated_at.isoformat(), str)

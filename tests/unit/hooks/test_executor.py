@@ -450,7 +450,7 @@ class TestHookExecutorEdgeCases:
 
         assert len(results) == 1
         # Should either have error or non-zero exit code
-        assert results[0].exit_code != 0 or results[0].error is not None
+        assert results[0].exit_code != 0 or isinstance(results[0].error, str)
 
     @pytest.mark.asyncio
     async def test_empty_command(self) -> None:

@@ -118,7 +118,7 @@ class TestOpenRouterLLMGenerate:
         assert len(result.generations) == 1
         assert isinstance(result.generations[0].message, AIMessage)
         assert result.generations[0].message.content == "Hello from mock!"
-        assert result.llm_output is not None
+        assert isinstance(result.llm_output, dict)
         assert result.llm_output["usage"]["total_tokens"] == 15
 
     @pytest.mark.asyncio
@@ -282,7 +282,7 @@ class TestOpenRouterLLMBuildRequest:
         messages = [HumanMessage(content="Hello")]
         request = llm_with_tools._build_request(messages)
 
-        assert request.tools is not None
+        assert isinstance(request.tools, list)
         assert len(request.tools) == 1
 
 

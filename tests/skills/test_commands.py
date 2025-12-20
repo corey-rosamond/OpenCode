@@ -376,7 +376,7 @@ class TestSkillCommand:
 
         assert result.success
         assert "Activated" in result.output
-        assert registry.active_skill is not None
+        assert isinstance(registry.active_skill, Skill)
         assert registry.active_skill.name == "pdf"
 
     @pytest.mark.asyncio

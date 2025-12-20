@@ -49,7 +49,7 @@ class TestPluginConfig:
             "plugin_configs": {"plugin1": {"key": "value"}},
         })
         assert config.enabled is False
-        assert config.user_dir is not None
+        assert isinstance(config.user_dir, Path)
         assert config.disabled_plugins == ["disabled1"]
 
     def test_to_dict(self) -> None:

@@ -72,7 +72,7 @@ class TestLangChainToolAdapter:
         # Access the args_schema - it's a dynamically created Pydantic model
         schema_class = adapter.args_schema
 
-        assert schema_class is not None
+        assert isinstance(schema_class, type)
         assert issubclass(schema_class, BaseModel)
 
         # Check schema has the right fields
@@ -100,7 +100,7 @@ class TestLangChainToolAdapter:
 
         # Access the args_schema - it's a dynamically created Pydantic model
         schema_class = adapter.args_schema
-        assert schema_class is not None
+        assert isinstance(schema_class, type)
         json_schema = schema_class.model_json_schema()
 
         props = json_schema.get("properties", {})

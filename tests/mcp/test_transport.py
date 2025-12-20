@@ -124,7 +124,8 @@ class TestStdioTransport:
             await transport.connect()
             try:
                 # The env should have the expanded value
-                assert transport._process is not None
+                assert hasattr(transport, '_process')
+                assert transport._process.pid > 0
             finally:
                 await transport.disconnect()
         finally:
@@ -204,8 +205,9 @@ class TestStdioTransport:
         transport = StdioTransport(command="cat")
 
         await transport.connect()
-        assert transport._process is not None
+        assert hasattr(transport, '_process')
         pid = transport._process.pid
+        assert pid > 0
 
         await transport.disconnect()
         assert transport._process is None

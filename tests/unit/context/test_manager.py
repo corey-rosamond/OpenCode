@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from code_forge.context.compaction import ContextCompactor
 from code_forge.context.manager import (
     ContextManager,
     TruncationMode,
@@ -79,7 +80,7 @@ class TestContextManager:
         mock_llm = MagicMock()
         manager = ContextManager(model="claude-3-opus", llm=mock_llm)
 
-        assert manager.compactor is not None
+        assert isinstance(manager.compactor, ContextCompactor)
 
     def test_init_without_llm_no_compactor(self) -> None:
         """Should not create compactor without LLM."""

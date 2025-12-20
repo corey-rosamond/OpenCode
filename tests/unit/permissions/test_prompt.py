@@ -309,7 +309,7 @@ class TestCreateRuleFromChoice:
             ConfirmationChoice.ALLOW_ALWAYS, "bash", {}
         )
 
-        assert rule is not None
+        assert isinstance(rule, PermissionRule)
         assert rule.pattern == "tool:bash"
         assert rule.permission == PermissionLevel.ALLOW
         assert rule.priority == 100
@@ -320,7 +320,7 @@ class TestCreateRuleFromChoice:
             ConfirmationChoice.DENY_ALWAYS, "bash", {}
         )
 
-        assert rule is not None
+        assert isinstance(rule, PermissionRule)
         assert rule.pattern == "tool:bash"
         assert rule.permission == PermissionLevel.DENY
         assert rule.priority == 100
@@ -346,7 +346,7 @@ class TestCreateRuleFromChoice:
             ConfirmationChoice.ALLOW_ALWAYS, "custom_tool", {}
         )
 
-        assert rule is not None
+        assert isinstance(rule, PermissionRule)
         assert "custom_tool" in rule.description
 
     def test_arguments_not_used_in_pattern(self):
@@ -357,7 +357,7 @@ class TestCreateRuleFromChoice:
             {"command": "ls", "timeout": 30},
         )
 
-        assert rule is not None
+        assert isinstance(rule, PermissionRule)
         assert rule.pattern == "tool:bash"
         # Arguments are not included in the simple pattern
         assert "arg:" not in rule.pattern

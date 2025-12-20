@@ -523,7 +523,6 @@ class TestOpenRouterClientGetClient:
 
         http_client = await client._get_client()
 
-        assert http_client is not None
         assert isinstance(http_client, httpx.AsyncClient)
 
         # Cleanup

@@ -15,33 +15,73 @@ from code_forge.permissions.rules import (
 class TestPatternMatcherToolPatterns:
     """Tests for PatternMatcher tool patterns."""
 
-    def test_exact_tool_match(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,expected",
+        [
+            ("tool:bash", "bash", True),
+            ("tool:read", "read", True),
+            ("tool:write", "write", True),
+            ("tool:grep", "grep", True),
+        ]
+    )
+    def test_exact_tool_match(self, pattern: str, tool_name: str, expected: bool):
         """Test exact tool name match."""
-        assert PatternMatcher.match("tool:bash", "bash", {}) is True
-        assert PatternMatcher.match("tool:read", "read", {}) is True
+        assert PatternMatcher.match(pattern, tool_name, {}) is expected
 
-    def test_exact_tool_no_match(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,expected",
+        [
+            ("tool:bash", "read", False),
+            ("tool:read", "bash", False),
+            ("tool:write", "edit", False),
+            ("tool:grep", "find", False),
+        ]
+    )
+    def test_exact_tool_no_match(self, pattern: str, tool_name: str, expected: bool):
         """Test exact tool name non-match."""
-        assert PatternMatcher.match("tool:bash", "read", {}) is False
-        assert PatternMatcher.match("tool:read", "bash", {}) is False
+        assert PatternMatcher.match(pattern, tool_name, {}) is expected
 
-    def test_glob_tool_match_star(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,expected",
+        [
+            ("tool:bash*", "bash", True),
+            ("tool:bash*", "bash_output", True),
+            ("tool:*bash", "mybash", True),
+            ("tool:*", "anything", True),
+            ("tool:read*", "read_file", True),
+            ("tool:*tool", "mytool", True),
+        ]
+    )
+    def test_glob_tool_match_star(self, pattern: str, tool_name: str, expected: bool):
         """Test glob pattern with * wildcard."""
-        assert PatternMatcher.match("tool:bash*", "bash", {}) is True
-        assert PatternMatcher.match("tool:bash*", "bash_output", {}) is True
-        assert PatternMatcher.match("tool:*bash", "mybash", {}) is True
-        assert PatternMatcher.match("tool:*", "anything", {}) is True
+        assert PatternMatcher.match(pattern, tool_name, {}) is expected
 
-    def test_glob_tool_match_question(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,expected",
+        [
+            ("tool:rea?", "read", True),
+            ("tool:rea?", "real", True),
+            ("tool:rea?", "reads", False),
+            ("tool:bas?", "bash", True),
+            ("tool:bas?", "base", True),
+        ]
+    )
+    def test_glob_tool_match_question(self, pattern: str, tool_name: str, expected: bool):
         """Test glob pattern with ? wildcard."""
-        assert PatternMatcher.match("tool:rea?", "read", {}) is True
-        assert PatternMatcher.match("tool:rea?", "real", {}) is True
-        assert PatternMatcher.match("tool:rea?", "reads", {}) is False
+        assert PatternMatcher.match(pattern, tool_name, {}) is expected
 
-    def test_implicit_tool_pattern(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,expected",
+        [
+            ("bash", "bash", True),
+            ("bash*", "bash_output", True),
+            ("read", "read", True),
+            ("*tool", "mytool", True),
+        ]
+    )
+    def test_implicit_tool_pattern(self, pattern: str, tool_name: str, expected: bool):
         """Test pattern without tool: prefix is treated as tool pattern."""
-        assert PatternMatcher.match("bash", "bash", {}) is True
-        assert PatternMatcher.match("bash*", "bash_output", {}) is True
+        assert PatternMatcher.match(pattern, tool_name, {}) is expected
 
 
 class TestPatternMatcherArgumentPatterns:
@@ -93,42 +133,57 @@ class TestPatternMatcherArgumentPatterns:
 class TestPatternMatcherRegexPatterns:
     """Tests for PatternMatcher regex patterns."""
 
-    def test_regex_starts_with_caret(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,args,expected",
+        [
+            ("arg:file_path:^/etc/.*", "write", {"file_path": "/etc/passwd"}, True),
+            ("arg:file_path:^/etc/.*", "write", {"file_path": "/home/user"}, False),
+            ("arg:file_path:^/tmp/.*", "read", {"file_path": "/tmp/test.txt"}, True),
+            ("arg:file_path:^/var/.*", "write", {"file_path": "/usr/local"}, False),
+        ]
+    )
+    def test_regex_starts_with_caret(self, pattern: str, tool_name: str, args: dict, expected: bool):
         """Test regex pattern starting with ^."""
-        assert PatternMatcher.match(
-            "arg:file_path:^/etc/.*", "write", {"file_path": "/etc/passwd"}
-        ) is True
-        assert PatternMatcher.match(
-            "arg:file_path:^/etc/.*", "write", {"file_path": "/home/user"}
-        ) is False
+        assert PatternMatcher.match(pattern, tool_name, args) is expected
 
-    def test_regex_ends_with_dollar(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,args,expected",
+        [
+            ("arg:file_path:.*\\.py$", "read", {"file_path": "test.py"}, True),
+            ("arg:file_path:.*\\.py$", "read", {"file_path": "test.pyc"}, False),
+            ("arg:file_path:.*\\.js$", "read", {"file_path": "app.js"}, True),
+            ("arg:file_path:.*\\.json$", "read", {"file_path": "config.json"}, True),
+        ]
+    )
+    def test_regex_ends_with_dollar(self, pattern: str, tool_name: str, args: dict, expected: bool):
         """Test regex pattern ending with $."""
-        assert PatternMatcher.match(
-            "arg:file_path:.*\\.py$", "read", {"file_path": "test.py"}
-        ) is True
-        assert PatternMatcher.match(
-            "arg:file_path:.*\\.py$", "read", {"file_path": "test.pyc"}
-        ) is False
+        assert PatternMatcher.match(pattern, tool_name, args) is expected
 
-    def test_regex_with_alternation(self):
+    @pytest.mark.parametrize(
+        "pattern,tool_name,args,expected",
+        [
+            ("arg:command:(rm|del)", "bash", {"command": "rm file"}, True),
+            ("arg:command:(rm|del)", "bash", {"command": "del file"}, True),
+            ("arg:command:(rm|del)", "bash", {"command": "cp file"}, False),
+            ("arg:command:(git|svn)", "bash", {"command": "git status"}, True),
+            ("arg:command:(ls|dir)", "bash", {"command": "ls -la"}, True),
+        ]
+    )
+    def test_regex_with_alternation(self, pattern: str, tool_name: str, args: dict, expected: bool):
         """Test regex pattern with | alternation."""
-        assert PatternMatcher.match(
-            "arg:command:(rm|del)", "bash", {"command": "rm file"}
-        ) is True
-        assert PatternMatcher.match(
-            "arg:command:(rm|del)", "bash", {"command": "del file"}
-        ) is True
-        assert PatternMatcher.match(
-            "arg:command:(rm|del)", "bash", {"command": "cp file"}
-        ) is False
+        assert PatternMatcher.match(pattern, tool_name, args) is expected
 
-    def test_invalid_regex_returns_false(self):
+    @pytest.mark.parametrize(
+        "pattern",
+        [
+            "arg:command:((invalid",
+            "arg:path:[unclosed",
+            "arg:value:(?P<invalid",
+        ]
+    )
+    def test_invalid_regex_returns_false(self, pattern: str):
         """Test that invalid regex pattern returns False."""
-        # Invalid regex with unmatched parenthesis
-        assert PatternMatcher.match(
-            "arg:command:((invalid", "bash", {"command": "anything"}
-        ) is False
+        assert PatternMatcher.match(pattern, "bash", {"command": "anything"}) is False
 
 
 class TestPatternMatcherCategoryPatterns:
@@ -346,7 +401,7 @@ class TestRuleSetEvaluate:
         ruleset.add_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
         result = ruleset.evaluate("read", {})
         assert result.level == PermissionLevel.ALLOW
-        assert result.rule is not None
+        assert isinstance(result.rule, PermissionRule)
         assert result.rule.pattern == "tool:read"
 
     def test_disabled_rule_not_matched(self):

@@ -99,7 +99,7 @@ class TestWebCache:
         response = make_response()
 
         cache.set("key1", response)
-        assert cache.get("key1") is not None
+        assert isinstance(cache.get("key1"), FetchResponse)
 
         time.sleep(1.1)  # Wait for expiration
         assert cache.get("key1") is None
@@ -110,7 +110,7 @@ class TestWebCache:
         response = make_response()
 
         cache.set("key1", response)
-        assert cache.get("key1") is not None
+        assert isinstance(cache.get("key1"), FetchResponse)
 
         result = cache.delete("key1")
         assert result is True

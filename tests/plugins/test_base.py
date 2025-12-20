@@ -325,5 +325,5 @@ class TestPlugin:
 
         plugin = MyPlugin()
         schema = plugin.get_config_schema()
-        assert schema is not None
+        assert isinstance(schema, dict)
         assert schema["type"] == "object"

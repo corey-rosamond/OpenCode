@@ -272,8 +272,10 @@ class TestToolExecutorTracking:
         await executor.execute("Echo", context, message="Test")
 
         execution = executor.get_executions()[0]
-        assert execution.started_at is not None
-        assert execution.completed_at is not None
+        assert isinstance(execution.started_at, float)
+        assert execution.started_at > 0
+        assert isinstance(execution.completed_at, float)
+        assert execution.completed_at > 0
         assert execution.duration_ms >= 0
 
     @pytest.mark.asyncio

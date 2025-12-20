@@ -713,7 +713,7 @@ class TestBaseToolExecution:
 
         assert result.success is True
         assert result.output == "Hello World"
-        assert result.duration_ms is not None
+        assert isinstance(result.duration_ms, (int, float))
         assert result.duration_ms >= 0
 
     @pytest.mark.asyncio

@@ -145,7 +145,8 @@ class TestGitOperations:
         with patch.object(mock_repo, "run_git", side_effect=mock_run_git):
             commit = await ops.commit("fix: Amend commit", amend=True)
 
-        assert commit is not None
+        assert isinstance(commit, CommitInfo)
+        assert commit.sha == "abc123"
 
     @pytest.mark.asyncio
     async def test_commit_amend_unsafe(self, ops: GitOperations, mock_repo: GitRepository) -> None:

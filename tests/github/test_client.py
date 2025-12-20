@@ -148,7 +148,7 @@ class TestGitHubClient:
                 {"title": "Test"}
             )
 
-        assert result is not None
+        assert isinstance(result, dict)
         assert result["number"] == 42
 
     @pytest.mark.asyncio
@@ -179,7 +179,7 @@ class TestGitHubClient:
                 {"title": "Updated"}
             )
 
-        assert result is not None
+        assert isinstance(result, dict)
         assert result["number"] == 42
 
     @pytest.mark.asyncio
@@ -210,7 +210,7 @@ class TestGitHubClient:
                 {"merge_method": "squash"}
             )
 
-        assert result is not None
+        assert isinstance(result, dict)
         assert result["merged"] is True
 
     @pytest.mark.asyncio

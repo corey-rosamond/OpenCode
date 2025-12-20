@@ -225,7 +225,7 @@ class TestSkillDefinition:
         )
 
         opt = definition.get_config_option("format")
-        assert opt is not None
+        assert isinstance(opt, SkillConfig)
         assert opt.name == "format"
 
         opt = definition.get_config_option("nonexistent")
@@ -330,7 +330,8 @@ class TestSkill:
         errors = skill.activate()
         assert errors == []
         assert skill.is_active is True
-        assert skill._activated_at is not None
+        assert isinstance(skill._activated_at, float)
+        assert skill._activated_at > 0
 
     def test_activate_with_config(self) -> None:
         """Test activating with configuration."""
@@ -415,7 +416,8 @@ class TestSkill:
         assert result["name"] == "test"
         assert result["active"] is True
         assert result["context"]["key"] == "value"
-        assert result["activated_at"] is not None
+        assert isinstance(result["activated_at"], float)
+        assert result["activated_at"] > 0
 
     def test_get_help(self) -> None:
         """Test getting help text."""

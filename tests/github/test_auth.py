@@ -300,7 +300,7 @@ class TestGitHubAuthenticator:
         )
 
         auth_info = authenticated_authenticator.get_auth_info()
-        assert auth_info is not None
+        assert isinstance(auth_info, GitHubAuth)
         assert auth_info.rate_limit == 5000
         assert auth_info.rate_remaining == 4500
         assert auth_info.rate_reset == 1700001000
@@ -324,7 +324,7 @@ class TestGitHubAuthenticator:
         """Test get_auth_info after validation."""
         auth_info = authenticated_authenticator.get_auth_info()
 
-        assert auth_info is not None
+        assert isinstance(auth_info, GitHubAuth)
         assert auth_info.username == "testuser"
 
 

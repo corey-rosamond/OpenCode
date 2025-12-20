@@ -60,7 +60,6 @@ class TestGitHubPullRequest:
 
         assert pr.merged is True
         assert pr.merged_at == "2024-01-02T00:00:00Z"
-        assert pr.merged_by is not None
         assert pr.merged_by.login == "testuser"
 
     def test_from_api_no_head_repo(self, sample_pr_data: dict[str, Any]) -> None:
@@ -131,7 +130,8 @@ class TestGitHubPRFile:
         assert file.status == "modified"
         assert file.additions == 10
         assert file.deletions == 5
-        assert file.patch is not None
+        assert isinstance(file.patch, str)
+        assert len(file.patch) > 0
 
 
 class TestPullRequestService:

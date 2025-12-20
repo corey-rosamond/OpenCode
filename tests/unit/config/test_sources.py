@@ -381,5 +381,4 @@ class TestEnvironmentSource:
         # Just verify it doesn't crash with real environ
         source = EnvironmentSource()
         # Access internal environ to verify it's set
-        assert source._environ is not None
         assert isinstance(source._environ, dict)

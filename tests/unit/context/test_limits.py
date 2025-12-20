@@ -11,6 +11,7 @@ from code_forge.context.limits import (
     ContextTracker,
     MODEL_LIMITS,
 )
+from code_forge.context.tokens import TokenCounter
 
 
 class TestContextBudget:
@@ -201,7 +202,7 @@ class TestContextTracker:
         """Should create tracker with correct limits and counter."""
         tracker = ContextTracker.for_model("claude-3-opus")
         assert tracker.limits.max_tokens == 200000
-        assert tracker.counter is not None
+        assert isinstance(tracker.counter, TokenCounter)
 
     def test_set_system_prompt(self) -> None:
         """Should set system prompt and update budget."""

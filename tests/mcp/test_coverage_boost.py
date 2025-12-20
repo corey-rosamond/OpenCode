@@ -326,7 +326,7 @@ class TestProtocolParseMessage:
         msg = {"jsonrpc": "2.0", "id": 1, "error": {"code": -32600, "message": "Invalid"}}
         result = parse_message(msg)
         assert isinstance(result, MCPResponse)
-        assert result.error is not None
+        assert isinstance(result.error, MCPError)
         assert result.error.code == -32600
 
     def test_parse_json_message(self) -> None:

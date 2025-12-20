@@ -1,5 +1,6 @@
 """Tests for Headless mode."""
 
+import io
 import json
 import tempfile
 import time
@@ -278,10 +279,11 @@ class TestHeadlessMode:
         mode.activate(context)
 
         assert mode.is_active is True
-        assert mode._start_time is not None
-        # Should use stdin/stdout
-        assert mode._input_stream is not None
-        assert mode._output_stream is not None
+        assert isinstance(mode._start_time, float)
+        assert mode._start_time > 0
+        # Should use stdin/stdout - hasattr checks implicitly verify not None
+        assert hasattr(mode._input_stream, 'read')
+        assert hasattr(mode._output_stream, 'write')
         assert mode._owns_input_stream is False
         assert mode._owns_output_stream is False
 
@@ -300,7 +302,8 @@ class TestHeadlessMode:
             mode.activate(context)
 
             assert mode._owns_input_stream is True
-            assert mode._input_stream is not None
+            assert isinstance(mode._input_stream, io.IOBase)
+            assert hasattr(mode._input_stream, 'read')
 
             mode.deactivate(context)
         finally:
@@ -324,7 +327,8 @@ class TestHeadlessMode:
             mode.activate(context)
 
             assert mode._owns_output_stream is True
-            assert mode._output_stream is not None
+            assert isinstance(mode._output_stream, io.IOBase)
+            assert hasattr(mode._output_stream, 'write')
 
             mode.deactivate(context)
 

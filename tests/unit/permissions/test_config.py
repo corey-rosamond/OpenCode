@@ -90,7 +90,7 @@ class TestPermissionConfigPaths:
     def test_get_global_path(self):
         """Test getting global config path."""
         path = PermissionConfig.get_global_path()
-        assert path is not None
+        assert isinstance(path, Path)
         assert "permissions.json" in str(path)
         assert ".config" in str(path) or "forge" in str(path)
 
@@ -98,7 +98,7 @@ class TestPermissionConfigPaths:
         """Test getting project config path with root."""
         project_root = Path("/test/project")
         path = PermissionConfig.get_project_path(project_root)
-        assert path is not None
+        assert isinstance(path, Path)
         assert "permissions.json" in str(path)
         assert str(project_root) in str(path)
 
@@ -190,7 +190,7 @@ class TestPermissionConfigLoadProject:
 
             rules = PermissionConfig.load_project(project_root)
 
-            assert rules is not None
+            assert isinstance(rules, RuleSet)
             assert rules.default == PermissionLevel.ALLOW
             assert len(rules) == 1
 
@@ -354,7 +354,7 @@ class TestPermissionConfigRoundtrip:
             # Load
             loaded = PermissionConfig.load_project(project_root)
 
-            assert loaded is not None
+            assert isinstance(loaded, RuleSet)
             assert loaded.default == original.default
             assert len(loaded) == len(original)
             assert loaded.rules[0].pattern == original.rules[0].pattern

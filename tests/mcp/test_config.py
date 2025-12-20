@@ -398,7 +398,7 @@ class TestMCPConfigLoader:
             try:
                 loader = MCPConfigLoader()
                 config = loader.load_from_file(Path(f.name))
-                assert config.servers["test"].headers is not None
+                assert isinstance(config.servers["test"].headers, dict)
                 assert config.servers["test"].headers["Authorization"] == "Bearer secret123"
             finally:
                 os.unlink(f.name)

@@ -99,7 +99,7 @@ class TestStreamCollector:
         chunk = StreamChunk.from_dict(chunk_data)
         collector.add_chunk(chunk)
 
-        assert collector.usage is not None
+        assert isinstance(collector.usage, TokenUsage)
         assert collector.usage.prompt_tokens == 10
         assert collector.usage.completion_tokens == 5
         assert collector.usage.total_tokens == 15
@@ -233,7 +233,7 @@ class TestStreamCollector:
         message = collector.get_message()
         assert message.role == MessageRole.ASSISTANT
         assert message.content is None
-        assert message.tool_calls is not None
+        assert isinstance(message.tool_calls, list)
         assert len(message.tool_calls) == 1
         assert message.tool_calls[0].id == "call_abc"
         assert message.tool_calls[0].function["name"] == "test_func"

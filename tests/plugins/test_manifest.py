@@ -146,7 +146,7 @@ config:
         type: string
 """)
         manifest = PluginManifest.from_yaml(manifest_path)
-        assert manifest.config_schema is not None
+        assert isinstance(manifest.config_schema, dict)
         assert manifest.config_schema["type"] == "object"
 
     def test_path_is_set(self, tmp_path: Path) -> None:

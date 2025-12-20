@@ -171,7 +171,7 @@ class TestSessionStorage:
         storage.save(session)
 
         loaded = storage.load_or_none(session.id)
-        assert loaded is not None
+        assert isinstance(loaded, Session)
         assert loaded.id == session.id
 
     def test_load_or_none_missing(self, storage: SessionStorage) -> None:

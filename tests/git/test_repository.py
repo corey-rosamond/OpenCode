@@ -170,7 +170,8 @@ class TestRepositoryInfo:
             is_dirty=True,
             remotes=[remote],
         )
-        assert info.head_commit is not None
+        assert isinstance(info.head_commit, CommitInfo)
+        assert info.head_commit.sha == "abc123"
         assert len(info.remotes) == 1
 
 

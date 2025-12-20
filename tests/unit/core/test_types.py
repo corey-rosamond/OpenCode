@@ -26,7 +26,7 @@ class TestAgentId:
     def test_create_agent_id_generates_uuid(self) -> None:
         """AgentId should generate a UUID when created without arguments."""
         agent_id = AgentId()
-        assert agent_id.value is not None
+        assert isinstance(agent_id.value, str)
         assert len(agent_id.value) == 36  # UUID format
 
     def test_agent_id_string_representation(self) -> None:
@@ -91,7 +91,7 @@ class TestProjectId:
     def test_create_project_id_from_path(self) -> None:
         """ProjectId should create a hashed value from path."""
         project_id = ProjectId.from_path("/home/user/project")
-        assert project_id.value is not None
+        assert isinstance(project_id.value, str)
         assert len(project_id.value) == 12  # Truncated hash
         assert project_id.path == "/home/user/project"
 

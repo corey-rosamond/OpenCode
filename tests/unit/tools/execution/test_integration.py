@@ -12,6 +12,7 @@ from code_forge.tools.execution import (
     BashTool,
     KillShellTool,
     ShellManager,
+    ShellProcess,
     ShellStatus,
     register_execution_tools,
 )
@@ -153,7 +154,7 @@ class TestBackgroundWorkflow:
         # Verify all shells exist
         for shell_id in shell_ids:
             shell = ShellManager.get_shell(shell_id)
-            assert shell is not None
+            assert isinstance(shell, ShellProcess)
 
         # Kill all
         killed = await ShellManager.kill_all()

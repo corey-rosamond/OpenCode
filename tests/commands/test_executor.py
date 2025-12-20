@@ -24,7 +24,7 @@ class TestCommandContext:
         assert context.config is None
         assert context.llm is None
         assert context.repl is None
-        assert context.output is not None
+        assert callable(context.output)
 
     def test_with_components(self) -> None:
         """Test CommandContext with components."""
@@ -104,8 +104,8 @@ class TestCommandExecutor:
     def test_init_defaults(self) -> None:
         """Test executor initializes with defaults."""
         executor = CommandExecutor()
-        assert executor.registry is not None
-        assert executor.parser is not None
+        assert isinstance(executor.registry, CommandRegistry)
+        assert isinstance(executor.parser, CommandParser)
 
     def test_init_custom(self) -> None:
         """Test executor with custom registry and parser."""

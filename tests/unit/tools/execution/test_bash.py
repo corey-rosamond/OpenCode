@@ -6,7 +6,7 @@ import pytest
 
 from code_forge.tools.base import ExecutionContext, ToolCategory
 from code_forge.tools.execution.bash import BashTool
-from code_forge.tools.execution.shell_manager import ShellManager
+from code_forge.tools.execution.shell_manager import ShellManager, ShellProcess
 
 
 @pytest.fixture(autouse=True)
@@ -294,7 +294,7 @@ class TestBashToolBackground:
         assert result.success
         bash_id = result.metadata["bash_id"]
         shell = ShellManager.get_shell(bash_id)
-        assert shell is not None
+        assert isinstance(shell, ShellProcess)
         shell.kill()
 
 

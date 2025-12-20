@@ -78,7 +78,6 @@ class TestGitHubIssue:
         assert len(issue.assignees) == 1
         assert len(issue.labels) == 1
         assert issue.labels[0].name == "bug"
-        assert issue.milestone is not None
         assert issue.milestone.title == "v1.0"
         assert issue.comments_count == 5
         assert issue.is_pull_request is False

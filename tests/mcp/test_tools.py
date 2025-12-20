@@ -268,7 +268,7 @@ class TestMCPToolRegistry:
         registry.register_server_tools(adapter, tools)
 
         tool = registry.get_tool("mcp__test_server__test")
-        assert tool is not None
+        assert isinstance(tool, dict)
         assert tool["description"] == "Test"
 
     def test_get_tool_not_found(self) -> None:

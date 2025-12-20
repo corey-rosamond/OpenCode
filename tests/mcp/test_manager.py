@@ -87,7 +87,7 @@ class TestMCPManager:
         config = MCPConfig()
         manager = MCPManager(config)
         assert manager.config is config
-        assert manager.tool_registry is not None
+        assert isinstance(manager.tool_registry, MCPToolRegistry)
         assert manager.list_connections() == []
 
     def test_get_instance_singleton(self) -> None:

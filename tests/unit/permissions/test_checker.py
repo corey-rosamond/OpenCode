@@ -22,7 +22,7 @@ class TestPermissionChecker:
     def test_creation_empty(self):
         """Test creating checker with no rules."""
         checker = PermissionChecker()
-        assert checker.global_rules is not None
+        assert isinstance(checker.global_rules, RuleSet)
         assert checker.project_rules is None
         assert len(checker.session_rules) == 0
 
@@ -38,7 +38,7 @@ class TestPermissionChecker:
         project_rules = RuleSet()
         project_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.DENY))
         checker = PermissionChecker(project_rules=project_rules)
-        assert checker.project_rules is not None
+        assert isinstance(checker.project_rules, RuleSet)
 
 
 class TestPermissionCheckerCheck:
@@ -222,7 +222,7 @@ class TestPermissionCheckerFromConfig:
         checker = PermissionChecker.from_config(Path("/test/project"))
 
         assert len(checker.global_rules) == 1
-        assert checker.project_rules is not None
+        assert isinstance(checker.project_rules, RuleSet)
         assert len(checker.project_rules) == 1
 
     @patch("code_forge.permissions.config.PermissionConfig.load_global")

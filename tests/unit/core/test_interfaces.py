@@ -93,7 +93,7 @@ class TestIToolInterface:
         tool = MockTool()
         is_valid, error = tool.validate_params()
         assert is_valid is False
-        assert error is not None
+        assert isinstance(error, str)
         assert "required_param" in error
 
     def test_itool_validate_params_all_provided(self) -> None:
@@ -251,4 +251,4 @@ class TestISessionRepositoryInterface:
 
         repo = MockSessionRepository()
         # Just verify it can be instantiated
-        assert repo is not None
+        assert isinstance(repo, ISessionRepository)
