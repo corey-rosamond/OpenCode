@@ -61,10 +61,10 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Note:** Feature request - requires implementing scheduled cleanup or CLI command.
 
 #### SESS-008: No Conflict Detection for Concurrent Access
-**Status:** Deferred
-**File:** `src/code_forge/sessions/storage.py:141-195`
-**Issue:** Multiple processes can write to same session file
-**Note:** Feature request - requires implementing file locking (fcntl/msvcrt).
+**Status:** Fixed (2025-12-21)
+**File:** `src/code_forge/sessions/storage.py`
+**Fix:** Implemented cross-platform file locking with timeout support, automatic lock cleanup
+**Commit:** 6e8c07b
 
 ---
 
@@ -108,25 +108,22 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Reason:** Linear search is acceptable for typical skill counts. Search indexing would add complexity for marginal gains.
 
 #### PERM-015: No Rate Limiting on Permission Denials
-**Status:** Pending
-**File:** `src/code_forge/permissions/`
-**Issue:** Repeated bypass attempts have no rate limiting
-**Impact:** Potential DoS against permission system
-**Fix:** Track failed attempts, add backoff
+**Status:** Fixed (2025-12-21)
+**File:** `src/code_forge/permissions/checker.py`
+**Fix:** Added sliding window rate limiter (10 denials/60s), 5-minute backoff, thread-safe tracking
+**Commit:** 7fac204
 
 #### PERM-016: No Hook Error Recovery
-**Status:** Pending
-**File:** `src/code_forge/hooks/executor.py:99-178`
-**Issue:** No retry logic for transient hook failures
-**Impact:** Permanent operation blocking on transient failure
-**Fix:** Add `max_retries` parameter
+**Status:** Fixed (2025-12-21)
+**File:** `src/code_forge/hooks/executor.py`
+**Fix:** Added retry logic with exponential backoff for transient errors (max_retries=2 default)
+**Commit:** 4018e02
 
 #### PERM-017: No Dry-Run Mode for Hooks
-**Status:** Pending
-**File:** `src/code_forge/hooks/`
-**Issue:** Hooks execute immediately with no preview option
-**Impact:** Users can't see what a hook will do first
-**Fix:** Add `dry_run` parameter to execute_hooks()
+**Status:** Fixed (2025-12-21)
+**File:** `src/code_forge/hooks/executor.py`
+**Fix:** Added dry_run parameter that simulates execution without running commands
+**Commit:** 4018e02
 
 ---
 
@@ -259,17 +256,14 @@ src/code_forge/agents/
 |----------|---------|----------|-------|
 | **P0 Critical** | 0 | 0 | 0 |
 | **P1 High** | 0 | 2 | 2 |
-| **P2 Medium** | 0 | 4 | 4 |
-| **P3 Low** | 3 | 6 | 9 |
+| **P2 Medium** | 0 | 3 | 3 |
+| **P3 Low** | 0 | 6 | 6 |
 | **Features** | 3 | 0 | 3 |
-| **TOTAL** | **6** | **12** | **18** |
+| **TOTAL** | **3** | **11** | **14** |
 
 ### Breakdown
 
-**Pending Items (6):**
-- PERM-015: No Rate Limiting on Permission Denials
-- PERM-016: No Hook Error Recovery
-- PERM-017: No Dry-Run Mode for Hooks
+**Pending Items (3):**
 - FEAT-001: Per-Project RAG Support
 - FEAT-002: Specialized Task Agents
 - FEAT-003: Agent Workflow System
@@ -286,6 +280,7 @@ src/code_forge/agents/
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.0 | 2025-12-21 | Technical debt cleanup (SESS-008, PERM-015/016/017) |
 | 1.4.0 | 2025-12-21 | Test quality improvements (TEST-001, TEST-002, TEST-003) |
 | 1.3.0 | 2025-12-17 | Streaming error handling fix |
 | 1.2.0 | 2025-12-17 | Setup wizard, security fixes |
