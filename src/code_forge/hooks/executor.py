@@ -145,6 +145,8 @@ class HookExecutor:
         *,
         stop_on_failure: bool = True,
         max_results: int | None = None,
+        max_retries: int = 2,
+        dry_run: bool = False,
     ) -> list[HookResult]:
         """
         Execute all matching hooks for an event.
@@ -153,9 +155,16 @@ class HookExecutor:
             event: The event to handle
             stop_on_failure: Stop after first failing hook
             max_results: Maximum results to return (default: MAX_RESULTS)
+            max_retries: Maximum retry attempts for transient failures (default: 2)
+            dry_run: If True, simulate execution without running commands (default: False)
 
         Returns:
             List of hook execution results (bounded to max_results)
+
+        Note:
+            Transient failures (OSError, ConnectionError) are retried with
+            exponential backoff. Other errors fail immediately.
+            Dry-run mode returns mock results showing what would be executed.
         """
         hooks = self.registry.get_hooks(event)
 
@@ -167,7 +176,25 @@ class HookExecutor:
 
         for hook in hooks:
             try:
-                result = await self._execute_hook(hook, event)
+                if dry_run:
+                    # Dry run: create mock result without actual execution
+                    result = HookResult(
+                        hook=hook,
+                        exit_code=0,
+                        stdout=f"[DRY RUN] Would execute: {hook.command}",
+                        stderr="",
+                        duration=0.0,
+                        error=None,
+                    )
+                    logger.info(
+                        "[DRY RUN] Hook '%s' would execute: %s",
+                        hook.event_pattern,
+                        hook.command,
+                    )
+                else:
+                    result = await self._execute_hook_with_retry(
+                        hook, event, max_retries=max_retries
+                    )
                 results.append(result)
 
                 # Log result
@@ -224,6 +251,77 @@ class HookExecutor:
                     break
 
         return results
+
+    async def _execute_hook_with_retry(
+        self,
+        hook: Hook,
+        event: HookEvent,
+        max_retries: int = 2,
+    ) -> HookResult:
+        """
+        Execute a hook with retry logic for transient failures.
+
+        Args:
+            hook: The hook to execute
+            event: The triggering event
+            max_retries: Maximum number of retry attempts
+
+        Returns:
+            HookResult with execution details
+
+        Note:
+            Retries only transient errors (OSError, ConnectionError, TimeoutError)
+            with exponential backoff and jitter. Other errors fail immediately.
+        """
+        import random
+
+        last_error = None
+        attempt = 0
+
+        while attempt <= max_retries:
+            try:
+                return await self._execute_hook(hook, event)
+
+            except (OSError, ConnectionError, TimeoutError) as e:
+                last_error = e
+                attempt += 1
+
+                if attempt <= max_retries:
+                    # Calculate exponential backoff with jitter
+                    base_delay = 2 ** (attempt - 1)  # 1s, 2s, 4s
+                    jitter = random.uniform(0.5, 1.5)
+                    delay = base_delay * jitter
+
+                    logger.warning(
+                        "Hook '%s' failed (attempt %d/%d): %s. Retrying in %.2fs...",
+                        hook.event_pattern,
+                        attempt,
+                        max_retries + 1,
+                        e,
+                        delay,
+                    )
+                    await asyncio.sleep(delay)
+                else:
+                    logger.error(
+                        "Hook '%s' failed after %d attempts: %s",
+                        hook.event_pattern,
+                        max_retries + 1,
+                        e,
+                    )
+
+            except Exception:
+                # Non-transient errors fail immediately without retry
+                raise
+
+        # All retries exhausted - return error result
+        return HookResult(
+            hook=hook,
+            exit_code=-1,
+            stdout="",
+            stderr="",
+            duration=0.0,
+            error=f"Failed after {max_retries + 1} attempts: {last_error}",
+        )
 
     async def _execute_hook(
         self,
