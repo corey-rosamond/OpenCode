@@ -158,7 +158,7 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 ---
 
 ### FEAT-002: Specialized Task Agents
-**Status:** Proposed
+**Status:** Complete (v1.6.0)
 **Priority:** High
 **Description:** Create different specialized agents for different tasks instead of one general-purpose agent
 
@@ -258,14 +258,13 @@ src/code_forge/agents/
 | **P1 High** | 0 | 2 | 2 |
 | **P2 Medium** | 0 | 3 | 3 |
 | **P3 Low** | 0 | 6 | 6 |
-| **Features** | 3 | 0 | 3 |
-| **TOTAL** | **3** | **11** | **14** |
+| **Features** | 2 | 0 | 2 |
+| **TOTAL** | **2** | **11** | **13** |
 
 ### Breakdown
 
-**Pending Items (3):**
+**Pending Items (2):**
 - FEAT-001: Per-Project RAG Support
-- FEAT-002: Specialized Task Agents
 - FEAT-003: Agent Workflow System
 
 **Deferred Items (12):**
@@ -280,6 +279,7 @@ src/code_forge/agents/
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.0 | 2025-12-21 | Specialized agent system (FEAT-002): 16 new agent types |
 | 1.5.0 | 2025-12-21 | Technical debt cleanup (SESS-008, PERM-015/016/017) |
 | 1.4.0 | 2025-12-21 | Test quality improvements (TEST-001, TEST-002, TEST-003) |
 | 1.3.0 | 2025-12-17 | Streaming error handling fix |
