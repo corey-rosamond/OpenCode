@@ -136,26 +136,54 @@ class TestProviderError:
 class TestErrorHierarchy:
     """Tests for error hierarchy relationships."""
 
-    def test_all_errors_catchable_as_llm_error(self) -> None:
-        errors = [
-            AuthenticationError(),
-            RateLimitError(),
-            ModelNotFoundError("test"),
-            ContextLengthError(),
-            ContentPolicyError(),
-            ProviderError("test"),
+    @pytest.mark.parametrize(
+        "error_class,args",
+        [
+            (AuthenticationError, ()),
+            (RateLimitError, ()),
+            (ModelNotFoundError, ("test",)),
+            (ContextLengthError, ()),
+            (ContentPolicyError, ()),
+            (ProviderError, ("test",)),
         ]
-        for err in errors:
-            assert isinstance(err, LLMError)
+    )
+    def test_all_errors_catchable_as_llm_error(self, error_class, args) -> None:
+        err = error_class(*args)
+        assert isinstance(err, LLMError)
 
-    def test_all_errors_catchable_as_forge_error(self) -> None:
-        errors = [
-            AuthenticationError(),
-            RateLimitError(),
-            ModelNotFoundError("test"),
-            ContextLengthError(),
-            ContentPolicyError(),
-            ProviderError("test"),
+    @pytest.mark.parametrize(
+        "error_class,args",
+        [
+            (AuthenticationError, ()),
+            (RateLimitError, ()),
+            (ModelNotFoundError, ("test",)),
+            (ContextLengthError, ()),
+            (ContentPolicyError, ()),
+            (ProviderError, ("test",)),
         ]
-        for err in errors:
-            assert isinstance(err, CodeForgeError)
+    )
+    def test_all_errors_catchable_as_forge_error(self, error_class, args) -> None:
+        err = error_class(*args)
+        assert isinstance(err, CodeForgeError)
+
+
+class TestLLMErrorMessages:
+    """Test error messages for various scenarios."""
+
+    @pytest.mark.parametrize(
+        "error_class,message,expected_substring",
+        [
+            (AuthenticationError, "Invalid API key", "Invalid API key"),
+            (RateLimitError, "Too many requests", "Too many requests"),
+            (ModelNotFoundError, "gpt-5", "gpt-5"),
+            (ContextLengthError, "Token limit exceeded", "Token limit exceeded"),
+            (ContentPolicyError, "Harmful content", "Harmful content"),
+            (ProviderError, "Service unavailable", "Service unavailable"),
+        ]
+    )
+    def test_custom_error_messages(self, error_class, message: str, expected_substring: str) -> None:
+        if error_class == ModelNotFoundError:
+            err = error_class(message)
+        else:
+            err = error_class(message)
+        assert expected_substring in str(err)

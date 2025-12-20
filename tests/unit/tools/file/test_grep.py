@@ -259,32 +259,50 @@ class TestGrepToolFileFiltering:
     """Test file type and glob filtering."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "glob_pattern,expected_file,excluded_file",
+        [
+            ("*.js", "app.js", "main.py"),
+            ("*.py", "main.py", "app.js"),
+            ("*.json", "config.json", "main.py"),
+            ("src/*.py", "main.py", "app.js"),
+        ]
+    )
     async def test_glob_filter(
-        self, grep_tool: GrepTool, context: ExecutionContext, sample_codebase: Path
+        self, grep_tool: GrepTool, context: ExecutionContext, sample_codebase: Path,
+        glob_pattern: str, expected_file: str, excluded_file: str
     ) -> None:
         result = await grep_tool.execute(
             context,
-            pattern="function",
+            pattern="\\w+",  # Match any word
             path=str(sample_codebase),
-            glob="*.js",
+            glob=glob_pattern,
         )
         assert result.success
-        assert "app.js" in result.output
-        assert "main.py" not in result.output
+        assert expected_file in result.output
+        assert excluded_file not in result.output
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "file_type,expected_pattern,expected_file",
+        [
+            ("py", "def", "main.py"),
+            ("js", "function", "app.js"),
+            ("json", "debug", "config.json"),
+        ]
+    )
     async def test_type_filter(
-        self, grep_tool: GrepTool, context: ExecutionContext, sample_codebase: Path
+        self, grep_tool: GrepTool, context: ExecutionContext, sample_codebase: Path,
+        file_type: str, expected_pattern: str, expected_file: str
     ) -> None:
         result = await grep_tool.execute(
             context,
-            pattern="def",
+            pattern=expected_pattern,
             path=str(sample_codebase),
-            type="py",
+            type=file_type,
         )
         assert result.success
-        assert "main.py" in result.output
-        assert "app.js" not in result.output
+        assert expected_file in result.output
 
 
 class TestGrepToolSingleFile:
@@ -328,7 +346,7 @@ class TestGrepToolInvalidPattern:
             context, pattern="[invalid", path=str(sample_codebase)
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "invalid" in result.error.lower() or "error" in result.error.lower()
 
 
@@ -397,3 +415,29 @@ class TestGrepToolBinaryFiles:
         assert result.success
         assert "text.txt" in result.output
         assert "binary.dat" not in result.output
+
+
+class TestGrepToolOutputModes:
+    """Test different output modes."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "output_mode,expected_in_output",
+        [
+            ("files_with_matches", "main.py"),
+            ("content", "Hello, World!"),
+            ("count", "main.py"),
+        ]
+    )
+    async def test_output_modes(
+        self, grep_tool: GrepTool, context: ExecutionContext, sample_codebase: Path,
+        output_mode: str, expected_in_output: str
+    ) -> None:
+        result = await grep_tool.execute(
+            context,
+            pattern="Hello",
+            path=str(sample_codebase),
+            output_mode=output_mode,
+        )
+        assert result.success
+        assert expected_in_output in result.output

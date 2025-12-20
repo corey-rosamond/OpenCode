@@ -177,14 +177,23 @@ class TestWriteToolErrorHandling:
     """Test error handling scenarios."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "relative_path",
+        [
+            "relative/path.txt",
+            "../parent/file.txt",
+            "./current/file.py",
+            "simple.txt",
+        ]
+    )
     async def test_relative_path_rejected(
-        self, write_tool: WriteTool, context: ExecutionContext
+        self, write_tool: WriteTool, context: ExecutionContext, relative_path: str
     ) -> None:
         result = await write_tool.execute(
-            context, file_path="relative/path.txt", content="test"
+            context, file_path=relative_path, content="test"
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "absolute path" in result.error.lower()
 
     @pytest.mark.asyncio
@@ -203,7 +212,7 @@ class TestWriteToolErrorHandling:
                 context, file_path=str(file_path), content="test"
             )
             assert not result.success
-            assert result.error is not None
+            assert isinstance(result.error, str)
             assert "permission" in result.error.lower()
         finally:
             # Restore permissions for cleanup
@@ -243,15 +252,53 @@ class TestWriteToolSecurityValidation:
     """Test path security validation."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "malicious_suffix",
+        [
+            "../../../tmp/evil.txt",
+            "/../../../etc/passwd",
+            "/./../../etc/shadow",
+            "/../../../../../root/.ssh/authorized_keys",
+        ]
+    )
     async def test_path_traversal_rejected(
-        self, write_tool: WriteTool, context: ExecutionContext, tmp_path: Path
+        self, write_tool: WriteTool, context: ExecutionContext, tmp_path: Path, malicious_suffix: str
     ) -> None:
         # Try to use path traversal
         result = await write_tool.execute(
             context,
-            file_path=f"{tmp_path}/../../../tmp/evil.txt",
+            file_path=f"{tmp_path}/{malicious_suffix}",
             content="malicious",
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "traversal" in result.error.lower() or "invalid" in result.error.lower()
+
+
+class TestWriteToolFileExtensions:
+    """Test writing different file types."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "extension,content",
+        [
+            (".txt", "Plain text content"),
+            (".py", "def function():\n    pass"),
+            (".js", "function test() { return true; }"),
+            (".json", '{"key": "value"}'),
+            (".md", "# Markdown Header\n\nContent here"),
+            (".yaml", "key: value\nlist:\n  - item1"),
+            (".xml", "<?xml version='1.0'?><root><item/></root>"),
+            (".csv", "col1,col2\nval1,val2"),
+        ]
+    )
+    async def test_write_various_file_types(
+        self, write_tool: WriteTool, context: ExecutionContext, tmp_path: Path, extension: str, content: str
+    ) -> None:
+        file_path = tmp_path / f"test{extension}"
+        result = await write_tool.execute(
+            context, file_path=str(file_path), content=content
+        )
+        assert result.success
+        assert file_path.exists()
+        assert file_path.read_text() == content

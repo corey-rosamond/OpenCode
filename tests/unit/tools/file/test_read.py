@@ -168,18 +168,27 @@ class TestReadToolErrorHandling:
             context, file_path=str(tmp_path / "nonexistent.txt")
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "not found" in result.error.lower()
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "relative_path",
+        [
+            "relative/path.txt",
+            "../parent/file.txt",
+            "./current/file.py",
+            "file.json",
+        ]
+    )
     async def test_relative_path_rejected(
-        self, read_tool: ReadTool, context: ExecutionContext
+        self, read_tool: ReadTool, context: ExecutionContext, relative_path: str
     ) -> None:
         result = await read_tool.execute(
-            context, file_path="relative/path.txt"
+            context, file_path=relative_path
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "absolute path" in result.error.lower()
 
     @pytest.mark.asyncio
@@ -190,7 +199,7 @@ class TestReadToolErrorHandling:
             context, file_path=str(tmp_path)
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "directory" in result.error.lower()
 
 
@@ -285,13 +294,51 @@ class TestReadToolSecurityValidation:
     """Test path security validation."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "malicious_suffix",
+        [
+            "../../../etc/passwd",
+            "/../../../etc/shadow",
+            "/./../../etc/hosts",
+            "/../../../../../root/.ssh/id_rsa",
+        ]
+    )
     async def test_path_traversal_rejected(
-        self, read_tool: ReadTool, context: ExecutionContext, tmp_path: Path
+        self, read_tool: ReadTool, context: ExecutionContext, tmp_path: Path, malicious_suffix: str
     ) -> None:
         # Try to use path traversal
         result = await read_tool.execute(
-            context, file_path=f"{tmp_path}/../../../etc/passwd"
+            context, file_path=f"{tmp_path}/{malicious_suffix}"
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "traversal" in result.error.lower() or "not found" in result.error.lower()
+
+
+class TestReadToolFileExtensions:
+    """Test reading different file extensions."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "extension,content",
+        [
+            (".txt", "Plain text content"),
+            (".py", "def function():\n    pass"),
+            (".js", "function test() { return true; }"),
+            (".json", '{"key": "value"}'),
+            (".md", "# Markdown Header\n\nContent here"),
+            (".yaml", "key: value\nlist:\n  - item1"),
+            (".xml", "<?xml version='1.0'?><root><item/></root>"),
+            (".csv", "col1,col2\nval1,val2"),
+        ]
+    )
+    async def test_read_various_file_types(
+        self, read_tool: ReadTool, context: ExecutionContext, tmp_path: Path, extension: str, content: str
+    ) -> None:
+        file_path = tmp_path / f"test{extension}"
+        file_path.write_text(content)
+        result = await read_tool.execute(
+            context, file_path=str(file_path)
+        )
+        assert result.success
+        assert content in result.output

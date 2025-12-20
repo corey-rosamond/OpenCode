@@ -20,17 +20,17 @@ from code_forge.llm.models import (
 class TestMessageRole:
     """Tests for MessageRole enum."""
 
-    def test_system_role(self) -> None:
-        assert MessageRole.SYSTEM.value == "system"
-
-    def test_user_role(self) -> None:
-        assert MessageRole.USER.value == "user"
-
-    def test_assistant_role(self) -> None:
-        assert MessageRole.ASSISTANT.value == "assistant"
-
-    def test_tool_role(self) -> None:
-        assert MessageRole.TOOL.value == "tool"
+    @pytest.mark.parametrize(
+        "role,expected_value",
+        [
+            (MessageRole.SYSTEM, "system"),
+            (MessageRole.USER, "user"),
+            (MessageRole.ASSISTANT, "assistant"),
+            (MessageRole.TOOL, "tool"),
+        ]
+    )
+    def test_role_values(self, role: MessageRole, expected_value: str) -> None:
+        assert role.value == expected_value
 
 
 class TestContentPart:
@@ -83,28 +83,25 @@ class TestToolCall:
 class TestMessage:
     """Tests for Message dataclass."""
 
-    def test_system_factory(self) -> None:
-        msg = Message.system("You are a helpful assistant.")
-        assert msg.role == MessageRole.SYSTEM
-        assert msg.content == "You are a helpful assistant."
-
-    def test_user_factory(self) -> None:
-        msg = Message.user("Hello!")
-        assert msg.role == MessageRole.USER
-        assert msg.content == "Hello!"
-
-    def test_assistant_factory_with_content(self) -> None:
-        msg = Message.assistant("Hello! How can I help?")
-        assert msg.role == MessageRole.ASSISTANT
-        assert msg.content == "Hello! How can I help?"
-        assert msg.tool_calls is None
+    @pytest.mark.parametrize(
+        "factory_method,content,expected_role",
+        [
+            (Message.system, "You are a helpful assistant.", MessageRole.SYSTEM),
+            (Message.user, "Hello!", MessageRole.USER),
+            (Message.assistant, "Hello! How can I help?", MessageRole.ASSISTANT),
+        ]
+    )
+    def test_message_factories(self, factory_method, content: str, expected_role: MessageRole) -> None:
+        msg = factory_method(content)
+        assert msg.role == expected_role
+        assert msg.content == content
 
     def test_assistant_factory_with_tool_calls(self) -> None:
         tool_call = ToolCall(id="call_1", type="function", function={"name": "test"})
         msg = Message.assistant(content=None, tool_calls=[tool_call])
         assert msg.role == MessageRole.ASSISTANT
         assert msg.content is None
-        assert msg.tool_calls is not None
+        assert isinstance(msg.tool_calls, list)
         assert len(msg.tool_calls) == 1
 
     def test_tool_result_factory(self) -> None:
@@ -163,7 +160,7 @@ class TestMessage:
         }
         msg = Message.from_dict(data)
         assert msg.role == MessageRole.ASSISTANT
-        assert msg.tool_calls is not None
+        assert isinstance(msg.tool_calls, list)
         assert len(msg.tool_calls) == 1
         assert msg.tool_calls[0].id == "call_1"
 
@@ -346,7 +343,7 @@ class TestStreamDelta:
     def test_from_dict_with_tool_calls(self) -> None:
         data = {"tool_calls": [{"index": 0, "id": "call_1"}]}
         delta = StreamDelta.from_dict(data)
-        assert delta.tool_calls is not None
+        assert isinstance(delta.tool_calls, list)
         assert len(delta.tool_calls) == 1
 
 
@@ -367,14 +364,23 @@ class TestStreamChunk:
         assert chunk.delta.content == "Hello"
         assert chunk.finish_reason is None
 
-    def test_from_dict_with_finish_reason(self) -> None:
+    @pytest.mark.parametrize(
+        "finish_reason",
+        [
+            "stop",
+            "length",
+            "tool_calls",
+            "content_filter",
+        ]
+    )
+    def test_from_dict_with_finish_reason(self, finish_reason: str) -> None:
         data = {
             "id": "gen-123",
             "model": "test/model",
-            "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+            "choices": [{"index": 0, "delta": {}, "finish_reason": finish_reason}],
         }
         chunk = StreamChunk.from_dict(data)
-        assert chunk.finish_reason == "stop"
+        assert chunk.finish_reason == finish_reason
 
     def test_from_dict_with_usage(self) -> None:
         data = {
@@ -384,7 +390,7 @@ class TestStreamChunk:
             "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
         }
         chunk = StreamChunk.from_dict(data)
-        assert chunk.usage is not None
+        assert isinstance(chunk.usage, TokenUsage)
         assert chunk.usage.total_tokens == 15
 
     def test_from_dict_empty_choices(self) -> None:
@@ -392,3 +398,30 @@ class TestStreamChunk:
         chunk = StreamChunk.from_dict(data)
         assert chunk.index == 0
         assert chunk.delta.content is None
+
+
+class TestCompletionRequestParameters:
+    """Test completion request with various parameters."""
+
+    @pytest.mark.parametrize(
+        "temperature,max_tokens,top_p",
+        [
+            (0.0, 100, 1.0),
+            (0.5, 500, 0.9),
+            (0.7, 1000, 0.95),
+            (1.0, 2000, 1.0),
+            (1.5, 4000, 0.8),
+        ]
+    )
+    def test_request_with_sampling_params(self, temperature: float, max_tokens: int, top_p: float) -> None:
+        request = CompletionRequest(
+            model="test/model",
+            messages=[Message.user("Test")],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            top_p=top_p,
+        )
+        result = request.to_dict()
+        assert result["temperature"] == temperature
+        assert result["max_tokens"] == max_tokens
+        assert result["top_p"] == top_p

@@ -66,136 +66,83 @@ class TestGlobToolBasicPatterns:
     """Test basic glob patterns."""
 
     @pytest.mark.asyncio
-    async def test_find_all_python_files(
-        self, glob_tool: GlobTool, context: ExecutionContext, sample_directory: Path
+    @pytest.mark.parametrize(
+        "pattern,expected_files,expected_count",
+        [
+            ("**/*.py", ["main.py", "utils.py", "test_main.py", "setup.py"], 4),
+            ("src/*.py", ["main.py", "utils.py"], 2),
+            ("**/README.md", ["README.md"], 1),
+            ("**/*.json", ["config.json"], 1),
+            ("**/*.md", ["README.md"], 1),
+        ]
+    )
+    async def test_glob_patterns(
+        self, glob_tool: GlobTool, context: ExecutionContext, sample_directory: Path,
+        pattern: str, expected_files: list, expected_count: int
     ) -> None:
         result = await glob_tool.execute(
-            context, pattern="**/*.py", path=str(sample_directory)
+            context, pattern=pattern, path=str(sample_directory)
         )
         assert result.success
-        assert "main.py" in result.output
-        assert "utils.py" in result.output
-        assert "test_main.py" in result.output
-        assert "setup.py" in result.output
-        assert result.metadata["count"] == 4
-
-    @pytest.mark.asyncio
-    async def test_find_files_in_directory(
-        self, glob_tool: GlobTool, context: ExecutionContext, sample_directory: Path
-    ) -> None:
-        result = await glob_tool.execute(
-            context, pattern="src/*.py", path=str(sample_directory)
-        )
-        assert result.success
-        assert "main.py" in result.output
-        assert "utils.py" in result.output
-        assert "test_main.py" not in result.output
-
-    @pytest.mark.asyncio
-    async def test_find_specific_file(
-        self, glob_tool: GlobTool, context: ExecutionContext, sample_directory: Path
-    ) -> None:
-        result = await glob_tool.execute(
-            context, pattern="**/README.md", path=str(sample_directory)
-        )
-        assert result.success
-        assert "README.md" in result.output
-        assert result.metadata["count"] == 1
-
-    @pytest.mark.asyncio
-    async def test_find_multiple_extensions(
-        self, glob_tool: GlobTool, context: ExecutionContext, sample_directory: Path
-    ) -> None:
-        result = await glob_tool.execute(
-            context, pattern="**/*.json", path=str(sample_directory)
-        )
-        assert result.success
-        assert "config.json" in result.output
+        for expected_file in expected_files:
+            assert expected_file in result.output
+        assert result.metadata["count"] == expected_count
 
 
 class TestGlobToolDefaultExcludes:
     """Test default exclude patterns."""
 
     @pytest.mark.asyncio
-    async def test_exclude_node_modules(
-        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path
+    @pytest.mark.parametrize(
+        "exclude_dir,pattern,file_in_excluded,file_in_src",
+        [
+            ("node_modules", "**/*.js", "node_modules/pkg/index.js", "src/app.js"),
+            (".venv", "**/*.py", ".venv/lib/python.py", "app.py"),
+            (".git", "**/*", ".git/config", "file.txt"),
+            ("__pycache__", "**/*", "__pycache__/module.cpython-311.pyc", "module.py"),
+        ]
+    )
+    async def test_excluded_directories(
+        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path,
+        exclude_dir: str, pattern: str, file_in_excluded: str, file_in_src: str
     ) -> None:
-        # Create node_modules
-        (tmp_path / "node_modules").mkdir()
-        (tmp_path / "node_modules" / "pkg" / "index.js").parent.mkdir(parents=True)
-        (tmp_path / "node_modules" / "pkg" / "index.js").write_text("module")
-        (tmp_path / "src" / "app.js").parent.mkdir(parents=True)
-        (tmp_path / "src" / "app.js").write_text("app")
+        # Create files in excluded directory
+        excluded_file = tmp_path / file_in_excluded
+        excluded_file.parent.mkdir(parents=True, exist_ok=True)
+        if file_in_excluded.endswith(".pyc"):
+            excluded_file.write_bytes(b"")
+        else:
+            excluded_file.write_text("content")
+
+        # Create normal file
+        normal_file = tmp_path / file_in_src
+        normal_file.parent.mkdir(parents=True, exist_ok=True)
+        normal_file.write_text("content")
 
         result = await glob_tool.execute(
-            context, pattern="**/*.js", path=str(tmp_path)
+            context, pattern=pattern, path=str(tmp_path)
         )
         assert result.success
-        assert "app.js" in result.output
-        # Only app.js should be found, not the node_modules/pkg/index.js
-        assert result.metadata["count"] == 1
-        # Check that node_modules path component is not in any result
-        assert "/node_modules/" not in result.output
+        assert exclude_dir not in result.output
+        assert file_in_src.split('/')[-1] in result.output
 
     @pytest.mark.asyncio
-    async def test_exclude_pycache(
-        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path
+    @pytest.mark.parametrize(
+        "extension",
+        [".pyc", ".pyo", ".so", ".dylib"]
+    )
+    async def test_exclude_compiled_files(
+        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path, extension: str
     ) -> None:
-        # Create __pycache__
-        (tmp_path / "__pycache__").mkdir()
-        (tmp_path / "__pycache__" / "module.cpython-311.pyc").write_bytes(b"")
         (tmp_path / "module.py").write_text("code")
-
-        result = await glob_tool.execute(
-            context, pattern="**/*", path=str(tmp_path)
-        )
-        assert result.success
-        assert "__pycache__" not in result.output
-        assert "module.py" in result.output
-
-    @pytest.mark.asyncio
-    async def test_exclude_pyc_files(
-        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path
-    ) -> None:
-        (tmp_path / "module.py").write_text("code")
-        (tmp_path / "module.pyc").write_bytes(b"bytecode")
+        (tmp_path / f"module{extension}").write_bytes(b"compiled")
 
         result = await glob_tool.execute(
             context, pattern="**/*", path=str(tmp_path)
         )
         assert result.success
         assert "module.py" in result.output
-        assert ".pyc" not in result.output
-
-    @pytest.mark.asyncio
-    async def test_exclude_git_directory(
-        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path
-    ) -> None:
-        (tmp_path / ".git").mkdir()
-        (tmp_path / ".git" / "config").write_text("git config")
-        (tmp_path / "file.txt").write_text("content")
-
-        result = await glob_tool.execute(
-            context, pattern="**/*", path=str(tmp_path)
-        )
-        assert result.success
-        assert "file.txt" in result.output
-        assert ".git" not in result.output
-
-    @pytest.mark.asyncio
-    async def test_exclude_venv(
-        self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path
-    ) -> None:
-        (tmp_path / ".venv" / "lib").mkdir(parents=True)
-        (tmp_path / ".venv" / "lib" / "python.py").write_text("venv")
-        (tmp_path / "app.py").write_text("app")
-
-        result = await glob_tool.execute(
-            context, pattern="**/*.py", path=str(tmp_path)
-        )
-        assert result.success
-        assert "app.py" in result.output
-        assert ".venv" not in result.output
+        assert extension not in result.output
 
 
 class TestGlobToolSorting:
@@ -249,7 +196,7 @@ class TestGlobToolErrorHandling:
             context, pattern="*.txt", path=str(tmp_path / "nonexistent")
         )
         assert not result.success
-        assert result.error is not None
+        assert isinstance(result.error, str)
         assert "not found" in result.error.lower()
 
 

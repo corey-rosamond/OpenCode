@@ -16,7 +16,7 @@ class TestURLFetcher:
     def test_initialization(self) -> None:
         """Test fetcher initialization."""
         fetcher = URLFetcher()
-        assert fetcher.default_options is not None
+        assert isinstance(fetcher.default_options, FetchOptions)
         assert fetcher.default_options.timeout == 30
 
     def test_initialization_custom(self) -> None:
@@ -143,23 +143,40 @@ class TestURLFetcher:
                     await fetcher.fetch("https://example.com")
 
     @pytest.mark.asyncio
-    async def test_fetch_timeout(self) -> None:
+    @pytest.mark.parametrize(
+        "error_type,error_message,expected_match",
+        [
+            (TimeoutError, "timeout", "Timeout"),
+            (TimeoutError, "request timeout", "Timeout"),
+            (TimeoutError, "connection timeout", "Timeout"),
+        ]
+    )
+    async def test_fetch_timeout(self, error_type, error_message: str, expected_match: str) -> None:
         """Test timeout handling."""
         fetcher = URLFetcher()
 
         with patch("aiohttp.ClientSession") as mock_cls:
-            mock_cls.side_effect = TimeoutError("timeout")
+            mock_cls.side_effect = error_type(error_message)
             with patch("aiohttp.TCPConnector"):
-                with pytest.raises(FetchError, match="Timeout"):
+                with pytest.raises(FetchError, match=expected_match):
                     await fetcher.fetch("https://example.com")
 
     @pytest.mark.asyncio
-    async def test_fetch_network_error(self) -> None:
+    @pytest.mark.parametrize(
+        "error_message",
+        [
+            "connection failed",
+            "network unreachable",
+            "host not found",
+            "connection refused",
+        ]
+    )
+    async def test_fetch_network_error(self, error_message: str) -> None:
         """Test network error handling."""
         fetcher = URLFetcher()
 
         with patch("aiohttp.ClientSession") as mock_cls:
-            mock_cls.side_effect = aiohttp.ClientError("connection failed")
+            mock_cls.side_effect = aiohttp.ClientError(error_message)
             with patch("aiohttp.TCPConnector"):
                 with pytest.raises(FetchError, match="Network error"):
                     await fetcher.fetch("https://example.com")
@@ -239,6 +256,50 @@ class TestURLFetcher:
         assert len(results) == 2
 
 
+class TestURLFetcherStatusCodes:
+    """Test handling of different HTTP status codes."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "status_code",
+        [
+            200,  # OK
+            201,  # Created
+            204,  # No Content
+            301,  # Moved Permanently
+            302,  # Found
+            304,  # Not Modified
+        ]
+    )
+    async def test_successful_status_codes(self, status_code: int) -> None:
+        """Test successful HTTP status codes."""
+        fetcher = URLFetcher()
+
+        mock_resp = AsyncMock()
+        mock_resp.status = status_code
+        mock_resp.url = "https://example.com"
+        mock_resp.content_type = "text/html"
+        mock_resp.charset = "utf-8"
+        mock_resp.headers = {}
+        mock_resp.content = AsyncMock()
+        mock_resp.content.iter_chunked = MagicMock(
+            return_value=AsyncIterator([b"content"])
+        )
+
+        mock_session = AsyncMock()
+        mock_session.get = MagicMock(
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_resp), __aexit__=AsyncMock())
+        )
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock()
+
+        with patch("aiohttp.ClientSession", return_value=mock_session):
+            with patch("aiohttp.TCPConnector"):
+                response = await fetcher.fetch("https://example.com")
+
+        assert response.status_code == status_code
+
+
 class AsyncIterator:
     """Helper for async iteration in tests."""
 
@@ -263,7 +324,8 @@ class TestHTMLParser:
     def test_initialization(self) -> None:
         """Test parser initialization."""
         parser = HTMLParser()
-        assert parser._h2t is not None
+        assert hasattr(parser, '_h2t')
+        assert parser._h2t.__class__.__name__ == 'HTML2Text'
 
     def test_parse_basic(self) -> None:
         """Test basic HTML parsing."""

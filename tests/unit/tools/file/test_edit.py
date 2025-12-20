@@ -211,27 +211,44 @@ class TestEditToolErrorHandling:
     """Test error handling scenarios."""
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "error_scenario,expected_error_msg",
+        [
+            ("nonexistent.txt", "not found"),
+            ("missing_file.py", "not found"),
+            ("absent.json", "not found"),
+        ]
+    )
     async def test_file_not_found(
-        self, edit_tool: EditTool, context: ExecutionContext, tmp_path: Path
+        self, edit_tool: EditTool, context: ExecutionContext, tmp_path: Path, error_scenario: str, expected_error_msg: str
     ) -> None:
         result = await edit_tool.execute(
             context,
-            file_path=str(tmp_path / "nonexistent.txt"),
+            file_path=str(tmp_path / error_scenario),
             old_string="foo",
             new_string="bar",
         )
         assert not result.success
         assert isinstance(result.error, str) and len(result.error) > 0
-        assert "not found" in result.error.lower()
+        assert expected_error_msg in result.error.lower()
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "old_string",
+        [
+            "nonexistent string",
+            "missing text pattern",
+            "not in file",
+            "void search",
+        ]
+    )
     async def test_old_string_not_found(
-        self, edit_tool: EditTool, context: ExecutionContext, sample_file: Path
+        self, edit_tool: EditTool, context: ExecutionContext, sample_file: Path, old_string: str
     ) -> None:
         result = await edit_tool.execute(
             context,
             file_path=str(sample_file),
-            old_string="nonexistent string",
+            old_string=old_string,
             new_string="replacement",
         )
         assert not result.success
@@ -239,26 +256,43 @@ class TestEditToolErrorHandling:
         assert "not found" in result.error.lower()
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "identical_string",
+        [
+            "hello",
+            "world",
+            "same text",
+        ]
+    )
     async def test_same_old_and_new_string(
-        self, edit_tool: EditTool, context: ExecutionContext, sample_file: Path
+        self, edit_tool: EditTool, context: ExecutionContext, sample_file: Path, identical_string: str
     ) -> None:
         result = await edit_tool.execute(
             context,
             file_path=str(sample_file),
-            old_string="hello",
-            new_string="hello",
+            old_string=identical_string,
+            new_string=identical_string,
         )
         assert not result.success
         assert isinstance(result.error, str) and len(result.error) > 0
         assert "different" in result.error.lower()
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "relative_path",
+        [
+            "relative/path.txt",
+            "../parent/file.py",
+            "./local/test.json",
+            "simple.txt",
+        ]
+    )
     async def test_relative_path_rejected(
-        self, edit_tool: EditTool, context: ExecutionContext
+        self, edit_tool: EditTool, context: ExecutionContext, relative_path: str
     ) -> None:
         result = await edit_tool.execute(
             context,
-            file_path="relative/path.txt",
+            file_path=relative_path,
             old_string="foo",
             new_string="bar",
         )
