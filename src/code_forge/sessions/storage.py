@@ -6,12 +6,20 @@ import contextlib
 import json
 import logging
 import os
+import platform
 import shutil
+import sys
 import tempfile
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING
+
+# Platform-specific file locking imports
+if platform.system() == "Windows":
+    import msvcrt
+else:
+    import fcntl
 
 if TYPE_CHECKING:
     from .models import Session
@@ -35,6 +43,74 @@ class SessionCorruptedError(SessionStorageError):
     """Session file is corrupted."""
 
     pass
+
+
+@contextlib.contextmanager
+def _file_lock(file_path: Path, timeout: float = 10.0):
+    """Cross-platform file locking context manager.
+
+    Args:
+        file_path: Path to lock file (created if doesn't exist).
+        timeout: Maximum seconds to wait for lock acquisition.
+
+    Yields:
+        None when lock is acquired.
+
+    Raises:
+        TimeoutError: If lock cannot be acquired within timeout.
+
+    Note:
+        Creates a .lock file adjacent to the target file.
+        Uses fcntl (Unix) or msvcrt (Windows) for locking.
+    """
+    lock_path = file_path.parent / f"{file_path.name}.lock"
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Open lock file
+    lock_file = open(lock_path, "w")
+
+    try:
+        # Try to acquire lock with timeout
+        start_time = time.time()
+        while True:
+            try:
+                if platform.system() == "Windows":
+                    # Windows: use msvcrt.locking
+                    msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
+                else:
+                    # Unix: use fcntl.flock with non-blocking
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+                # Lock acquired
+                logger.debug(f"Acquired lock for {file_path}")
+                break
+
+            except (IOError, OSError):
+                # Lock not available, check timeout
+                if time.time() - start_time > timeout:
+                    raise TimeoutError(
+                        f"Could not acquire lock for {file_path} within {timeout}s"
+                    )
+                # Wait a bit and retry
+                time.sleep(0.01)
+
+        yield
+
+    finally:
+        # Release lock
+        try:
+            if platform.system() == "Windows":
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            logger.debug(f"Released lock for {file_path}")
+        except (IOError, OSError) as e:
+            logger.warning(f"Failed to release lock for {file_path}: {e}")
+        finally:
+            lock_file.close()
+            # Clean up lock file
+            with contextlib.suppress(OSError):
+                lock_path.unlink()
 
 
 class SessionStorage:
@@ -143,59 +219,65 @@ class SessionStorage:
 
         Uses atomic write (write to temp file, then rename) for safety.
         Creates a backup of the existing file before overwrite.
+        File locking ensures concurrent writes don't corrupt data.
 
         Args:
             session: The session to save.
 
         Raises:
             SessionStorageError: If save fails.
+            TimeoutError: If lock cannot be acquired within 10 seconds.
         """
         session_path = self.get_path(session.id)
         backup_path = self.get_backup_path(session.id)
 
-        # Create backup if file exists
-        if session_path.exists():
+        # Acquire file lock to prevent concurrent writes
+        with _file_lock(session_path):
+            # Create backup if file exists
+            if session_path.exists():
+                try:
+                    shutil.copy2(session_path, backup_path)
+                except OSError as e:
+                    logger.warning(f"Failed to create backup: {e}")
+
+            # Serialize session
             try:
-                shutil.copy2(session_path, backup_path)
+                json_data = session.to_json()
+            except Exception as e:
+                raise SessionStorageError(f"Failed to serialize session: {e}") from e
+
+            # Atomic write: write to temp file, then rename
+            try:
+                fd, temp_path = tempfile.mkstemp(
+                    suffix=self.SESSION_EXTENSION,
+                    dir=self.storage_dir,
+                )
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as f:
+                        f.write(json_data)
+
+                    # Rename temp file to target (atomic on POSIX)
+                    Path(temp_path).replace(session_path)
+
+                    # Set secure permissions
+                    with contextlib.suppress(OSError):
+                        session_path.chmod(0o600)
+
+                except Exception:
+                    # Clean up temp file on failure
+                    with contextlib.suppress(OSError):
+                        Path(temp_path).unlink()
+                    raise
+
             except OSError as e:
-                logger.warning(f"Failed to create backup: {e}")
+                raise SessionStorageError(f"Failed to save session: {e}") from e
 
-        # Serialize session
-        try:
-            json_data = session.to_json()
-        except Exception as e:
-            raise SessionStorageError(f"Failed to serialize session: {e}") from e
-
-        # Atomic write: write to temp file, then rename
-        try:
-            fd, temp_path = tempfile.mkstemp(
-                suffix=self.SESSION_EXTENSION,
-                dir=self.storage_dir,
-            )
-            try:
-                with os.fdopen(fd, "w", encoding="utf-8") as f:
-                    f.write(json_data)
-
-                # Rename temp file to target (atomic on POSIX)
-                Path(temp_path).replace(session_path)
-
-                # Set secure permissions
-                with contextlib.suppress(OSError):
-                    session_path.chmod(0o600)
-
-            except Exception:
-                # Clean up temp file on failure
-                with contextlib.suppress(OSError):
-                    Path(temp_path).unlink()
-                raise
-
-        except OSError as e:
-            raise SessionStorageError(f"Failed to save session: {e}") from e
-
-        logger.debug(f"Saved session {session.id}")
+            logger.debug(f"Saved session {session.id}")
 
     def load(self, session_id: str, auto_recover: bool = True) -> Session:
         """Load a session from storage.
+
+        File locking ensures concurrent reads don't see partial writes.
 
         Args:
             session_id: The session ID to load.
@@ -207,6 +289,7 @@ class SessionStorage:
         Raises:
             SessionNotFoundError: If session doesn't exist.
             SessionCorruptedError: If session file is corrupted and recovery failed.
+            TimeoutError: If lock cannot be acquired within 10 seconds.
         """
         from .models import Session
 
@@ -215,29 +298,31 @@ class SessionStorage:
         if not session_path.exists():
             raise SessionNotFoundError(f"Session not found: {session_id}")
 
-        try:
-            with session_path.open(encoding="utf-8") as f:
-                json_data = f.read()
+        # Acquire file lock to prevent reading during writes
+        with _file_lock(session_path):
+            try:
+                with session_path.open(encoding="utf-8") as f:
+                    json_data = f.read()
 
-            session = Session.from_json(json_data)
-            logger.debug(f"Loaded session {session_id}")
-            return session
+                session = Session.from_json(json_data)
+                logger.debug(f"Loaded session {session_id}")
+                return session
 
-        except json.JSONDecodeError as e:
-            # Attempt automatic recovery from backup
-            if auto_recover and self.recover_from_backup(session_id):
-                logger.warning(
-                    f"Session {session_id} was corrupted, recovered from backup"
-                )
-                # Retry load after recovery (with auto_recover=False to prevent loops)
-                return self.load(session_id, auto_recover=False)
+            except json.JSONDecodeError as e:
+                # Attempt automatic recovery from backup
+                if auto_recover and self.recover_from_backup(session_id):
+                    logger.warning(
+                        f"Session {session_id} was corrupted, recovered from backup"
+                    )
+                    # Retry load after recovery (with auto_recover=False to prevent loops)
+                    return self.load(session_id, auto_recover=False)
 
-            raise SessionCorruptedError(
-                f"Session file corrupted: {session_id}. "
-                f"Backup recovery {'failed' if auto_recover else 'disabled'}."
-            ) from e
-        except Exception as e:
-            raise SessionStorageError(f"Failed to load session: {e}") from e
+                raise SessionCorruptedError(
+                    f"Session file corrupted: {session_id}. "
+                    f"Backup recovery {'failed' if auto_recover else 'disabled'}."
+                ) from e
+            except Exception as e:
+                raise SessionStorageError(f"Failed to load session: {e}") from e
 
     def load_or_none(self, session_id: str) -> Session | None:
         """Load a session, returning None if not found or corrupted.
