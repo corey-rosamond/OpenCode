@@ -37,6 +37,11 @@ __all__ = [
     "StateManagementError",
     "CheckpointNotFoundError",
     "CheckpointCorruptedError",
+    # Execution
+    "WorkflowExecutor",
+    "StepExecutor",
+    "WorkflowExecutionError",
+    "StepExecutionError",
 ]
 
 # Lazy imports to avoid circular dependencies

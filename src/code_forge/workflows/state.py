@@ -100,10 +100,24 @@ class StateManager:
         step_id = step_result.step_id
 
         if step_result.success:
-            self.state.completed_steps.append(step_id)
+            # Remove from failed list if it was there (re-execution)
+            if step_id in self.state.failed_steps:
+                self.state.failed_steps.remove(step_id)
+
+            # Add to completed if not already there
+            if step_id not in self.state.completed_steps:
+                self.state.completed_steps.append(step_id)
+
             logger.info(f"Step {step_id} completed successfully")
         else:
-            self.state.failed_steps.append(step_id)
+            # Remove from completed list if it was there (re-execution)
+            if step_id in self.state.completed_steps:
+                self.state.completed_steps.remove(step_id)
+
+            # Add to failed if not already there
+            if step_id not in self.state.failed_steps:
+                self.state.failed_steps.append(step_id)
+
             logger.warning(f"Step {step_id} failed: {step_result.error}")
 
         self.state.step_results[step_id] = step_result
