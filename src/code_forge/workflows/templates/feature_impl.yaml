@@ -1,0 +1,62 @@
+name: feature-implementation
+description: Test-driven feature implementation workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: development
+  use_case: New feature implementation with TDD approach
+
+steps:
+  - id: plan
+    agent: plan
+    description: Create detailed implementation plan
+    inputs:
+      task: "Analyze the feature requirements and create a detailed implementation plan"
+    timeout: 600
+
+  - id: test_generation
+    agent: test-generation
+    description: Write tests first (TDD)
+    depends_on: [plan]
+    condition: "plan.success"
+    inputs:
+      task: "Create comprehensive tests for the planned feature"
+    timeout: 600
+
+  - id: implement
+    agent: general
+    description: Implement the feature
+    depends_on: [test_generation]
+    condition: "test_generation.success"
+    inputs:
+      task: "Implement the feature to make the tests pass"
+    timeout: 900
+    max_retries: 1
+
+  - id: code_review
+    agent: code-review
+    description: Review implementation quality
+    depends_on: [implement]
+    condition: "implement.success"
+    inputs:
+      task: "Review the implementation for code quality, patterns, and best practices"
+    timeout: 300
+
+  - id: security_check
+    agent: security-audit
+    description: Security audit of new feature
+    depends_on: [implement]
+    parallel_with: [code_review]
+    condition: "implement.success"
+    inputs:
+      task: "Audit the new feature for security vulnerabilities"
+    timeout: 300
+
+  - id: documentation
+    agent: documentation
+    description: Document the new feature
+    depends_on: [code_review, security_check]
+    condition: "code_review.success and security_check.success"
+    inputs:
+      task: "Create documentation for the new feature including usage examples"
+    timeout: 300

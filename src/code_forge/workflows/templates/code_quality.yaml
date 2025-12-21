@@ -1,0 +1,62 @@
+name: code-quality-improvement
+description: Code quality improvement and refactoring workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: quality
+  use_case: Systematic code quality improvement
+
+steps:
+  - id: analyze
+    agent: code-review
+    description: Analyze code quality issues
+    inputs:
+      task: "Analyze the codebase for code smells, anti-patterns, and quality issues"
+    timeout: 600
+
+  - id: plan_refactoring
+    agent: plan
+    description: Create refactoring strategy
+    depends_on: [analyze]
+    condition: "analyze.success"
+    inputs:
+      task: "Create a prioritized refactoring plan based on the quality analysis"
+    timeout: 300
+
+  - id: refactor
+    agent: refactoring
+    description: Execute refactoring
+    depends_on: [plan_refactoring]
+    condition: "plan_refactoring.success"
+    inputs:
+      task: "Implement the planned refactorings while maintaining existing behavior"
+    timeout: 900
+    max_retries: 1
+
+  - id: test_verification
+    agent: test-generation
+    description: Verify refactoring didn't break functionality
+    depends_on: [refactor]
+    condition: "refactor.success"
+    inputs:
+      task: "Ensure all tests pass and add any missing test coverage"
+    timeout: 300
+
+  - id: performance_check
+    agent: performance-analysis
+    description: Check for performance improvements
+    depends_on: [refactor]
+    parallel_with: [test_verification]
+    condition: "refactor.success"
+    inputs:
+      task: "Analyze performance impact of refactoring"
+    timeout: 300
+
+  - id: final_review
+    agent: code-review
+    description: Review refactored code
+    depends_on: [test_verification, performance_check]
+    condition: "test_verification.success and performance_check.success"
+    inputs:
+      task: "Final code review of refactored code"
+    timeout: 300

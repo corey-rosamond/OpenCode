@@ -1,0 +1,60 @@
+name: bug-fix
+description: Systematic bug debugging and fixing workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: debugging
+  use_case: Bug identification, fixing, and verification
+
+steps:
+  - id: debug
+    agent: debug
+    description: Analyze error and identify root cause
+    inputs:
+      task: "Analyze the bug report, error messages, and stack traces to identify the root cause"
+    timeout: 600
+    max_retries: 1
+
+  - id: assess_scope
+    agent: plan
+    description: Assess fix complexity and plan approach
+    depends_on: [debug]
+    condition: "debug.success"
+    inputs:
+      task: "Based on the root cause analysis, create a plan for fixing the bug"
+    timeout: 300
+
+  - id: refactor
+    agent: refactoring
+    description: Refactor if architectural issues found
+    depends_on: [assess_scope]
+    condition: "assess_scope.result.requires_refactoring == true"
+    inputs:
+      task: "Perform necessary refactoring to address architectural issues"
+    timeout: 900
+
+  - id: implement_fix
+    agent: general
+    description: Implement the bug fix
+    depends_on: [assess_scope]
+    inputs:
+      task: "Implement the bug fix based on the plan"
+    timeout: 600
+
+  - id: test_generation
+    agent: test-generation
+    description: Create regression tests
+    depends_on: [implement_fix]
+    condition: "implement_fix.success"
+    inputs:
+      task: "Create regression tests to prevent this bug from recurring"
+    timeout: 300
+
+  - id: code_review
+    agent: code-review
+    description: Review the bug fix
+    depends_on: [test_generation]
+    condition: "test_generation.success"
+    inputs:
+      task: "Review the bug fix for quality and potential side effects"
+    timeout: 300

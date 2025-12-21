@@ -1,0 +1,49 @@
+name: security-audit-full
+description: Comprehensive security audit workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: security
+  use_case: Complete security assessment of codebase
+
+steps:
+  - id: scan
+    agent: security-audit
+    description: Initial security vulnerability scan
+    inputs:
+      task: "Perform comprehensive security scan of the codebase"
+    timeout: 900
+
+  - id: dependency_check
+    agent: dependency-analysis
+    description: Check dependencies for known vulnerabilities
+    depends_on: [scan]
+    parallel_with: []
+    inputs:
+      task: "Analyze dependencies for known security vulnerabilities"
+    timeout: 600
+
+  - id: code_review_security
+    agent: code-review
+    description: Manual code review for security patterns
+    depends_on: [scan, dependency_check]
+    inputs:
+      task: "Review code for security anti-patterns and vulnerable code constructs"
+    timeout: 600
+
+  - id: test_security
+    agent: test-generation
+    description: Generate security-focused tests
+    depends_on: [code_review_security]
+    condition: "code_review_security.success"
+    inputs:
+      task: "Create tests for identified security concerns"
+    timeout: 300
+
+  - id: report
+    agent: research
+    description: Compile security audit report
+    depends_on: [test_security]
+    inputs:
+      task: "Synthesize findings from all security checks into a comprehensive report"
+    timeout: 300

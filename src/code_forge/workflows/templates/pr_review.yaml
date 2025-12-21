@@ -1,0 +1,50 @@
+name: pr-review
+description: Comprehensive pull request review workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: review
+  use_case: Pull request analysis and quality assurance
+
+steps:
+  - id: plan
+    agent: plan
+    description: Analyze PR scope and create review strategy
+    inputs:
+      task: "Analyze the pull request changes and create a comprehensive review plan"
+    timeout: 300
+
+  - id: code_review
+    agent: code-review
+    description: Review code quality, patterns, and best practices
+    depends_on: [plan]
+    inputs:
+      task: "Review code quality focusing on maintainability, performance, and best practices"
+    timeout: 600
+
+  - id: security_audit
+    agent: security-audit
+    description: Scan for security vulnerabilities
+    depends_on: [plan]
+    parallel_with: [code_review]
+    inputs:
+      task: "Perform security audit of the changes"
+    timeout: 600
+
+  - id: test_coverage
+    agent: test-generation
+    description: Analyze test coverage and suggest improvements
+    depends_on: [code_review, security_audit]
+    condition: "code_review.success and security_audit.success"
+    inputs:
+      task: "Analyze test coverage for the changes and identify gaps"
+    timeout: 300
+
+  - id: documentation
+    agent: documentation
+    description: Check and update documentation
+    depends_on: [test_coverage]
+    condition: "test_coverage.success"
+    inputs:
+      task: "Review and update documentation for the changes"
+    timeout: 300

@@ -1,0 +1,56 @@
+name: parallel-analysis
+description: Multi-dimensional parallel analysis workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: analysis
+  use_case: Comprehensive codebase analysis from multiple perspectives
+
+steps:
+  - id: log_analysis
+    agent: log-analysis
+    description: Analyze application logs
+    inputs:
+      task: "Analyze application logs for errors, patterns, and anomalies"
+    timeout: 600
+
+  - id: performance_analysis
+    agent: performance-analysis
+    description: Profile code performance
+    parallel_with: [log_analysis]
+    inputs:
+      task: "Analyze code for performance bottlenecks and optimization opportunities"
+    timeout: 600
+
+  - id: dependency_analysis
+    agent: dependency-analysis
+    description: Analyze dependencies
+    parallel_with: [log_analysis, performance_analysis]
+    inputs:
+      task: "Analyze project dependencies for vulnerabilities and updates"
+    timeout: 600
+
+  - id: code_quality_analysis
+    agent: code-review
+    description: Analyze code quality
+    parallel_with: [log_analysis, performance_analysis, dependency_analysis]
+    inputs:
+      task: "Analyze code quality, patterns, and maintainability"
+    timeout: 600
+
+  - id: synthesize_findings
+    agent: research
+    description: Synthesize all findings into comprehensive report
+    depends_on: [log_analysis, performance_analysis, dependency_analysis, code_quality_analysis]
+    inputs:
+      task: "Synthesize findings from all analyses into a comprehensive report with prioritized recommendations"
+    timeout: 600
+
+  - id: create_action_plan
+    agent: plan
+    description: Create action plan based on findings
+    depends_on: [synthesize_findings]
+    condition: "synthesize_findings.success"
+    inputs:
+      task: "Create a prioritized action plan to address the findings"
+    timeout: 300

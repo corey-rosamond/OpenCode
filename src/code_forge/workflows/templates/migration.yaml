@@ -1,0 +1,71 @@
+name: code-migration
+description: Systematic code migration workflow
+version: 1.0.0
+author: Code-Forge
+metadata:
+  category: migration
+  use_case: Framework upgrades, language migrations, architectural changes
+
+steps:
+  - id: plan_migration
+    agent: migration-planning
+    description: Analyze codebase and plan migration strategy
+    inputs:
+      task: "Analyze the codebase and create a comprehensive migration plan"
+    timeout: 900
+
+  - id: dependency_update
+    agent: dependency-analysis
+    description: Plan dependency updates
+    depends_on: [plan_migration]
+    condition: "plan_migration.success"
+    inputs:
+      task: "Analyze and plan dependency updates required for migration"
+    timeout: 300
+
+  - id: refactor_code
+    agent: refactoring
+    description: Execute code changes
+    depends_on: [dependency_update]
+    condition: "dependency_update.success"
+    inputs:
+      task: "Implement the planned code changes for migration"
+    timeout: 1200
+    max_retries: 1
+
+  - id: update_tests
+    agent: test-generation
+    description: Update and expand test suite
+    depends_on: [refactor_code]
+    condition: "refactor_code.success"
+    inputs:
+      task: "Update tests to work with migrated code and add migration-specific tests"
+    timeout: 600
+
+  - id: security_audit
+    agent: security-audit
+    description: Verify security post-migration
+    depends_on: [refactor_code]
+    parallel_with: [update_tests]
+    condition: "refactor_code.success"
+    inputs:
+      task: "Audit migrated code for security vulnerabilities"
+    timeout: 300
+
+  - id: documentation
+    agent: documentation
+    description: Update documentation
+    depends_on: [update_tests, security_audit]
+    condition: "update_tests.success and security_audit.success"
+    inputs:
+      task: "Update documentation to reflect migration changes"
+    timeout: 300
+
+  - id: final_review
+    agent: code-review
+    description: Final migration review
+    depends_on: [documentation]
+    condition: "documentation.success"
+    inputs:
+      task: "Comprehensive review of the completed migration"
+    timeout: 600

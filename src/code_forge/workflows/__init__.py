@@ -42,6 +42,11 @@ __all__ = [
     "StepExecutor",
     "WorkflowExecutionError",
     "StepExecutionError",
+    # Templates & Registry
+    "WorkflowTemplateRegistry",
+    # Parsing
+    "YAMLWorkflowParser",
+    "PythonWorkflowBuilder",
 ]
 
 # Lazy imports to avoid circular dependencies
