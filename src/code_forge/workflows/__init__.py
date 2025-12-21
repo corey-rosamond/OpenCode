@@ -31,6 +31,12 @@ __all__ = [
     "WorkflowGraph",
     "GraphValidator",
     "TopologicalSorter",
+    # State Management
+    "StateManager",
+    "CheckpointManager",
+    "StateManagementError",
+    "CheckpointNotFoundError",
+    "CheckpointCorruptedError",
 ]
 
 # Lazy imports to avoid circular dependencies
