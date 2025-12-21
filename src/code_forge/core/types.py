@@ -88,9 +88,8 @@ class ProjectId(BaseModel):
         return self.value == other.value
 
 
-# ToolParameter and ToolResult are defined in tools/base.py with full functionality
-# Re-exported here for backwards compatibility with imports from code_forge.core
-from code_forge.tools.base import ToolParameter, ToolResult  # noqa: E402
+# ToolParameter and ToolResult moved to tools/base.py to avoid circular imports
+# Import directly from code_forge.tools.base instead of from core
 
 
 class Message(BaseModel):

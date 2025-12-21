@@ -26,8 +26,6 @@ from code_forge.core.types import (
     SessionId,
     SessionSummary,
     ToolName,
-    ToolParameter,
-    ToolResult,
 )
 
 __all__ = [
@@ -51,8 +49,6 @@ __all__ = [
     "SessionSummary",
     "ToolError",
     "ToolName",
-    "ToolParameter",
-    "ToolResult",
     "get_logger",
     "setup_logging",
 ]

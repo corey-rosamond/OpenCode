@@ -129,6 +129,99 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 
 ## Feature Requests
 
+### FEAT-004: Comprehensive Test Coverage Enhancement
+**Status:** Proposed
+**Priority:** Critical
+**Version Target:** 1.8.0
+**Phase Directory:** `.ai/phase/test-coverage/`
+**Description:** Achieve comprehensive test coverage (85%+) across all Code-Forge modules
+
+**Current State:**
+- 137 test files, ~400 tests
+- Overall coverage ~65%
+- E2E tests: 16/16 passing (100%)
+- Critical gaps: CLI setup (0%), SSRF (30%), 17 agents untested
+- Missing: Error handling, concurrency, integration tests
+
+**Goals:**
+- Add 350-400 new test cases
+- Achieve 85%+ overall coverage
+- Test all 21 built-in agents
+- Validate security-critical code (SSRF, permissions)
+- Test async/concurrent scenarios
+- Comprehensive error handling tests
+- Integration and E2E test scenarios
+
+**Implementation Phases:**
+1. **Phase 1:** Critical Security & Setup (Week 1)
+   - SSRF protection tests (20+ tests)
+   - CLI setup wizard tests (12+ tests)
+   - Dependency injection tests (10+ tests)
+
+2. **Phase 2:** Agent Coverage (Week 2-3)
+   - All 21 agent implementations (100+ tests)
+   - Agent infrastructure enhancement
+   - Execution and error handling
+
+3. **Phase 3:** Provider & Transport Tests (Week 4)
+   - Web search providers (30+ tests)
+   - MCP transport layer (30+ tests)
+   - Network error scenarios
+
+4. **Phase 4:** Async & Concurrency (Week 5)
+   - Session repository async (25+ tests)
+   - Web cache concurrency (20+ tests)
+   - Workflow async execution (25+ tests)
+
+5. **Phase 5:** Error Handling & Edge Cases (Week 6)
+   - Network errors (12+ tests)
+   - File system errors (11+ tests)
+   - HTML parser edge cases (10+ tests)
+   - Config edge cases (10+ tests)
+
+6. **Phase 6:** Integration & E2E (Week 7)
+   - Full setup E2E (7+ scenarios)
+   - Multi-agent workflows (7+ scenarios)
+   - MCP integration (7+ scenarios)
+   - Web search integration (7+ scenarios)
+
+7. **Phase 7:** Documentation & Metrics (Week 8)
+   - Test documentation
+   - Coverage analysis
+   - Performance benchmarks
+   - Release preparation
+
+**Benefits:**
+- High confidence in code quality
+- Fewer production bugs
+- Easier refactoring with safety net
+- Security vulnerabilities caught early
+- Performance regression detection
+- Clear testing patterns for contributors
+
+**Impact:**
+- Development speed: Faster iteration with confidence
+- Code quality: Higher reliability and maintainability
+- Security: All critical paths validated
+- Onboarding: Clear examples for new contributors
+
+**Timeline:** 8 weeks (48 days)
+
+**Dependencies:**
+- No new production dependencies
+- Optional dev dependencies: pytest-xdist, hypothesis, faker
+- All core dependencies already available
+
+**Documentation:**
+- `PLAN.md` - Comprehensive implementation plan
+- `COMPLETION_CRITERIA.md` - Success metrics and gates
+- `GHERKIN.md` - BDD-style test scenarios
+- `DEPENDENCIES.md` - Dependency analysis
+- `TESTS.md` - Testing strategy and patterns
+- `REVIEW.md` - Review checklist and approval process
+
+---
+
 ### FEAT-001: Per-Project RAG Support
 **Status:** Proposed
 **Priority:** High
@@ -254,16 +347,17 @@ src/code_forge/agents/
 
 | Priority | Pending | Deferred | Total |
 |----------|---------|----------|-------|
-| **P0 Critical** | 0 | 0 | 0 |
+| **P0 Critical** | 1 | 0 | 1 |
 | **P1 High** | 0 | 2 | 2 |
 | **P2 Medium** | 0 | 3 | 3 |
 | **P3 Low** | 0 | 6 | 6 |
 | **Features** | 2 | 0 | 2 |
-| **TOTAL** | **2** | **11** | **13** |
+| **TOTAL** | **3** | **11** | **14** |
 
 ### Breakdown
 
-**Pending Items (2):**
+**Pending Items (3):**
+- FEAT-004: Comprehensive Test Coverage Enhancement (Critical)
 - FEAT-001: Per-Project RAG Support
 - FEAT-003: Agent Workflow System
 
