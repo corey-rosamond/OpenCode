@@ -47,6 +47,15 @@ __all__ = [
     # Parsing
     "YAMLWorkflowParser",
     "PythonWorkflowBuilder",
+    # Commands
+    "WorkflowCommand",
+    "WorkflowListCommand",
+    "WorkflowRunCommand",
+    "WorkflowStatusCommand",
+    "WorkflowResumeCommand",
+    "WorkflowCancelCommand",
+    # Tools
+    "WorkflowTool",
 ]
 
 # Lazy imports to avoid circular dependencies

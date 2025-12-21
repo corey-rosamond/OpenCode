@@ -152,6 +152,7 @@ class CommandCategory(str, Enum):
     CONTROL = "control"
     CONFIG = "config"
     DEBUG = "debug"
+    WORKFLOW = "workflow"
 
 
 class Command(ABC):
