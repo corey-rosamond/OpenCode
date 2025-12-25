@@ -137,7 +137,7 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Description:** Achieve comprehensive test coverage (85%+) across all Code-Forge modules
 
 **Current State:**
-- 137 test files, ~400 tests
+- 137 test files, 3700+ tests
 - Overall coverage ~65%
 - E2E tests: 16/16 passing (100%)
 - Critical gaps: CLI setup (0%), SSRF (30%), 17 agents untested
@@ -323,21 +323,19 @@ src/code_forge/agents/
 ---
 
 ### FEAT-003: Agent Workflow System
-**Status:** Proposed
+**Status:** Complete (v1.7.0)
 **Priority:** Medium
 **Description:** Enable chaining multiple specialized agents together for complex workflows
 
-**Example Workflows:**
-- "Full PR Review": Planning → Code Review → Test Generation → Documentation
-- "Bug Fix": Debug → Code Review → Test Generation
-- "Feature Implementation": Planning → Implementation → Test → Documentation
-
-**Features:**
-- Workflow definition via YAML or code
+**Implemented Features:**
+- Workflow definition via YAML
 - Conditional agent execution based on results
-- Parallel agent execution where possible
-- Workflow templates for common tasks
-- Progress tracking and resumability
+- DAG-based parallel execution where possible
+- Built-in workflow templates
+- State checkpointing and resumability
+- /workflow command and WorkflowTool for LLM
+
+**Location:** `src/code_forge/workflows/`
 
 ---
 
@@ -345,21 +343,20 @@ src/code_forge/agents/
 
 ### Remaining Work
 
-| Priority | Pending | Deferred | Total |
-|----------|---------|----------|-------|
-| **P0 Critical** | 1 | 0 | 1 |
-| **P1 High** | 0 | 2 | 2 |
-| **P2 Medium** | 0 | 3 | 3 |
-| **P3 Low** | 0 | 6 | 6 |
-| **Features** | 2 | 0 | 2 |
-| **TOTAL** | **3** | **11** | **14** |
+| Priority | Pending | Deferred | Complete | Total |
+|----------|---------|----------|----------|-------|
+| **P0 Critical** | 1 | 0 | 0 | 1 |
+| **P1 High** | 0 | 2 | 0 | 2 |
+| **P2 Medium** | 0 | 3 | 0 | 3 |
+| **P3 Low** | 0 | 6 | 0 | 6 |
+| **Features** | 2 | 0 | 2 | 4 |
+| **TOTAL** | **3** | **11** | **2** | **16** |
 
 ### Breakdown
 
-**Pending Items (3):**
+**Pending Items (2):**
 - FEAT-004: Comprehensive Test Coverage Enhancement (Critical)
 - FEAT-001: Per-Project RAG Support
-- FEAT-003: Agent Workflow System
 
 **Deferred Items (12):**
 - Technical debt and optimizations that don't block functionality
@@ -373,6 +370,7 @@ src/code_forge/agents/
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.7.0 | 2025-12-22 | Workflow system (FEAT-003): Multi-step agent pipelines |
 | 1.6.0 | 2025-12-21 | Specialized agent system (FEAT-002): 16 new agent types |
 | 1.5.0 | 2025-12-21 | Technical debt cleanup (SESS-008, PERM-015/016/017) |
 | 1.4.0 | 2025-12-21 | Test quality improvements (TEST-001, TEST-002, TEST-003) |

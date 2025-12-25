@@ -1,0 +1,183 @@
+name: code-review
+description: Comprehensive automated code review workflow
+version: 1.0.0
+author: Code-Forge Team
+metadata:
+  category: code-quality
+  tags: [review, quality, analysis, testing]
+
+steps:
+  # Analyze changes
+  - id: analyze_changes
+    agent: explore
+    description: Analyze code changes in detail
+    prompt: |
+      Analyze the code changes in this branch/PR:
+      - Identify all modified files
+      - Understand the scope and purpose of changes
+      - Map changes to affected components
+      - Identify potential impact areas
+    timeout: 600
+
+  # Static analysis (parallel analysis of different aspects)
+  - id: static_analysis
+    agent: general
+    description: Run static code analysis
+    prompt: |
+      Run static analysis tools on the changed code:
+      - Check for code smells
+      - Identify complexity issues
+      - Flag potential bugs
+      - Report maintainability metrics
+    depends_on: [analyze_changes]
+    timeout: 600
+
+  - id: security_review
+    agent: security-audit
+    description: Security-focused code review
+    prompt: |
+      Review code changes for security issues:
+      - Check for injection vulnerabilities
+      - Verify input validation
+      - Review authentication/authorization changes
+      - Check for exposed secrets or credentials
+      - Verify secure coding practices
+    depends_on: [analyze_changes]
+    parallel_with: [static_analysis]
+    timeout: 900
+
+  - id: style_check
+    agent: general
+    description: Check code style and formatting
+    prompt: |
+      Review code style and formatting:
+      - Run linter and formatters
+      - Check naming conventions
+      - Verify code organization
+      - Flag inconsistencies with project style guide
+    depends_on: [analyze_changes]
+    parallel_with: [static_analysis, security_review]
+    timeout: 300
+
+  # Test analysis
+  - id: test_coverage
+    agent: test-generation
+    description: Analyze test coverage
+    prompt: |
+      Analyze test coverage for the changes:
+      - Calculate coverage for new/modified code
+      - Identify untested code paths
+      - Verify edge cases are tested
+      - Check for missing integration tests
+    depends_on: [analyze_changes]
+    parallel_with: [static_analysis]
+    timeout: 600
+
+  - id: test_quality
+    agent: test-generation
+    description: Review test quality
+    prompt: |
+      Review the quality of tests:
+      - Check for proper assertions
+      - Verify test isolation
+      - Identify brittle tests
+      - Flag missing negative test cases
+      - Suggest test improvements
+    depends_on: [test_coverage]
+    timeout: 300
+
+  # Documentation review
+  - id: documentation_review
+    agent: documentation
+    description: Review documentation updates
+    prompt: |
+      Review documentation for completeness:
+      - Verify API changes are documented
+      - Check README updates if needed
+      - Review inline code comments
+      - Verify changelog entries
+      - Check for outdated documentation
+    depends_on: [analyze_changes]
+    parallel_with: [test_coverage]
+    timeout: 300
+
+  # Architecture review
+  - id: architecture_review
+    agent: plan
+    description: Review architectural decisions
+    prompt: |
+      Review architectural aspects:
+      - Verify changes align with project architecture
+      - Check for architectural violations
+      - Review design patterns used
+      - Identify potential performance impacts
+      - Suggest architectural improvements
+    depends_on: [analyze_changes]
+    timeout: 600
+
+  # Dependency review
+  - id: dependency_review
+    agent: dependency-analysis
+    description: Review dependency changes
+    prompt: |
+      Review dependency changes:
+      - Check for new dependencies added
+      - Verify dependency versions
+      - Check for known vulnerabilities
+      - Review license compatibility
+      - Assess dependency health and maintenance
+    depends_on: [analyze_changes]
+    parallel_with: [architecture_review]
+    timeout: 300
+
+  # Performance analysis
+  - id: performance_review
+    agent: performance-analysis
+    description: Analyze performance impact
+    prompt: |
+      Analyze potential performance impacts:
+      - Identify performance-critical changes
+      - Check for inefficient algorithms
+      - Review database query efficiency
+      - Flag potential memory leaks
+      - Suggest performance optimizations
+    depends_on: [analyze_changes]
+    parallel_with: [architecture_review]
+    timeout: 600
+
+  # Aggregate results
+  - id: aggregate_results
+    agent: general
+    description: Aggregate all review results
+    prompt: |
+      Aggregate all review results into categories:
+      - Critical issues (must fix before merge)
+      - Warnings (should address)
+      - Suggestions (nice to have)
+      - Positive observations
+      Prioritize findings by severity and impact.
+    depends_on:
+      - static_analysis
+      - security_review
+      - style_check
+      - test_quality
+      - documentation_review
+      - architecture_review
+      - dependency_review
+      - performance_review
+    timeout: 300
+
+  # Generate review report
+  - id: generate_report
+    agent: documentation
+    description: Generate comprehensive review report
+    prompt: |
+      Generate a comprehensive code review report:
+      - Executive summary of findings
+      - Detailed breakdown by category
+      - Actionable recommendations
+      - Code quality metrics
+      - Comparison with previous reviews
+      Format as markdown for easy sharing.
+    depends_on: [aggregate_results]
+    timeout: 300

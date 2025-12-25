@@ -28,11 +28,13 @@
 **Code-Forge** is an AI-powered CLI development assistant providing:
 - Access to 400+ AI models via OpenRouter API
 - LangChain integration for agent orchestration
+- 21 specialized agent types for focused tasks
+- Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.6.0
+**Version:** 1.7.0
 **Status:** Production/Stable
-**Tests:** 3400+ (90%+ coverage)
+**Tests:** 3700+ (65%+ coverage, targeting 85%+ in v1.8.0)
 
 ---
 
@@ -67,10 +69,10 @@ ruff check src/code_forge/
 
 **When completing any milestone or significant work:**
 
-1. **Update version number** in both files:
-   - `pyproject.toml` - line 3: `version = "X.Y.Z"`
-   - `src/code_forge/__init__.py` - line 3: `__version__ = "X.Y.Z"`
-   - This `START.md` file - line 33: `**Version:** X.Y.Z`
+1. **Update version number** in these files:
+   - `pyproject.toml` - `version = "X.Y.Z"`
+   - `src/code_forge/__init__.py` - `__version__ = "X.Y.Z"`
+   - `.ai/START.md` - `**Version:** X.Y.Z`
 
 2. **Update CHANGELOG.md** with changes:
    ```markdown

@@ -42,6 +42,7 @@
 | **Git** | `git/` | Git operations and safety |
 | **GitHub** | `github/` | GitHub API integration |
 | **Plugins** | `plugins/` | Plugin discovery and loading |
+| **Workflows** | `workflows/` | Multi-step agent pipelines and orchestration |
 
 ---
 

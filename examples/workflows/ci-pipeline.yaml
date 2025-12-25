@@ -1,0 +1,164 @@
+name: ci-pipeline
+description: Complete CI/CD pipeline with testing, building, and deployment
+version: 1.0.0
+author: Code-Forge Team
+metadata:
+  category: ci-cd
+  tags: [ci, cd, testing, deployment, automation]
+
+steps:
+  # Setup: Install dependencies and prepare environment
+  - id: setup
+    agent: general
+    description: Setup environment and install dependencies
+    prompt: |
+      Install project dependencies using the appropriate package manager.
+      Verify all dependencies are installed correctly.
+      Set up any required environment variables for testing.
+    timeout: 600
+    retry_on_failure: true
+    max_retries: 2
+
+  # Parallel testing: Run different test suites concurrently
+  - id: unit_tests
+    agent: qa-manual
+    description: Run unit test suite
+    prompt: |
+      Execute all unit tests using the project's test runner.
+      Generate coverage report.
+      Fail if any tests fail or coverage is below threshold.
+    depends_on: [setup]
+    timeout: 900
+    retry_on_failure: true
+    max_retries: 1
+
+  - id: integration_tests
+    agent: qa-manual
+    description: Run integration test suite
+    prompt: |
+      Execute all integration tests.
+      Ensure external service mocks are properly configured.
+      Report any failures with detailed logs.
+    depends_on: [setup]
+    parallel_with: [unit_tests]
+    timeout: 1200
+
+  - id: e2e_tests
+    agent: qa-manual
+    description: Run end-to-end test suite
+    prompt: |
+      Execute end-to-end tests in headless browser.
+      Verify critical user flows work correctly.
+      Capture screenshots on failures.
+    depends_on: [setup]
+    parallel_with: [unit_tests, integration_tests]
+    timeout: 1800
+
+  # Code quality checks (parallel with tests)
+  - id: lint
+    agent: general
+    description: Run linter
+    prompt: |
+      Run code linter and report any style violations.
+      Fail if there are any linting errors (warnings are acceptable).
+    depends_on: [setup]
+    parallel_with: [unit_tests]
+    timeout: 300
+
+  - id: type_check
+    agent: general
+    description: Run type checker
+    prompt: |
+      Run static type checker (TypeScript, mypy, etc.).
+      Report any type errors found.
+    depends_on: [setup]
+    parallel_with: [unit_tests, lint]
+    timeout: 300
+
+  # Build application (only if all tests pass)
+  - id: build
+    agent: general
+    description: Build application for production
+    prompt: |
+      Build the application for production deployment.
+      Optimize assets (minification, tree-shaking, etc.).
+      Verify build completes successfully with no errors.
+      Report build size and any significant changes.
+    depends_on: [unit_tests, integration_tests, e2e_tests, lint, type_check]
+    condition: "unit_tests.success AND integration_tests.success AND e2e_tests.success AND lint.success AND type_check.success"
+    timeout: 900
+
+  # Security scan before deployment
+  - id: security_scan
+    agent: security-audit
+    description: Run security vulnerability scan
+    prompt: |
+      Scan dependencies for known vulnerabilities.
+      Check for common security issues (XSS, SQL injection, etc.).
+      Generate security report.
+      Warn on high-severity issues but don't block deployment.
+    depends_on: [build]
+    timeout: 600
+
+  # Deploy to staging
+  - id: deploy_staging
+    agent: general
+    description: Deploy to staging environment
+    prompt: |
+      Deploy the built application to staging environment.
+      Verify deployment succeeds and application starts.
+      Run smoke tests on staging.
+    depends_on: [build, security_scan]
+    condition: "build.success"
+    timeout: 900
+
+  # Staging verification
+  - id: verify_staging
+    agent: qa-manual
+    description: Verify staging deployment
+    prompt: |
+      Verify the staging deployment is working correctly.
+      Test critical user flows in staging environment.
+      Check API health endpoints.
+      Verify database migrations applied successfully.
+    depends_on: [deploy_staging]
+    timeout: 600
+
+  # Deploy to production (manual approval recommended)
+  - id: deploy_production
+    agent: general
+    description: Deploy to production environment
+    prompt: |
+      Deploy the application to production environment.
+      Use blue-green or canary deployment strategy.
+      Monitor deployment progress and health metrics.
+      Be prepared to rollback if issues detected.
+    depends_on: [verify_staging]
+    condition: "verify_staging.success"
+    timeout: 1200
+
+  # Post-deployment verification
+  - id: verify_production
+    agent: qa-manual
+    description: Verify production deployment
+    prompt: |
+      Verify production deployment is healthy.
+      Run smoke tests on production.
+      Check error monitoring dashboards.
+      Verify metrics are within normal ranges.
+    depends_on: [deploy_production]
+    timeout: 300
+
+  # Notify team of deployment
+  - id: notify
+    agent: communication
+    description: Send deployment notification
+    prompt: |
+      Send deployment notification to the team.
+      Include deployment summary:
+      - What was deployed
+      - Test results
+      - Any warnings or notes
+      - Rollback procedure if needed
+    depends_on: [verify_production]
+    timeout: 60

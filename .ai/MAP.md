@@ -140,14 +140,24 @@ src/code_forge/
 │   ├── pull_requests.py # PullRequestService
 │   ├── actions.py       # ActionsService
 │   └── context.py       # GitHubContext for LLM
-└── plugins/             # Plugin system
-    ├── base.py          # Plugin ABC
-    ├── manifest.py      # PluginManifest
-    ├── discovery.py     # PluginDiscovery
-    ├── loader.py        # PluginLoader
-    ├── registry.py      # PluginRegistry
-    ├── manager.py       # PluginManager singleton
-    └── commands.py      # /plugins command
+├── plugins/             # Plugin system
+│   ├── base.py          # Plugin ABC
+│   ├── manifest.py      # PluginManifest
+│   ├── discovery.py     # PluginDiscovery
+│   ├── loader.py        # PluginLoader
+│   ├── registry.py      # PluginRegistry
+│   ├── manager.py       # PluginManager singleton
+│   └── commands.py      # /plugins command
+└── workflows/           # Workflow system
+    ├── models.py        # WorkflowDefinition, StepDefinition
+    ├── graph.py         # WorkflowGraph, DAG validation
+    ├── parser.py        # YAML workflow parser
+    ├── conditions.py    # Conditional execution logic
+    ├── executor.py      # WorkflowExecutor
+    ├── state.py         # WorkflowState, checkpointing
+    ├── registry.py      # WorkflowRegistry singleton
+    ├── tool.py          # WorkflowTool for LLM
+    └── commands.py      # /workflow command
 ```
 
 ---
@@ -168,6 +178,7 @@ src/code_forge/
 | Add agent type | `agents/types.py`, `agents/builtin/` |
 | Add skill | `skills/builtin/` or `~/.forge/skills/` |
 | Add MCP server support | `mcp/config.py`, `mcp/manager.py` |
+| Add workflow template | `workflows/registry.py`, `~/.forge/workflows/` |
 
 ---
 

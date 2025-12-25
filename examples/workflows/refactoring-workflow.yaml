@@ -1,0 +1,234 @@
+name: refactoring-workflow
+description: Systematic code refactoring with safety checks
+version: 1.0.0
+author: Code-Forge Team
+metadata:
+  category: code-quality
+  tags: [refactoring, quality, maintenance, testing]
+
+steps:
+  # Analyze current code
+  - id: analyze_code
+    agent: explore
+    description: Analyze code to be refactored
+    prompt: |
+      Analyze the target code for refactoring:
+      - Understand current implementation
+      - Identify code smells and anti-patterns
+      - Map dependencies and usage
+      - Assess current test coverage
+      - Document current behavior
+    timeout: 600
+
+  # Identify refactoring opportunities
+  - id: identify_opportunities
+    agent: refactoring
+    description: Identify specific refactoring opportunities
+    prompt: |
+      Identify specific refactoring opportunities:
+      - Complex methods that need simplification
+      - Duplicated code to extract
+      - Poor naming to improve
+      - Missing abstractions
+      - Violation of SOLID principles
+      Prioritize by impact and risk.
+    depends_on: [analyze_code]
+    timeout: 300
+
+  # Create refactoring plan
+  - id: create_plan
+    agent: plan
+    description: Create detailed refactoring plan
+    prompt: |
+      Create a detailed, incremental refactoring plan:
+      - Break into small, safe steps
+      - Order steps to minimize risk
+      - Identify which steps can be automated
+      - Plan verification at each step
+      - Define rollback points
+      - Estimate effort for each step
+    depends_on: [identify_opportunities]
+    timeout: 600
+
+  # Ensure test coverage
+  - id: ensure_coverage
+    agent: test-generation
+    description: Ensure comprehensive test coverage
+    prompt: |
+      Ensure comprehensive test coverage before refactoring:
+      - Write missing unit tests
+      - Add integration tests for critical paths
+      - Create characterization tests for existing behavior
+      - Aim for high coverage on code to be refactored
+      - Document expected behavior
+    depends_on: [analyze_code, create_plan]
+    timeout: 900
+
+  # Run baseline tests
+  - id: baseline_tests
+    agent: qa-manual
+    description: Run baseline test suite
+    prompt: |
+      Run complete test suite as baseline:
+      - Execute all unit tests
+      - Execute all integration tests
+      - Record all test results
+      - Verify 100% of tests pass
+      - Document any flaky tests
+      This establishes our safety net.
+    depends_on: [ensure_coverage]
+    timeout: 900
+
+  # Perform refactoring step 1
+  - id: refactor_step_1
+    agent: refactoring
+    description: Execute first refactoring step
+    prompt: |
+      Execute the first refactoring step from the plan:
+      - Make the smallest safe change
+      - Preserve existing behavior
+      - Use automated refactoring tools where possible
+      - Commit changes immediately
+    depends_on: [baseline_tests, create_plan]
+    timeout: 600
+
+  # Test after step 1
+  - id: test_step_1
+    agent: qa-manual
+    description: Verify tests pass after step 1
+    prompt: |
+      Run full test suite after first refactoring:
+      - Execute all tests
+      - Compare results with baseline
+      - Verify no regressions introduced
+      - If tests fail, rollback and investigate
+    depends_on: [refactor_step_1]
+    timeout: 600
+
+  # Perform refactoring step 2
+  - id: refactor_step_2
+    agent: refactoring
+    description: Execute second refactoring step
+    prompt: |
+      Execute the second refactoring step:
+      - Build on previous refactoring
+      - Continue preserving behavior
+      - Keep changes focused and small
+      - Commit after completion
+    depends_on: [test_step_1]
+    condition: "test_step_1.success"
+    timeout: 600
+
+  # Test after step 2
+  - id: test_step_2
+    agent: qa-manual
+    description: Verify tests pass after step 2
+    prompt: |
+      Run full test suite after second refactoring:
+      - Execute all tests
+      - Verify no regressions
+      - Compare with baseline
+    depends_on: [refactor_step_2]
+    timeout: 600
+
+  # Perform refactoring step 3
+  - id: refactor_step_3
+    agent: refactoring
+    description: Execute third refactoring step
+    prompt: |
+      Execute the third refactoring step:
+      - Continue with planned refactorings
+      - Maintain small, safe changes
+      - Preserve all existing behavior
+    depends_on: [test_step_2]
+    condition: "test_step_2.success"
+    timeout: 600
+
+  # Test after step 3
+  - id: test_step_3
+    agent: qa-manual
+    description: Verify tests pass after step 3
+    prompt: |
+      Run full test suite after third refactoring:
+      - Execute all tests
+      - Verify continued correctness
+    depends_on: [refactor_step_3]
+    timeout: 600
+
+  # Code quality analysis
+  - id: quality_analysis
+    agent: general
+    description: Analyze code quality improvements
+    prompt: |
+      Analyze code quality improvements:
+      - Measure complexity reduction
+      - Check code smell elimination
+      - Verify naming improvements
+      - Assess maintainability metrics
+      - Compare before/after metrics
+    depends_on: [test_step_3]
+    condition: "test_step_3.success"
+    timeout: 300
+
+  # Performance verification
+  - id: verify_performance
+    agent: performance-analysis
+    description: Verify refactoring didn't degrade performance
+    prompt: |
+      Verify performance is maintained or improved:
+      - Run performance benchmarks
+      - Compare with baseline measurements
+      - Identify any performance regressions
+      - Verify acceptable performance characteristics
+    depends_on: [test_step_3]
+    parallel_with: [quality_analysis]
+    timeout: 600
+
+  # Update documentation
+  - id: update_documentation
+    agent: documentation
+    description: Update code documentation
+    prompt: |
+      Update documentation to reflect refactored code:
+      - Update code comments
+      - Revise API documentation if changed
+      - Update architecture diagrams
+      - Document new patterns introduced
+      - Add migration notes if applicable
+    depends_on: [test_step_3]
+    parallel_with: [quality_analysis]
+    timeout: 300
+
+  # Final validation
+  - id: final_validation
+    agent: general
+    description: Final validation of refactoring
+    prompt: |
+      Perform final validation:
+      - All tests pass
+      - Code quality improved
+      - Performance maintained
+      - Documentation updated
+      - No behavioral changes
+      - Ready for code review
+      Generate summary report of improvements.
+    depends_on:
+      - quality_analysis
+      - verify_performance
+      - update_documentation
+    timeout: 300
+
+  # Generate refactoring report
+  - id: generate_report
+    agent: documentation
+    description: Generate refactoring summary report
+    prompt: |
+      Generate comprehensive refactoring report:
+      - What was refactored and why
+      - Metrics before and after
+      - Code quality improvements
+      - Performance impact
+      - Lessons learned
+      - Recommendations for future refactorings
+    depends_on: [final_validation]
+    timeout: 300

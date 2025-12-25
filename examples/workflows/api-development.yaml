@@ -1,0 +1,218 @@
+name: api-development
+description: End-to-end API endpoint development workflow
+version: 1.0.0
+author: Code-Forge Team
+metadata:
+  category: development
+  tags: [api, rest, development, testing]
+
+steps:
+  # Requirements analysis
+  - id: analyze_requirements
+    agent: general
+    description: Analyze API requirements
+    prompt: |
+      Analyze the requirements for the new API endpoint:
+      - Understand the use case and user needs
+      - Identify required request/response formats
+      - Determine authentication/authorization needs
+      - Identify data validation requirements
+      - List potential error scenarios
+    timeout: 300
+
+  # API design
+  - id: design_api
+    agent: plan
+    description: Design API specification
+    prompt: |
+      Design the API endpoint specification:
+      - Define HTTP method and URL path
+      - Specify request parameters and body schema
+      - Define response format and status codes
+      - Design error responses
+      - Follow REST/OpenAPI best practices
+      - Consider versioning strategy
+      Create OpenAPI/Swagger specification.
+    depends_on: [analyze_requirements]
+    timeout: 600
+
+  # Database schema design (if needed)
+  - id: design_schema
+    agent: plan
+    description: Design database schema changes
+    prompt: |
+      Design any necessary database schema changes:
+      - Identify new tables or columns needed
+      - Design indexes for query performance
+      - Plan database migrations
+      - Consider data validation constraints
+      - Design for scalability
+    depends_on: [design_api]
+    timeout: 300
+
+  # Implementation planning
+  - id: plan_implementation
+    agent: plan
+    description: Plan implementation approach
+    prompt: |
+      Plan the implementation approach:
+      - Break down into subtasks
+      - Identify code files to create/modify
+      - Plan middleware/validation layers
+      - Design service layer architecture
+      - Identify reusable components
+    depends_on: [design_api, design_schema]
+    timeout: 300
+
+  # Implement endpoint
+  - id: implement_endpoint
+    agent: general
+    description: Implement API endpoint handler
+    prompt: |
+      Implement the API endpoint handler:
+      - Create route handler function
+      - Implement request validation
+      - Add authentication/authorization checks
+      - Implement business logic
+      - Handle error cases gracefully
+      - Add proper logging
+    depends_on: [plan_implementation]
+    timeout: 900
+
+  # Implement service layer
+  - id: implement_service
+    agent: general
+    description: Implement service/business logic layer
+    prompt: |
+      Implement the service layer:
+      - Create service functions for business logic
+      - Implement data access layer
+      - Add proper error handling
+      - Ensure separation of concerns
+      - Make functions testable
+    depends_on: [plan_implementation]
+    parallel_with: [implement_endpoint]
+    timeout: 900
+
+  # Database migration (if needed)
+  - id: create_migration
+    agent: general
+    description: Create database migration
+    prompt: |
+      Create database migration files:
+      - Generate migration from schema design
+      - Include rollback/down migration
+      - Add migration to version control
+      - Test migration applies cleanly
+    depends_on: [design_schema]
+    parallel_with: [implement_endpoint]
+    timeout: 300
+
+  # Write unit tests
+  - id: write_unit_tests
+    agent: test-generation
+    description: Write unit tests for service layer
+    prompt: |
+      Write comprehensive unit tests:
+      - Test all service functions
+      - Test edge cases and error conditions
+      - Mock external dependencies
+      - Aim for high coverage
+      - Test validation logic
+    depends_on: [implement_service]
+    timeout: 600
+
+  # Write integration tests
+  - id: write_integration_tests
+    agent: test-generation
+    description: Write integration tests for API endpoint
+    prompt: |
+      Write integration tests for the endpoint:
+      - Test successful requests
+      - Test error scenarios (400, 401, 404, 500, etc.)
+      - Test request validation
+      - Test authentication/authorization
+      - Test with realistic data
+      - Verify response formats
+    depends_on: [implement_endpoint, implement_service]
+    timeout: 600
+
+  # Write API documentation
+  - id: write_documentation
+    agent: documentation
+    description: Write API documentation
+    prompt: |
+      Write comprehensive API documentation:
+      - Document endpoint URL and method
+      - List all parameters with examples
+      - Show request/response examples
+      - Document error codes and messages
+      - Add authentication requirements
+      - Include curl examples
+      - Update OpenAPI spec if applicable
+    depends_on: [implement_endpoint]
+    parallel_with: [write_integration_tests]
+    timeout: 300
+
+  # Security review
+  - id: security_review
+    agent: security-audit
+    description: Review API security
+    prompt: |
+      Review the API implementation for security:
+      - Verify authentication is required
+      - Check authorization logic
+      - Verify input validation prevents injection
+      - Check for rate limiting needs
+      - Verify sensitive data is not exposed
+      - Check CORS configuration
+    depends_on: [implement_endpoint, implement_service]
+    timeout: 300
+
+  # Run all tests
+  - id: run_tests
+    agent: qa-manual
+    description: Run all tests
+    prompt: |
+      Run the complete test suite:
+      - Run unit tests
+      - Run integration tests
+      - Verify all tests pass
+      - Check test coverage meets threshold
+      - Report any failures with details
+    depends_on: [write_unit_tests, write_integration_tests]
+    timeout: 900
+
+  # Performance testing
+  - id: performance_test
+    agent: performance-analysis
+    description: Test API performance
+    prompt: |
+      Test endpoint performance:
+      - Measure response time under load
+      - Test with various payload sizes
+      - Identify bottlenecks
+      - Verify database query efficiency
+      - Test concurrent request handling
+      Provide performance metrics and recommendations.
+    depends_on: [run_tests]
+    timeout: 600
+
+  # Final validation
+  - id: final_validation
+    agent: general
+    description: Final validation before merge
+    prompt: |
+      Perform final validation:
+      - Verify all requirements implemented
+      - Check code quality metrics
+      - Verify documentation is complete
+      - Ensure all tests pass
+      - Verify no security issues
+      - Confirm ready for code review
+    depends_on:
+      - run_tests
+      - write_documentation
+      - security_review
+      - performance_test
+    timeout: 300

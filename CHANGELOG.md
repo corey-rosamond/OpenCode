@@ -5,6 +5,28 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2025-12-21
+
+### Added
+- **Agent Workflow System**: Multi-agent workflow orchestration with DAG-based execution
+  - **Workflow Models**: WorkflowDefinition, WorkflowStep, WorkflowState with full type safety
+  - **YAML Parser**: Define workflows in YAML with validation and schema checking
+  - **Dependency Management**: DAG-based dependency resolution with cycle detection
+  - **Parallel Execution**: Automatic parallel execution of independent steps
+  - **Conditional Execution**: Boolean expressions for conditional step execution
+  - **State Management**: Persistent workflow state with checkpoint/resume capability
+  - **Workflow Executor**: Complete orchestration engine with error handling and retries
+  - **Template Registry**: Built-in workflow templates with user/project override support
+  - **7 Built-in Templates**: pr-review, bug-fix, feature-implementation, security-audit-full, code-quality-improvement, code-migration, parallel-analysis
+  - **Slash Commands**: `/workflow list|run|status|resume|cancel` for workflow management
+  - **LLM Tool**: WorkflowTool for AI-driven workflow discovery and execution
+
+### Improved
+- Workflow system enables complex multi-step development tasks with automatic coordination
+- Checkpointing allows resuming failed workflows from last successful step
+- Template system provides reusable workflows for common software development patterns
+- DAG validation prevents invalid workflow configurations at parse time
+
 ## [1.6.0] - 2025-12-21
 
 ### Added

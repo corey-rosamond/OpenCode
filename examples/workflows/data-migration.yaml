@@ -1,0 +1,285 @@
+name: data-migration
+description: Safe database migration workflow with validation and rollback
+version: 1.0.0
+author: Code-Forge Team
+metadata:
+  category: database
+  tags: [database, migration, data, safety, validation]
+
+steps:
+  # Analyze migration requirements
+  - id: analyze_requirements
+    agent: general
+    description: Analyze migration requirements
+    prompt: |
+      Analyze the data migration requirements:
+      - Understand source and target schemas
+      - Identify data transformations needed
+      - Estimate data volume
+      - Identify constraints and validations
+      - List potential data quality issues
+      - Assess migration complexity
+    timeout: 600
+
+  # Create backup strategy
+  - id: plan_backup
+    agent: plan
+    description: Plan backup and rollback strategy
+    prompt: |
+      Plan comprehensive backup and rollback strategy:
+      - Identify all data to back up
+      - Determine backup methods
+      - Plan backup verification
+      - Design rollback procedures
+      - Estimate backup size and time
+      - Plan for point-in-time recovery
+    depends_on: [analyze_requirements]
+    timeout: 300
+
+  # Design migration script
+  - id: design_migration
+    agent: plan
+    description: Design migration scripts and procedures
+    prompt: |
+      Design the migration approach:
+      - Plan schema changes (DDL)
+      - Design data transformation logic
+      - Plan for data validation
+      - Design idempotent migration scripts
+      - Plan incremental migration if needed
+      - Consider zero-downtime strategies
+    depends_on: [analyze_requirements]
+    timeout: 600
+
+  # Create backup
+  - id: create_backup
+    agent: general
+    description: Create database backup
+    prompt: |
+      Create comprehensive database backup:
+      - Backup all relevant databases/tables
+      - Verify backup completed successfully
+      - Test backup integrity
+      - Document backup location and timestamp
+      - Ensure backup is restorable
+    depends_on: [plan_backup]
+    timeout: 1800
+    retry_on_failure: true
+    max_retries: 2
+
+  # Verify backup
+  - id: verify_backup
+    agent: general
+    description: Verify backup integrity and restorability
+    prompt: |
+      Verify the backup is valid and restorable:
+      - Check backup file integrity
+      - Verify backup size is reasonable
+      - Test restore to temporary location
+      - Verify restored data matches source
+      - Document verification results
+    depends_on: [create_backup]
+    timeout: 1800
+
+  # Implement migration script
+  - id: implement_migration
+    agent: general
+    description: Implement migration scripts
+    prompt: |
+      Implement the migration scripts:
+      - Write schema migration (DDL)
+      - Implement data transformation logic
+      - Add validation checks
+      - Make scripts idempotent
+      - Add error handling and logging
+      - Include progress reporting
+    depends_on: [design_migration, verify_backup]
+    timeout: 900
+
+  # Test migration on copy
+  - id: test_migration_dry_run
+    agent: general
+    description: Test migration on database copy
+    prompt: |
+      Test migration on a copy of production data:
+      - Restore backup to test environment
+      - Run migration scripts
+      - Measure execution time
+      - Verify data integrity
+      - Check for errors or warnings
+      - Validate transformations
+      Document any issues found.
+    depends_on: [implement_migration]
+    timeout: 3600
+
+  # Validate test results
+  - id: validate_test_results
+    agent: general
+    description: Validate migration test results
+    prompt: |
+      Validate the test migration results:
+      - Verify all data migrated correctly
+      - Check row counts match expectations
+      - Validate data transformations
+      - Verify constraints are satisfied
+      - Check for data loss or corruption
+      - Compare before/after samples
+    depends_on: [test_migration_dry_run]
+    timeout: 600
+
+  # Create rollback script
+  - id: create_rollback
+    agent: general
+    description: Create rollback scripts
+    prompt: |
+      Create comprehensive rollback scripts:
+      - Reverse schema changes
+      - Restore from backup if needed
+      - Document rollback procedure
+      - Test rollback on copy
+      - Ensure rollback is fast
+    depends_on: [test_migration_dry_run]
+    timeout: 600
+
+  # Pre-migration validation
+  - id: pre_migration_validation
+    agent: general
+    description: Pre-migration production validation
+    prompt: |
+      Perform final pre-migration validation:
+      - Verify backup is recent and valid
+      - Check database is in expected state
+      - Verify migration scripts are ready
+      - Check rollback scripts are ready
+      - Verify maintenance window scheduled
+      - Confirm all stakeholders notified
+    depends_on: [validate_test_results, create_rollback]
+    timeout: 300
+
+  # Execute migration
+  - id: execute_migration
+    agent: general
+    description: Execute production migration
+    prompt: |
+      Execute the production migration:
+      - Put application in maintenance mode if needed
+      - Run migration scripts
+      - Monitor progress closely
+      - Log all operations
+      - Watch for errors or warnings
+      - Measure execution time
+      CRITICAL: Stop immediately if serious errors occur.
+    depends_on: [pre_migration_validation]
+    condition: "pre_migration_validation.success"
+    timeout: 7200
+
+  # Post-migration validation
+  - id: post_migration_validation
+    agent: general
+    description: Validate migration success
+    prompt: |
+      Validate the production migration:
+      - Verify all data migrated
+      - Check row counts
+      - Validate data integrity
+      - Test application functionality
+      - Verify constraints satisfied
+      - Check for data anomalies
+      - Compare with test migration results
+    depends_on: [execute_migration]
+    timeout: 900
+
+  # Performance testing
+  - id: performance_testing
+    agent: performance-analysis
+    description: Test post-migration performance
+    prompt: |
+      Test database performance after migration:
+      - Run common queries
+      - Measure query performance
+      - Compare with pre-migration benchmarks
+      - Check index effectiveness
+      - Identify any performance regressions
+      - Test under realistic load
+    depends_on: [post_migration_validation]
+    timeout: 600
+
+  # Data quality audit
+  - id: data_quality_audit
+    agent: general
+    description: Audit data quality post-migration
+    prompt: |
+      Perform comprehensive data quality audit:
+      - Sample and verify random records
+      - Check referential integrity
+      - Validate business rules
+      - Verify data transformations
+      - Check for duplicate data
+      - Validate calculated fields
+    depends_on: [post_migration_validation]
+    parallel_with: [performance_testing]
+    timeout: 600
+
+  # Application integration test
+  - id: integration_test
+    agent: qa-manual
+    description: Test application integration
+    prompt: |
+      Test application works with migrated data:
+      - Test critical user flows
+      - Verify CRUD operations
+      - Test reporting functions
+      - Check batch processes
+      - Verify API responses
+      - Test edge cases
+    depends_on: [post_migration_validation]
+    timeout: 900
+
+  # Final validation
+  - id: final_validation
+    agent: general
+    description: Final migration validation
+    prompt: |
+      Perform final migration validation:
+      - All validation checks passed
+      - Performance acceptable
+      - Application functioning correctly
+      - No data integrity issues
+      - Stakeholders notified of success
+      - Document any issues or deviations
+    depends_on:
+      - performance_testing
+      - data_quality_audit
+      - integration_test
+    timeout: 300
+
+  # Generate migration report
+  - id: generate_report
+    agent: documentation
+    description: Generate migration completion report
+    prompt: |
+      Generate comprehensive migration report:
+      - Migration summary and timeline
+      - Data volumes migrated
+      - Validation results
+      - Performance metrics
+      - Issues encountered and resolutions
+      - Lessons learned
+      - Post-migration recommendations
+    depends_on: [final_validation]
+    timeout: 300
+
+  # Cleanup
+  - id: cleanup
+    agent: general
+    description: Post-migration cleanup
+    prompt: |
+      Perform post-migration cleanup:
+      - Archive migration scripts
+      - Clean up temporary data
+      - Update documentation
+      - Archive logs
+      - Schedule backup retention
+      - Remove maintenance mode
+    depends_on: [generate_report]
+    timeout: 300

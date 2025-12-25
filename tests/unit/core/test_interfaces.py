@@ -19,9 +19,8 @@ from code_forge.core.types import (
     Session,
     SessionId,
     SessionSummary,
-    ToolParameter,
-    ToolResult,
 )
+from code_forge.tools.base import ToolParameter, ToolResult
 
 
 class TestIToolInterface:

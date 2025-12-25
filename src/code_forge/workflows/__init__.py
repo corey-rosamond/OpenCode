@@ -59,4 +59,64 @@ __all__ = [
 ]
 
 # Lazy imports to avoid circular dependencies
-# Actual imports will be added as modules are implemented
+def __getattr__(name: str):
+    """Lazy import workflow components to avoid circular dependencies."""
+    if name in __all__:
+        # Import on first access
+        if name in ["WorkflowDefinition", "WorkflowStep", "WorkflowState", "WorkflowStatus", "StepResult", "WorkflowResult"]:
+            from code_forge.workflows.models import (
+                WorkflowDefinition,
+                WorkflowStep,
+                WorkflowState,
+                WorkflowStatus,
+                StepResult,
+                WorkflowResult,
+            )
+            return locals()[name]
+        elif name in ["WorkflowGraph", "GraphValidator", "TopologicalSorter"]:
+            from code_forge.workflows.graph import (
+                WorkflowGraph,
+                GraphValidator,
+                TopologicalSorter,
+            )
+            return locals()[name]
+        elif name in ["StateManager", "CheckpointManager", "StateManagementError", "CheckpointNotFoundError", "CheckpointCorruptedError"]:
+            from code_forge.workflows.state import (
+                StateManager,
+                CheckpointManager,
+                StateManagementError,
+                CheckpointNotFoundError,
+                CheckpointCorruptedError,
+            )
+            return locals()[name]
+        elif name in ["WorkflowExecutor", "StepExecutor", "WorkflowExecutionError", "StepExecutionError"]:
+            from code_forge.workflows.executor import (
+                WorkflowExecutor,
+                StepExecutor,
+                WorkflowExecutionError,
+                StepExecutionError,
+            )
+            return locals()[name]
+        elif name == "WorkflowTemplateRegistry":
+            from code_forge.workflows.registry import WorkflowTemplateRegistry
+            return WorkflowTemplateRegistry
+        elif name in ["YAMLWorkflowParser", "PythonWorkflowBuilder"]:
+            from code_forge.workflows.parser import (
+                YAMLWorkflowParser,
+                PythonWorkflowBuilder,
+            )
+            return locals()[name]
+        elif name in ["WorkflowCommand", "WorkflowListCommand", "WorkflowRunCommand", "WorkflowStatusCommand", "WorkflowResumeCommand", "WorkflowCancelCommand"]:
+            from code_forge.workflows.commands import (
+                WorkflowCommand,
+                WorkflowListCommand,
+                WorkflowRunCommand,
+                WorkflowStatusCommand,
+                WorkflowResumeCommand,
+                WorkflowCancelCommand,
+            )
+            return locals()[name]
+        elif name == "WorkflowTool":
+            from code_forge.workflows.tool import WorkflowTool
+            return WorkflowTool
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
