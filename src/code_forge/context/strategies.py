@@ -170,7 +170,7 @@ class TokenBudgetStrategy(TruncationStrategy):
         while result and result_tokens > available_tokens:
             # Remove oldest (first) message and subtract its tokens
             removed = result.pop(0)
-            removed_tokens = counter([removed])
+            removed_tokens = counter.count_messages([removed])
             result_tokens -= removed_tokens
             logger.debug(f"Removed message: {removed.get('role')}")
 

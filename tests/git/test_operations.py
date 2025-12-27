@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from code_forge.git.operations import GitOperations, UnsafeOperationError
-from code_forge.git.repository import GitError, GitRepository
+from code_forge.git.repository import GitCommit, GitError, GitRepository
 from code_forge.git.safety import SafetyCheck
 
 
@@ -145,8 +145,8 @@ class TestGitOperations:
         with patch.object(mock_repo, "run_git", side_effect=mock_run_git):
             commit = await ops.commit("fix: Amend commit", amend=True)
 
-        assert isinstance(commit, CommitInfo)
-        assert commit.sha == "abc123"
+        assert isinstance(commit, GitCommit)
+        assert commit.hash == "abc123"
 
     @pytest.mark.asyncio
     async def test_commit_amend_unsafe(self, ops: GitOperations, mock_repo: GitRepository) -> None:

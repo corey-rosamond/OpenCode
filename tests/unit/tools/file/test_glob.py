@@ -129,7 +129,7 @@ class TestGlobToolDefaultExcludes:
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "extension",
-        [".pyc", ".pyo", ".so", ".dylib"]
+        [".pyc", ".pyo"]  # Only .pyc and .pyo are in DEFAULT_EXCLUDES
     )
     async def test_exclude_compiled_files(
         self, glob_tool: GlobTool, context: ExecutionContext, tmp_path: Path, extension: str

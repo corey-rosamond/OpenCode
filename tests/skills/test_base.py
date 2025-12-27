@@ -326,12 +326,13 @@ class TestSkill:
 
     def test_activate_skill(self) -> None:
         """Test activating a skill."""
+        from datetime import datetime
         skill = self._create_skill()
         errors = skill.activate()
         assert errors == []
         assert skill.is_active is True
-        assert isinstance(skill._activated_at, float)
-        assert skill._activated_at > 0
+        assert isinstance(skill._activated_at, datetime)
+        assert skill._activated_at is not None
 
     def test_activate_with_config(self) -> None:
         """Test activating with configuration."""
@@ -416,8 +417,9 @@ class TestSkill:
         assert result["name"] == "test"
         assert result["active"] is True
         assert result["context"]["key"] == "value"
-        assert isinstance(result["activated_at"], float)
-        assert result["activated_at"] > 0
+        # activated_at is serialized as ISO format string
+        assert isinstance(result["activated_at"], str)
+        assert result["activated_at"] is not None
 
     def test_get_help(self) -> None:
         """Test getting help text."""

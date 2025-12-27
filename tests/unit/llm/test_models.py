@@ -424,4 +424,8 @@ class TestCompletionRequestParameters:
         result = request.to_dict()
         assert result["temperature"] == temperature
         assert result["max_tokens"] == max_tokens
-        assert result["top_p"] == top_p
+        # top_p is only included when != 1.0 (to keep payload clean)
+        if top_p != 1.0:
+            assert result["top_p"] == top_p
+        else:
+            assert "top_p" not in result

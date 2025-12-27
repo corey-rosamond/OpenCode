@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-import subprocess
+import asyncio.subprocess
 
 from code_forge.tools.execution.shell_manager import (
     ShellManager,
@@ -90,7 +90,8 @@ class TestShellProcess:
             command="echo hello",
             working_dir="/tmp",
         )
-        shell.stdout_buffer = "hello world\n"
+        # Use _append_to_buffer to add output (stdout_buffer is a property)
+        shell._append_to_buffer("stdout", "hello world\n")
         output = shell.get_new_output()
         assert output == "hello world\n"
         # Second call should return empty
@@ -104,8 +105,8 @@ class TestShellProcess:
             command="echo hello",
             working_dir="/tmp",
         )
-        shell.stdout_buffer = "out\n"
-        shell.stderr_buffer = "err\n"
+        shell._append_to_buffer("stdout", "out\n")
+        shell._append_to_buffer("stderr", "err\n")
         output = shell.get_new_output(include_stderr=True)
         assert "out\n" in output
         assert "[stderr]" in output
@@ -118,8 +119,8 @@ class TestShellProcess:
             command="echo hello",
             working_dir="/tmp",
         )
-        shell.stdout_buffer = "out\n"
-        shell.stderr_buffer = "err\n"
+        shell._append_to_buffer("stdout", "out\n")
+        shell._append_to_buffer("stderr", "err\n")
         output = shell.get_new_output(include_stderr=False)
         assert "out\n" in output
         assert "stderr" not in output
@@ -131,8 +132,8 @@ class TestShellProcess:
             command="echo hello",
             working_dir="/tmp",
         )
-        shell.stdout_buffer = "stdout content\n"
-        shell.stderr_buffer = "stderr content\n"
+        shell._append_to_buffer("stdout", "stdout content\n")
+        shell._append_to_buffer("stderr", "stderr content\n")
         output = shell.get_all_output()
         assert "stdout content\n" in output
         assert "[stderr]" in output
@@ -224,7 +225,7 @@ class TestShellManager:
         assert shell.command == "echo hello"
         assert shell.working_dir == "/tmp"
         assert shell.status == ShellStatus.RUNNING
-        assert isinstance(shell.process, subprocess.Popen)
+        assert isinstance(shell.process, asyncio.subprocess.Process)
         assert shell.process.returncode is None  # Still running
         # Clean up
         shell.kill()
@@ -237,7 +238,7 @@ class TestShellManager:
             working_dir="/tmp",
             env={"MY_VAR": "test_value"},
         )
-        assert isinstance(shell.process, subprocess.Popen)
+        assert isinstance(shell.process, asyncio.subprocess.Process)
         assert hasattr(shell.process, 'wait')
         # Wait for completion
         await shell.process.wait()

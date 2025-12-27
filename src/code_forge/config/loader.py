@@ -391,7 +391,8 @@ class ConfigLoader(IConfigLoader):
                 success_count += 1
             except Exception as e:
                 failure_count += 1
-                logger.error("Observer %s error: %s", observer.__name__, e)
+                observer_name = getattr(observer, "__name__", repr(observer))
+                logger.error("Observer %s error: %s", observer_name, e)
         return success_count, failure_count
 
     def __del__(self) -> None:

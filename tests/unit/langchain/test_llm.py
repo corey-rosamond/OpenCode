@@ -290,14 +290,14 @@ class TestOpenRouterLLMStructuredOutput:
     """Tests for structured output configuration."""
 
     def test_with_structured_output_json_mode(self) -> None:
-        """Test with_structured_output with JSON mode."""
+        """Test with_structured_output with JSON mode raises NotImplementedError."""
         mock_client = MagicMock()
         llm = OpenRouterLLM(client=mock_client, model="test")
 
-        result = llm.with_structured_output({}, method="json_mode")
-
-        # JSON mode just returns self
-        assert result is llm
+        # json_mode is not yet implemented
+        with pytest.raises(NotImplementedError) as exc_info:
+            llm.with_structured_output({}, method="json_mode")
+        assert "json_mode is not yet implemented" in str(exc_info.value)
 
     def test_with_structured_output_function_calling(self) -> None:
         """Test with_structured_output with function calling."""

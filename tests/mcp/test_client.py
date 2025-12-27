@@ -145,7 +145,7 @@ class TestMCPClient:
 
         assert server_info.name == "test-server"
         assert server_info.version == "1.0.0"
-        assert isinstance(client.capabilities, ServerCapabilities)
+        assert isinstance(client.capabilities, MCPCapabilities)
         assert client.capabilities.tools is True
         assert client.is_connected is True
 
@@ -556,7 +556,7 @@ class TestMCPClientIntegration:
 
         # Verify connected state
         assert client.is_connected is True
-        assert isinstance(client.capabilities, ServerCapabilities)
+        assert isinstance(client.capabilities, MCPCapabilities)
         assert client.capabilities.tools is True
 
         # Clean up

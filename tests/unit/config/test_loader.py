@@ -424,16 +424,29 @@ class TestConfigLoaderObservers:
 
     def test_observer_exception_handled(self, tmp_path: Path) -> None:
         """Test observer exceptions don't break reload."""
+        # Create directories for config to load successfully
+        user_dir = tmp_path / "user"
+        project_dir = tmp_path / "project"
+        user_dir.mkdir(parents=True)
+        project_dir.mkdir(parents=True)
+
         loader = ConfigLoader(
-            user_dir=tmp_path / "user",
-            project_dir=tmp_path / "project",
+            user_dir=user_dir,
+            project_dir=project_dir,
         )
+
+        # Do initial load to set up config
+        loader.load_all()
 
         bad_callback = MagicMock(side_effect=Exception("Observer error"))
         good_callback = MagicMock()
 
         loader.add_observer(bad_callback)
         loader.add_observer(good_callback)
+
+        # Create a config file to trigger a change on reload
+        config_file = project_dir / "settings.yaml"
+        config_file.write_text("model:\n  default: gpt-4\n")
 
         # Should not raise
         loader.reload()

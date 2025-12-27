@@ -172,10 +172,13 @@ class TestSessionRecovery:
         session_manager.save()
         session_manager.close()
 
-        # Corrupt the session file
+        # Corrupt the session file and delete backup to prevent recovery
         session_file = forge_data_dir / "sessions" / f"{session_id}.json"
+        backup_file = forge_data_dir / "sessions" / f"{session_id}.backup"
         if session_file.exists():
             session_file.write_text("{ invalid json }")
+        if backup_file.exists():
+            backup_file.unlink()
 
         # Resuming should raise SessionCorruptedError for corrupted files
         with pytest.raises(SessionCorruptedError):

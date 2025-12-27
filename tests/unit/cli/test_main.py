@@ -56,14 +56,18 @@ class TestMainFunction:
         mock_config = MagicMock()
         mock_config.model.default = "anthropic/claude-3.5-sonnet"
         mock_config.get_api_key.return_value = "test-api-key"
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
 
         with patch.object(sys, "argv", ["forge"]):
-            with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
-                mock_loader.return_value.load_all.return_value = mock_config
-                with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
-                    with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
-                        mock_run.return_value = 0
-                        exit_code = main()
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.return_value = 0
+                            exit_code = main()
 
         assert exit_code == 0
         mock_loader.assert_called_once()
@@ -71,11 +75,16 @@ class TestMainFunction:
 
     def test_config_load_error(self) -> None:
         """Config load error should return exit code 1."""
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
+
         with patch.object(sys, "argv", ["forge"]):
-            with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
-                mock_loader.return_value.load_all.side_effect = Exception("Config error")
-                with patch("builtins.print"):
-                    exit_code = main()
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.side_effect = Exception("Config error")
+                    with patch("builtins.print"):
+                        exit_code = main()
 
         assert exit_code == 1
 
@@ -85,15 +94,19 @@ class TestMainFunction:
         mock_config = MagicMock()
         mock_config.model.default = "anthropic/claude-3.5-sonnet"
         mock_config.get_api_key.return_value = "test-api-key"
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
 
         with patch.object(sys, "argv", ["forge"]):
-            with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
-                mock_loader.return_value.load_all.return_value = mock_config
-                with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
-                    with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
-                        mock_run.side_effect = Exception("REPL error")
-                        with patch("builtins.print"):
-                            exit_code = main()
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.side_effect = Exception("REPL error")
+                            with patch("builtins.print"):
+                                exit_code = main()
 
         assert exit_code == 1
 
@@ -103,15 +116,19 @@ class TestMainFunction:
         mock_config = MagicMock()
         mock_config.model.default = "anthropic/claude-3.5-sonnet"
         mock_config.get_api_key.return_value = "test-api-key"
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
 
         with patch.object(sys, "argv", ["forge"]):
-            with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
-                mock_loader.return_value.load_all.return_value = mock_config
-                with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
-                    with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
-                        mock_run.side_effect = KeyboardInterrupt()
-                        with patch("builtins.print"):
-                            exit_code = main()
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.side_effect = KeyboardInterrupt()
+                            with patch("builtins.print"):
+                                exit_code = main()
 
         assert exit_code == 130
 

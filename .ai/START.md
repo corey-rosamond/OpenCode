@@ -32,9 +32,9 @@
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 **Status:** Production/Stable
-**Tests:** 3700+ (65%+ coverage, targeting 85%+ in v1.8.0)
+**Tests:** 4898 (85%+ coverage)
 
 ---
 

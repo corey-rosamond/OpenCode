@@ -19,6 +19,7 @@ from code_forge.mcp.protocol import (
     MCPServerInfo,
     MCPTool,
 )
+from code_forge.mcp.tools import MCPToolRegistry
 
 
 class TestMCPConnection:

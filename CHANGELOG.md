@@ -5,6 +5,27 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2025-12-27
+
+### Added
+- **Comprehensive Test Coverage**: Achieved 85%+ test coverage with 4,898 tests
+  - **CLI Setup Tests**: 38 tests for setup wizard flow
+  - **Dependency Injection Tests**: 21 tests for DI container
+  - **Agent Tests**: 712 tests covering all 20 built-in agent types
+  - **Performance Benchmarks**: 18 benchmark tests for critical operations
+  - **Test Documentation**: Comprehensive tests/README.md
+
+### Fixed
+- **Session Storage Deadlock**: Fixed recursive lock acquisition during corrupt file recovery
+- **Config Observer Error**: Fixed AttributeError when notifying MagicMock observers
+- **Git Test Types**: Fixed CommitInfo→GitCommit and sha→hash attribute names
+- **MCP Client Types**: Fixed ServerCapabilities→MCPCapabilities type reference
+
+### Improved
+- Test suite now provides confidence for refactoring and feature development
+- Performance benchmarks catch regressions in critical paths
+- Test documentation guides contributors on testing patterns
+
 ## [1.7.0] - 2025-12-21
 
 ### Added

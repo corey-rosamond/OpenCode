@@ -522,12 +522,18 @@ class TestMCPConfigLoader:
             )
 
             loader = MCPConfigLoader()
-            loader.save_to_file(config, path)
+            # Patch ALLOWED_SAVE_DIRS to include temp directory
+            original_dirs = MCPConfigLoader.ALLOWED_SAVE_DIRS
+            MCPConfigLoader.ALLOWED_SAVE_DIRS = [Path(tmpdir)]
+            try:
+                loader.save_to_file(config, path)
 
-            # Reload and verify
-            loaded = loader.load_from_file(path)
-            assert "test" in loaded.servers
-            assert loaded.servers["test"].command == "test-cmd"
+                # Reload and verify
+                loaded = loader.load_from_file(path)
+                assert "test" in loaded.servers
+                assert loaded.servers["test"].command == "test-cmd"
+            finally:
+                MCPConfigLoader.ALLOWED_SAVE_DIRS = original_dirs
 
     def test_save_creates_directories(self) -> None:
         """Test that save creates parent directories."""
@@ -536,9 +542,14 @@ class TestMCPConfigLoader:
 
             config = MCPConfig()
             loader = MCPConfigLoader()
-            loader.save_to_file(config, path)
-
-            assert path.exists()
+            # Patch ALLOWED_SAVE_DIRS to include temp directory
+            original_dirs = MCPConfigLoader.ALLOWED_SAVE_DIRS
+            MCPConfigLoader.ALLOWED_SAVE_DIRS = [Path(tmpdir)]
+            try:
+                loader.save_to_file(config, path)
+                assert path.exists()
+            finally:
+                MCPConfigLoader.ALLOWED_SAVE_DIRS = original_dirs
 
     def test_expand_env_vars_nested(self) -> None:
         """Test environment variable expansion in nested structures."""

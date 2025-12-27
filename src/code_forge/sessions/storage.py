@@ -299,6 +299,9 @@ class SessionStorage:
             raise SessionNotFoundError(f"Session not found: {session_id}")
 
         # Acquire file lock to prevent reading during writes
+        recovered_from_backup = False
+        json_decode_error = None
+
         with _file_lock(session_path):
             try:
                 with session_path.open(encoding="utf-8") as f:
@@ -309,20 +312,27 @@ class SessionStorage:
                 return session
 
             except json.JSONDecodeError as e:
-                # Attempt automatic recovery from backup
+                json_decode_error = e
+                # Attempt automatic recovery from backup (while lock is held)
                 if auto_recover and self.recover_from_backup(session_id):
                     logger.warning(
                         f"Session {session_id} was corrupted, recovered from backup"
                     )
-                    # Retry load after recovery (with auto_recover=False to prevent loops)
-                    return self.load(session_id, auto_recover=False)
-
-                raise SessionCorruptedError(
-                    f"Session file corrupted: {session_id}. "
-                    f"Backup recovery {'failed' if auto_recover else 'disabled'}."
-                ) from e
+                    recovered_from_backup = True
+                # Lock will be released, then we retry or raise
             except Exception as e:
                 raise SessionStorageError(f"Failed to load session: {e}") from e
+
+        # If we recovered from backup, retry load (outside lock context)
+        if recovered_from_backup:
+            return self.load(session_id, auto_recover=False)
+
+        # If JSON decode failed and we didn't recover, raise error
+        if json_decode_error is not None:
+            raise SessionCorruptedError(
+                f"Session file corrupted: {session_id}. "
+                f"Backup recovery {'failed' if auto_recover else 'disabled'}."
+            ) from json_decode_error
 
     def load_or_none(self, session_id: str) -> Session | None:
         """Load a session, returning None if not found or corrupted.

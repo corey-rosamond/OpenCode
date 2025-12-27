@@ -11,7 +11,7 @@ class TestSessionLifecycle:
         session = session_manager.create(title="E2E Test Session")
 
         assert session is not None
-        assert session.session_id is not None
+        assert session.id is not None
         assert session.title == "E2E Test Session"
         assert len(session.messages) == 0
 
@@ -25,22 +25,22 @@ class TestSessionLifecycle:
         sessions = session_manager.list_sessions()
 
         assert len(sessions) >= 2
-        session_ids = [s["id"] for s in sessions]
-        assert session1.session_id in session_ids
-        assert session2.session_id in session_ids
+        session_ids = [s.id for s in sessions]
+        assert session1.id in session_ids
+        assert session2.id in session_ids
 
     def test_loads_session(self, session_manager):
         """Given saved session, loads it back"""
         # Create and save
         original = session_manager.create(title="Load Test")
-        original.add_user_message("Test message")
+        original.add_message_from_dict("user", "Test message")
         session_manager.save()
 
-        # Load
-        loaded = session_manager.load(original.session_id)
+        # Load using get_session
+        loaded = session_manager.get_session(original.id)
 
         assert loaded is not None
-        assert loaded.session_id == original.session_id
+        assert loaded.id == original.id
         assert loaded.title == original.title
         assert len(loaded.messages) == 1
 
@@ -48,27 +48,28 @@ class TestSessionLifecycle:
         """Given session, deletes it successfully"""
         # Create session
         session = session_manager.create(title="Delete Me")
-        session_id = session.session_id
+        session_id = session.id
         session_manager.save()
 
         # Delete
         session_manager.delete(session_id)
 
-        # Verify deleted
-        with pytest.raises(FileNotFoundError):
-            session_manager.load(session_id)
+        # Verify deleted - get_session returns None for missing sessions
+        loaded = session_manager.get_session(session_id)
+        assert loaded is None
 
     def test_updates_session_title(self, session_manager):
         """Given session, updates title"""
         session = session_manager.create(title="Original Title")
-        session_id = session.session_id
+        session_id = session.id
 
         # Update title
         session.title = "Updated Title"
         session_manager.save()
 
         # Reload and verify
-        loaded = session_manager.load(session_id)
+        loaded = session_manager.get_session(session_id)
+        assert loaded is not None
         assert loaded.title == "Updated Title"
 
 
@@ -79,7 +80,7 @@ class TestSessionMessages:
         """Given session, adds user message"""
         session = session_manager.create(title="Message Test")
 
-        session.add_user_message("Hello, assistant!")
+        session.add_message_from_dict("user", "Hello, assistant!")
 
         assert len(session.messages) == 1
         assert session.messages[0].content == "Hello, assistant!"
@@ -89,7 +90,7 @@ class TestSessionMessages:
         """Given session, adds assistant message"""
         session = session_manager.create(title="Message Test")
 
-        session.add_assistant_message("Hello, user!")
+        session.add_message_from_dict("assistant", "Hello, user!")
 
         assert len(session.messages) == 1
         assert session.messages[0].content == "Hello, user!"
@@ -100,21 +101,22 @@ class TestSessionMessages:
         session = session_manager.create(title="Conversation")
 
         # User message
-        session.add_user_message("What is 2 + 2?")
+        session.add_message_from_dict("user", "What is 2 + 2?")
         assert len(session.messages) == 1
 
         # Assistant response
-        session.add_assistant_message("2 + 2 equals 4.")
+        session.add_message_from_dict("assistant", "2 + 2 equals 4.")
         assert len(session.messages) == 2
 
         # User followup
-        session.add_user_message("Thanks!")
+        session.add_message_from_dict("user", "Thanks!")
         assert len(session.messages) == 3
 
         # Save and reload
         session_manager.save()
-        loaded = session_manager.load(session.session_id)
+        loaded = session_manager.get_session(session.id)
 
+        assert loaded is not None
         assert len(loaded.messages) == 3
         assert loaded.messages[0].role == "user"
         assert loaded.messages[1].role == "assistant"
@@ -127,20 +129,20 @@ class TestSessionPersistence:
     def test_saves_session_to_disk(self, session_manager, forge_data_dir):
         """Given session, saves to disk"""
         session = session_manager.create(title="Persist Test")
-        session.add_user_message("Test message")
+        session.add_message_from_dict("user", "Test message")
 
         session_manager.save()
 
         # Verify file exists
-        session_file = forge_data_dir / "sessions" / f"{session.session_id}.json"
+        session_file = forge_data_dir / "sessions" / f"{session.id}.json"
         assert session_file.exists()
 
     def test_loads_from_disk_after_restart(self, session_manager, forge_data_dir):
         """Given saved session, loads after simulated restart"""
         # Create and save
         session = session_manager.create(title="Restart Test")
-        session.add_user_message("Before restart")
-        session_id = session.session_id
+        session.add_message_from_dict("user", "Before restart")
+        session_id = session.id
         session_manager.save()
 
         # Simulate restart by creating new manager
@@ -149,11 +151,11 @@ class TestSessionPersistence:
         storage = SessionStorage(forge_data_dir / "sessions")
         new_manager = SessionManager(storage=storage)
 
-        # Load session
-        loaded = new_manager.load(session_id)
+        # Load session using get_session
+        loaded = new_manager.get_session(session_id)
 
         assert loaded is not None
-        assert loaded.session_id == session_id
+        assert loaded.id == session_id
         assert loaded.title == "Restart Test"
         assert len(loaded.messages) == 1
 
@@ -162,8 +164,8 @@ class TestSessionPersistence:
         session1 = session_manager.create(title="Session 1")
         session2 = session_manager.create(title="Session 2")
 
-        session1.add_user_message("Message for session 1")
-        session2.add_user_message("Message for session 2")
+        session1.add_message_from_dict("user", "Message for session 1")
+        session2.add_message_from_dict("user", "Message for session 2")
 
         assert len(session1.messages) == 1
         assert len(session2.messages) == 1
@@ -174,19 +176,20 @@ class TestSessionCommands:
     """E2E tests for session-related commands."""
 
     @pytest.mark.asyncio
-    async def test_session_new_command(self):
+    async def test_session_new_command(self, session_manager):
         """Given /session new command, creates new session"""
         from code_forge.commands.parser import ParsedCommand
         from code_forge.commands.executor import CommandContext
-        from code_forge.commands.builtin.session import SessionNewCommand
+        from code_forge.commands.builtin.session_commands import SessionNewCommand
 
         cmd = SessionNewCommand()
         parsed = ParsedCommand(
-            name="session-new",
-            args=["Test Session"],
-            raw="session-new Test Session",
+            name="new",
+            args=[],
+            raw="/session new --title 'Test Session'",
         )
-        context = CommandContext()
+        parsed.kwargs = {"title": "Test Session"}
+        context = CommandContext(session_manager=session_manager)
 
         result = await cmd.execute(parsed, context)
 
@@ -198,7 +201,7 @@ class TestSessionCommands:
         """Given /session list command, lists sessions"""
         from code_forge.commands.parser import ParsedCommand
         from code_forge.commands.executor import CommandContext
-        from code_forge.commands.builtin.session import SessionListCommand
+        from code_forge.commands.builtin.session_commands import SessionListCommand
 
         # Create some sessions first
         session_manager.create(title="Test 1")
@@ -206,8 +209,8 @@ class TestSessionCommands:
         session_manager.save()
 
         cmd = SessionListCommand()
-        parsed = ParsedCommand(name="session-list", args=[], raw="session-list")
-        context = CommandContext()
+        parsed = ParsedCommand(name="list", args=[], raw="/session list")
+        context = CommandContext(session_manager=session_manager)
 
         result = await cmd.execute(parsed, context)
 
