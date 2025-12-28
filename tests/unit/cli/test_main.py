@@ -54,7 +54,7 @@ class TestMainFunction:
         """Running without arguments should start the REPL."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_stdin = MagicMock()
         mock_stdin.read.return_value = ""
@@ -92,7 +92,7 @@ class TestMainFunction:
         """REPL error should return exit code 1."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_stdin = MagicMock()
         mock_stdin.read.return_value = ""
@@ -114,7 +114,7 @@ class TestMainFunction:
         """KeyboardInterrupt should return exit code 130."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_stdin = MagicMock()
         mock_stdin.read.return_value = ""
@@ -202,7 +202,7 @@ class TestOutputFormatFlags:
         """--no-color should be a valid flag."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_config.display.color = True
         mock_stdin = MagicMock()
@@ -226,7 +226,7 @@ class TestOutputFormatFlags:
         """-q should be a valid flag."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_config.display.quiet = False
         mock_stdin = MagicMock()
@@ -250,7 +250,7 @@ class TestOutputFormatFlags:
         """--quiet should be a valid flag."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_config.display.quiet = False
         mock_stdin = MagicMock()
@@ -273,7 +273,7 @@ class TestOutputFormatFlags:
         """--json should be a valid flag."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_config.display.json_output = False
         mock_stdin = MagicMock()
@@ -296,7 +296,7 @@ class TestOutputFormatFlags:
         """Multiple output flags should work together."""
         mock_repl = MagicMock()
         mock_config = MagicMock()
-        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.model.default = "moonshotai/kimi-k2"
         mock_config.get_api_key.return_value = "test-api-key"
         mock_config.display.color = True
         mock_config.display.quiet = False

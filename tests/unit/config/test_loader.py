@@ -44,7 +44,7 @@ class TestConfigLoaderLoadAll:
         )
         config = loader.load_all()
 
-        assert config.model.default == "anthropic/claude-3.5-sonnet"
+        assert config.model.default == "moonshotai/kimi-k2"
         assert config.display.theme == "dark"
 
     def test_load_user_json(self, tmp_path: Path) -> None:

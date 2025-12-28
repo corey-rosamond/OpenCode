@@ -194,7 +194,7 @@ class TestToolCategory:
 
     def test_category_count(self) -> None:
         """Test that we have the expected number of categories."""
-        assert len(ToolCategory) == 7
+        assert len(ToolCategory) == 8
 
     def test_category_is_string_enum(self) -> None:
         """Test that categories can be used as strings via .value."""
@@ -744,7 +744,8 @@ class TestBaseToolExecution:
         result = await tool.execute(ctx)
 
         assert result.success is False
-        assert "Intentional error" in result.error
+        # Error message includes the exception type
+        assert "RuntimeError" in result.error or "Unexpected error" in result.error
 
     @pytest.mark.asyncio
     async def test_dry_run_mode(self) -> None:

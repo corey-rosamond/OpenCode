@@ -803,15 +803,41 @@ def benchmark_timer():
 # ============================================================
 
 
-@pytest.fixture
+@pytest.fixture(scope="function")
 def event_loop():
     """Create an event loop for async tests.
 
     This fixture ensures each test gets a fresh event loop.
+    Uses a policy-based approach to work around WSL source code inspection issues.
 
     Yields:
         Event loop instance.
     """
-    loop = asyncio.new_event_loop()
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    asyncio.set_event_loop(loop)
     yield loop
     loop.close()
+    asyncio.set_event_loop(None)
+
+
+# Configure pytest-asyncio to use our event_loop fixture
+def pytest_configure(config):
+    """Configure pytest for async tests."""
+    # Register custom markers
+    config.addinivalue_line("markers", "slow: marks tests as slow running")
+
+
+@pytest.fixture(scope="session")
+def session_event_loop():
+    """Session-scoped event loop for fixtures that need it.
+
+    Yields:
+        Event loop instance that persists for the test session.
+    """
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    asyncio.set_event_loop(loop)
+    yield loop
+    loop.close()
+    asyncio.set_event_loop(None)

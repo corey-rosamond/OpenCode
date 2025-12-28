@@ -130,7 +130,9 @@ class MCPManager:
         Raises:
             ValueError: If transport type is unknown.
         """
-        if config.transport == "stdio":
+        # Compare against enum values (TransportType is a str,Enum)
+        transport = str(config.transport.value) if hasattr(config.transport, 'value') else str(config.transport)
+        if transport == "stdio":
             if config.command is None:
                 raise ValueError(f"Server {config.name}: command is required")
             return StdioTransport(
@@ -139,7 +141,7 @@ class MCPManager:
                 env=config.env,
                 cwd=config.cwd,
             )
-        elif config.transport == "http":
+        elif transport == "streamable-http":
             if config.url is None:
                 raise ValueError(f"Server {config.name}: url is required")
             return HTTPTransport(

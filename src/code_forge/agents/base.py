@@ -19,6 +19,8 @@ from uuid import UUID, uuid4
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from code_forge.rag.manager import RAGManager
+
     from .result import AgentResult
 
 
@@ -204,6 +206,7 @@ class AgentContext:
         environment: Environment variables.
         metadata: Additional context data.
         parent_id: ID of parent agent (if any).
+        rag_manager: Optional RAG manager for context augmentation.
     """
 
     parent_messages: list[dict[str, Any]] = field(default_factory=list)
@@ -211,6 +214,7 @@ class AgentContext:
     environment: dict[str, str] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
     parent_id: UUID | None = None
+    rag_manager: RAGManager | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to dictionary.
@@ -224,6 +228,7 @@ class AgentContext:
             "environment": self.environment,
             "metadata": self.metadata,
             "parent_id": str(self.parent_id) if self.parent_id else None,
+            "has_rag_manager": self.rag_manager is not None,
         }
 
 

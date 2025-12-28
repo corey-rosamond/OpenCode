@@ -53,7 +53,7 @@ def mcp_config() -> MCPConfig:
             ),
             "http-server": MCPServerConfig(
                 name="http-server",
-                transport="http",
+                transport="streamable-http",
                 url="http://localhost:8080/mcp",
                 enabled=True,
                 auto_connect=False,

@@ -1,6 +1,6 @@
 [project]
 name = "code-forge"
-version = "1.8.15"
+version = "1.9.0"
 description = "AI-powered CLI development assistant with OpenRouter API and LangChain"
 readme = "README.md"
 license = { text = "MIT" }
@@ -48,7 +48,7 @@ dependencies = [
     "aiofiles>=23.0,<25.0",
     "beautifulsoup4>=4.12,<5.0",
     "html2text>=2024.2,<2025.0",
-    "duckduckgo-search>=4.0,<6.0",
+    "duckduckgo-search>=6.0,<9.0",
     "chardet>=5.0,<6.0",
 ]
 
@@ -169,10 +169,12 @@ known-first-party = ["code_forge"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 addopts = "-v --tb=short"
 filterwarnings = [
     "ignore::DeprecationWarning",
+    "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
 
 [tool.coverage.run]

@@ -26,7 +26,7 @@ class TestModelConfig:
     def test_default_values(self) -> None:
         """Test default values are set correctly."""
         config = ModelConfig()
-        assert config.default == "anthropic/claude-3.5-sonnet"
+        assert config.default == "moonshotai/kimi-k2"
         assert "openai/gpt-4o" in config.fallback
         assert config.max_tokens == 8192
         assert config.temperature == 1.0
@@ -324,7 +324,7 @@ class TestCodeForgeConfig:
     def test_default_values(self) -> None:
         """Test default root config values."""
         config = CodeForgeConfig()
-        assert config.model.default == "anthropic/claude-3.5-sonnet"
+        assert config.model.default == "moonshotai/kimi-k2"
         assert config.display.theme == "dark"
         assert config.api_key is None
 

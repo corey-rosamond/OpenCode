@@ -223,7 +223,7 @@ class TestPermissionConfigSave:
 
                 rules = RuleSet(default=PermissionLevel.DENY)
                 rules.add_rule(
-                    PermissionRule("tool:custom", PermissionLevel.ALLOW)
+                    PermissionRule(pattern="tool:custom", permission=PermissionLevel.ALLOW)
                 )
 
                 PermissionConfig.save_global(rules)
@@ -243,7 +243,7 @@ class TestPermissionConfigSave:
 
             rules = RuleSet(default=PermissionLevel.ALLOW)
             rules.add_rule(
-                PermissionRule("tool:project", PermissionLevel.ASK)
+                PermissionRule(pattern="tool:project", permission=PermissionLevel.ASK)
             )
 
             PermissionConfig.save_project(project_root, rules)
@@ -313,8 +313,8 @@ class TestPermissionConfigRoundtrip:
                 original = RuleSet(default=PermissionLevel.DENY)
                 original.add_rule(
                     PermissionRule(
-                        "tool:bash,arg:command:*safe*",
-                        PermissionLevel.ALLOW,
+                        pattern="tool:bash,arg:command:*safe*",
+                        permission=PermissionLevel.ALLOW,
                         description="Allow safe commands",
                         priority=50,
                     )
@@ -342,8 +342,8 @@ class TestPermissionConfigRoundtrip:
             original = RuleSet(default=PermissionLevel.ALLOW)
             original.add_rule(
                 PermissionRule(
-                    "tool:project_specific",
-                    PermissionLevel.DENY,
+                    pattern="tool:project_specific",
+                    permission=PermissionLevel.DENY,
                     description="Project-specific rule",
                 )
             )

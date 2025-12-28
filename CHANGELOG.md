@@ -5,16 +5,22 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - RAG Phase 4
+## [1.9.0] - 2025-12-28
 
 ### Added
-- **FEAT-001: RAG Phase 4 - Manager & Commands**
-  - `RAGManager` - Central coordinator for all RAG operations
-  - `RAGStatus` - Status information dataclass
-  - CLI commands: `/rag index`, `/rag search`, `/rag status`, `/rag clear`, `/rag config`
-  - `RAGContextAugmenter` - Integration with ContextManager for LLM context
-  - `RAGMessageProcessor` - Determines when to augment context
-  - 325 total RAG tests (91 new for Phase 4), 92% coverage
+- **FEAT-001: Per-Project RAG Support (Complete)**
+  - **Phase 4: Manager & Commands**
+    - `RAGManager` - Central coordinator for all RAG operations
+    - `RAGStatus` - Status information dataclass
+    - CLI commands: `/rag index`, `/rag search`, `/rag status`, `/rag clear`, `/rag config`
+    - `RAGContextAugmenter` - Integration with ContextManager for LLM context
+    - `RAGMessageProcessor` - Determines when to augment context
+  - **Phase 5: Integration & Polish**
+    - RAGManager integrated into `Dependencies` and `CommandContext`
+    - Auto-index on project open when RAG is enabled with `auto_index: true`
+    - Context augmentation in message flow - queries enhanced with relevant project context
+    - RAG commands registered with built-in command system
+  - 348 total RAG tests, 90%+ coverage across all phases
 
 ## [1.8.15] - 2025-12-28
 

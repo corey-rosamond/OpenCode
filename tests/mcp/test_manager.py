@@ -732,7 +732,7 @@ class TestMCPManager:
             servers={
                 "test": MCPServerConfig(
                     name="test",
-                    transport="http",
+                    transport="streamable-http",
                     url="https://example.com",
                     headers={"Auth": "token"},
                 )
@@ -751,11 +751,13 @@ class TestMCPManager:
 
     def test_create_transport_unknown(self) -> None:
         """Test creating transport with unknown type."""
+        from unittest.mock import MagicMock
+
         config = MCPConfig()
         manager = MCPManager(config)
 
-        # Create a config with invalid transport (bypass validation)
-        bad_config = MCPServerConfig.__new__(MCPServerConfig)
+        # Create a mock config with invalid transport
+        bad_config = MagicMock(spec=MCPServerConfig)
         bad_config.name = "test"
         bad_config.transport = "unknown"
         bad_config.command = "test"

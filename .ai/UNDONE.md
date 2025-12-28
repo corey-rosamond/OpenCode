@@ -6,8 +6,38 @@
 
 ## Active Tasks
 
+### FEAT-002: Multi-Agent Tools & Web Search Integration
+**Status:** ✅ Complete (v1.10.0)
+**Priority:** Critical (P0)
+**Version Target:** 1.10.0
+**Phase Directory:** `.ai/phase/llm-tool-integration/`
+
+**Problem:**
+- LLM cannot spawn sub-agents (TaskTool missing)
+- LLM cannot search web (WebSearchBaseTool missing)
+- LLM cannot fetch URLs (WebFetchBaseTool missing)
+- Agents don't have RAG access
+
+**Solution:**
+- Create TaskTool to expose 20+ agent types to LLM
+- Create WebSearchBaseTool wrapping existing web search
+- Create WebFetchBaseTool wrapping existing web fetch
+- Pass RAGManager through ExecutionContext to agents
+
+**Progress:**
+- [x] Phase directory created with all standard files
+- [x] TaskTool implementation
+- [x] WebSearchBaseTool implementation
+- [x] WebFetchBaseTool implementation
+- [x] Tool registration
+- [x] RAG integration for agents
+- [x] Unit tests (49 new tests)
+- [x] Full verification (5293 tests pass)
+
+---
+
 ### FEAT-001: Per-Project RAG Support
-**Status:** In Progress (Phase 4/5 Complete)
+**Status:** ✅ Complete (v1.9.0)
 **Priority:** High
 **Version Target:** 1.9.0
 **Phase Directory:** `.ai/phase/per-project-rag/`
@@ -34,14 +64,19 @@
   - CLI commands: /rag index, search, status, clear, config
   - RAGContextAugmenter for LLM context integration
   - 325 tests, 92% coverage for Phase 4 modules
-- [ ] Phase 5: Integration & Polish
+- [x] Phase 5: Integration & Polish (Complete)
+  - RAGManager integrated with Dependencies and CommandContext
+  - Auto-index on project open when enabled
+  - Context augmentation in message flow
+  - 348 total tests, 90%+ coverage
 
 **Files Created:**
 - Phase 1: models.py, config.py, embeddings.py
 - Phase 2: vectorstore.py, chunking.py
 - Phase 3: indexer.py, retriever.py
 - Phase 4: manager.py, commands.py, integration.py
-- Tests: test_*.py for each module (325 total tests)
+- Phase 5: Updated executor.py, dependencies.py, main.py
+- Tests: test_*.py for each module (348 total tests)
 
 ---
 
@@ -128,7 +163,7 @@ _All critical issues resolved._
 
 ## Feature Requests
 
-_FEAT-001 moved to Active Tasks (in progress)._
+_No pending feature requests._
 
 ---
 
@@ -138,16 +173,16 @@ _FEAT-001 moved to Active Tasks (in progress)._
 
 | Priority | Pending | In Progress | Deferred | Complete | Total |
 |----------|---------|-------------|----------|----------|-------|
-| **P0 Critical** | 0 | 0 | 0 | 3 | 3 |
+| **P0 Critical** | 0 | 0 | 0 | 4 | 4 |
 | **P1 High** | 1 | 0 | 0 | 3 | 4 |
 | **P2 Medium** | 0 | 0 | 0 | 5 | 5 |
 | **P3 Low** | 0 | 0 | 3 | 3 | 6 |
-| **Features** | 0 | 1 | 0 | 3 | 4 |
-| **TOTAL** | **1** | **1** | **3** | **17** | **22** |
+| **Features** | 0 | 0 | 0 | 5 | 5 |
+| **TOTAL** | **1** | **0** | **3** | **20** | **24** |
 
 ### Current Focus
 
-1. **FEAT-001** - Per-Project RAG Support (Phase 4/5 complete, 1 phase remaining)
+No active development. All critical issues resolved.
 
 ### Priority Order for Remaining Work
 
@@ -159,6 +194,8 @@ _FEAT-001 moved to Active Tasks (in progress)._
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.10.0 | 2025-12-28 | Multi-Agent Tools (FEAT-002): TaskTool, WebSearchBaseTool, WebFetchBaseTool, RAG integration, 49 new tests |
+| 1.9.0 | 2025-12-28 | RAG Support (FEAT-001): Per-project RAG with semantic search, 348 tests |
 | 1.8.15 | 2025-12-28 | Token counter fix (CLI-003): Fixed streaming token counter showing 0/200000 |
 | 1.8.14 | 2025-12-28 | Config consolidation (ARCH-004): Unified config patterns to Pydantic |
 | 1.8.13 | 2025-12-28 | Output options (CLI-002): Added --json, --no-color, -q CLI flags |

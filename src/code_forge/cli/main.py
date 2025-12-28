@@ -171,6 +171,28 @@ async def run_with_agent(
     if deps is None:
         deps = Dependencies.create(config, api_key)
 
+    # Auto-index project if RAG is enabled with auto_index
+    if deps.rag_manager is not None and config.rag.auto_index:
+        try:
+            # Check if index needs building
+            status = await deps.rag_manager.get_status()
+            if not status.indexed:
+                logger.info("Auto-indexing project for RAG...")
+                repl.output.print_dim("Indexing project for semantic search...")
+                await deps.rag_manager.index_project()
+                repl.output.print_dim("Indexing complete.")
+        except Exception as e:
+            logger.warning(f"Auto-index failed: {e}")
+
+    # Create RAG augmenter and processor if RAG is enabled
+    rag_augmenter = None
+    rag_processor = None
+    if deps.rag_manager is not None and deps.rag_manager.is_enabled:
+        from code_forge.rag.integration import RAGContextAugmenter, RAGMessageProcessor
+
+        rag_processor = RAGMessageProcessor(deps.rag_manager)
+        rag_augmenter = RAGContextAugmenter(deps.rag_manager)
+
     # Extract dependencies
     llm = deps.llm
     agent = deps.agent
@@ -296,6 +318,25 @@ async def run_with_agent(
                 # Add user message to session
                 session_manager.add_message("user", text)
 
+                # Augment query with RAG context if applicable
+                augmented_text = text
+                if rag_processor is not None and rag_augmenter is not None:
+                    if rag_processor.should_augment(text):
+                        try:
+                            context = await rag_augmenter.get_context_for_query(text)
+                            if context:
+                                # Prepend context to the user query
+                                augmented_text = (
+                                    f"<relevant_context>\n{context}\n</relevant_context>\n\n"
+                                    f"User query: {text}"
+                                )
+                                if not is_quiet and not is_json_mode:
+                                    repl.output.print_dim(
+                                        f"(Enhanced with {len(context):,} chars of project context)"
+                                    )
+                        except Exception as e:
+                            logger.warning(f"RAG augmentation failed: {e}")
+
                 # Stream agent execution with real-time output
                 accumulated_output = ""
                 current_tool = None
@@ -310,7 +351,7 @@ async def run_with_agent(
                     spinner = Status("[dim]Thinking...[/dim]", console=repl._console, spinner="dots")
                     spinner.start()
 
-                async for event in agent.stream(text):
+                async for event in agent.stream(augmented_text):
                     if event.type == AgentEventType.LLM_START:
                         iteration_count = event.data.get("iteration", 0)
                         if iteration_count > 1:

@@ -16,6 +16,14 @@ from code_forge.permissions.prompt import (
 )
 
 
+@pytest.fixture
+def event_loop():
+    """Create an event loop for async tests (fixes WSL source code issue)."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
+
+
 class TestConfirmationChoice:
     """Tests for ConfirmationChoice enum."""
 

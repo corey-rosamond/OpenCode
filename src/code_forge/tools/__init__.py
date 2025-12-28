@@ -62,6 +62,12 @@ from code_forge.tools.file import (
     register_file_tools,
 )
 from code_forge.tools.registry import ToolRegistry
+from code_forge.tools.task import TaskTool, register_task_tools
+from code_forge.tools.web import (
+    WebFetchBaseTool,
+    WebSearchBaseTool,
+    register_web_tools,
+)
 
 __all__ = [
     "BaseTool",
@@ -76,16 +82,21 @@ __all__ = [
     "ShellManager",
     "ShellProcess",
     "ShellStatus",
+    "TaskTool",
     "ToolCategory",
     "ToolExecution",
     "ToolExecutor",
     "ToolParameter",
     "ToolRegistry",
     "ToolResult",
+    "WebFetchBaseTool",
+    "WebSearchBaseTool",
     "WriteTool",
     "register_all_tools",
     "register_execution_tools",
     "register_file_tools",
+    "register_task_tools",
+    "register_web_tools",
 ]
 
 
@@ -93,3 +104,5 @@ def register_all_tools() -> None:
     """Register all built-in tools with the registry."""
     register_file_tools()
     register_execution_tools()
+    register_task_tools()
+    register_web_tools()

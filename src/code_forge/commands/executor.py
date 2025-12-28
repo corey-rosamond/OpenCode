@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from code_forge.config.models import CodeForgeConfig
     from code_forge.context.manager import ContextManager
     from code_forge.plugins.manager import PluginManager
+    from code_forge.rag.manager import RAGManager
     from code_forge.sessions.manager import SessionManager
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ class CommandContext:
         llm: LLM client instance.
         repl: REPL instance.
         plugin_manager: Plugin management instance.
+        rag_manager: RAG management instance.
         output: Function for writing output to user.
     """
 
@@ -43,6 +45,7 @@ class CommandContext:
     llm: Any = None  # OpenRouterLLM
     repl: Any = None  # REPL instance
     plugin_manager: PluginManager | None = None
+    rag_manager: RAGManager | None = None
     output: Callable[[str], None] = field(default_factory=lambda: print)
 
     def print(self, text: str) -> None:
@@ -162,6 +165,7 @@ def register_builtin_commands(registry: CommandRegistry | None = None) -> None:
         registry: Registry to use. Uses singleton if None.
     """
     from code_forge.plugins import commands as plugin_commands
+    from code_forge.rag import commands as rag_commands
 
     from .builtin import (
         config_commands,
@@ -184,6 +188,7 @@ def register_builtin_commands(registry: CommandRegistry | None = None) -> None:
         config_commands,
         debug_commands,
         plugin_commands,
+        rag_commands,
     ]:
         for command in module.get_commands():
             try:

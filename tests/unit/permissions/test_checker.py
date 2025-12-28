@@ -29,14 +29,14 @@ class TestPermissionChecker:
     def test_creation_with_global_rules(self):
         """Test creating checker with global rules."""
         global_rules = RuleSet()
-        global_rules.add_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
+        global_rules.add_rule(PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW))
         checker = PermissionChecker(global_rules=global_rules)
         assert len(checker.global_rules) == 1
 
     def test_creation_with_project_rules(self):
         """Test creating checker with project rules."""
         project_rules = RuleSet()
-        project_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.DENY))
+        project_rules.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY))
         checker = PermissionChecker(project_rules=project_rules)
         assert isinstance(checker.project_rules, RuleSet)
 
@@ -47,7 +47,7 @@ class TestPermissionCheckerCheck:
     def test_check_uses_global_rules(self):
         """Test that check uses global rules."""
         global_rules = RuleSet()
-        global_rules.add_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
+        global_rules.add_rule(PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW))
         checker = PermissionChecker(global_rules=global_rules)
 
         result = checker.check("read", {})
@@ -64,11 +64,11 @@ class TestPermissionCheckerCheck:
     def test_session_rules_override_global(self):
         """Test that session rules override global rules."""
         global_rules = RuleSet()
-        global_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.ASK))
+        global_rules.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK))
 
         checker = PermissionChecker(global_rules=global_rules)
         checker.add_session_rule(
-            PermissionRule("tool:bash", PermissionLevel.ALLOW, priority=100)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW, priority=100)
         )
 
         result = checker.check("bash", {})
@@ -77,10 +77,10 @@ class TestPermissionCheckerCheck:
     def test_project_rules_override_global(self):
         """Test that project rules override global rules."""
         global_rules = RuleSet()
-        global_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.ALLOW))
+        global_rules.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW))
 
         project_rules = RuleSet()
-        project_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.DENY))
+        project_rules.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY))
 
         checker = PermissionChecker(
             global_rules=global_rules, project_rules=project_rules
@@ -92,11 +92,11 @@ class TestPermissionCheckerCheck:
     def test_session_rules_override_project(self):
         """Test that session rules override project rules."""
         project_rules = RuleSet()
-        project_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.DENY))
+        project_rules.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY))
 
         checker = PermissionChecker(project_rules=project_rules)
         checker.add_session_rule(
-            PermissionRule("tool:bash", PermissionLevel.ALLOW, priority=100)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW, priority=100)
         )
 
         result = checker.check("bash", {})
@@ -109,7 +109,7 @@ class TestPermissionCheckerSessionRules:
     def test_add_session_rule(self):
         """Test adding a session rule."""
         checker = PermissionChecker()
-        rule = PermissionRule("tool:bash", PermissionLevel.ALLOW, priority=100)
+        rule = PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW, priority=100)
         checker.add_session_rule(rule)
 
         rules = checker.get_session_rules()
@@ -120,10 +120,10 @@ class TestPermissionCheckerSessionRules:
         """Test that adding session rule with same pattern replaces."""
         checker = PermissionChecker()
         checker.add_session_rule(
-            PermissionRule("tool:bash", PermissionLevel.ALLOW, priority=100)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW, priority=100)
         )
         checker.add_session_rule(
-            PermissionRule("tool:bash", PermissionLevel.DENY, priority=100)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY, priority=100)
         )
 
         rules = checker.get_session_rules()
@@ -134,7 +134,7 @@ class TestPermissionCheckerSessionRules:
         """Test removing a session rule."""
         checker = PermissionChecker()
         checker.add_session_rule(
-            PermissionRule("tool:bash", PermissionLevel.ALLOW)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW)
         )
 
         assert checker.remove_session_rule("tool:bash") is True
@@ -148,8 +148,8 @@ class TestPermissionCheckerSessionRules:
     def test_clear_session_rules(self):
         """Test clearing all session rules."""
         checker = PermissionChecker()
-        checker.add_session_rule(PermissionRule("tool:bash", PermissionLevel.ALLOW))
-        checker.add_session_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
+        checker.add_session_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW))
+        checker.add_session_rule(PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW))
 
         checker.clear_session_rules()
         assert len(checker.get_session_rules()) == 0
@@ -157,7 +157,7 @@ class TestPermissionCheckerSessionRules:
     def test_get_session_rules_returns_copy(self):
         """Test that get_session_rules returns a copy."""
         checker = PermissionChecker()
-        checker.add_session_rule(PermissionRule("tool:bash", PermissionLevel.ALLOW))
+        checker.add_session_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW))
 
         rules = checker.get_session_rules()
         rules.clear()
@@ -211,10 +211,10 @@ class TestPermissionCheckerFromConfig:
     def test_from_config_loads_rules(self, mock_load_project, mock_load_global):
         """Test that from_config loads global and project rules."""
         global_rules = RuleSet()
-        global_rules.add_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
+        global_rules.add_rule(PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW))
 
         project_rules = RuleSet()
-        project_rules.add_rule(PermissionRule("tool:bash", PermissionLevel.DENY))
+        project_rules.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY))
 
         mock_load_global.return_value = global_rules
         mock_load_project.return_value = project_rules
@@ -292,15 +292,15 @@ class TestPermissionCheckerIntegration:
         # Setup global rules
         global_rules = RuleSet(default=PermissionLevel.ASK)
         global_rules.add_rule(
-            PermissionRule("tool:read", PermissionLevel.ALLOW)
+            PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW)
         )
         global_rules.add_rule(
-            PermissionRule("tool:bash", PermissionLevel.ASK)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK)
         )
         global_rules.add_rule(
             PermissionRule(
-                "tool:bash,arg:command:*rm -rf*",
-                PermissionLevel.DENY,
+                pattern="tool:bash,arg:command:*rm -rf*",
+                permission=PermissionLevel.DENY,
                 priority=50,
             )
         )

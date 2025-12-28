@@ -8,27 +8,37 @@
 
 **All critical (P0) and most high-priority (P1/P2) issues have been resolved.**
 
-Check `UNDONE.md` for remaining deferred items and feature requests.
+Check `UNDONE.md` for remaining deferred items.
 
 ### Active Development
 
-**FEAT-001: Per-Project RAG Support** - Phase 4 Complete (v1.9.0-dev)
+No active development tasks. All critical issues resolved.
+
+### Recently Completed
+
+**FEAT-002: Multi-Agent Tools & Web Search Integration** - ✅ Complete (v1.10.0)
+- Phase directory: `.ai/phase/llm-tool-integration/`
+- TaskTool, WebSearchBaseTool, WebFetchBaseTool
+- RAG integration for agents
+- 49 new tests, 5293 total tests pass
+
+**FEAT-001: Per-Project RAG Support** - ✅ Complete (v1.9.0)
 - Phase directory: `.ai/phase/per-project-rag/`
-- Progress: Phase 4 of 5 complete (Manager & Commands)
-- Remaining: Phase 5 (Integration & Polish)
+- All 5 phases complete with 348 tests
 
 ### Remaining Work
 
 | Priority | Status | Items |
 |----------|--------|-------|
-| P0 Critical | ✅ Complete | All 3 items resolved |
+| P0 Critical | ✅ Complete | All resolved |
 | P1 High | 1 pending | SEC-022 (documented) |
 | P2 Medium | ✅ Complete | All 5 items resolved |
 | P3 Low | 3 deferred | Minor improvements |
-| Features | 1 in progress | FEAT-001 (RAG support) - Phase 4/5 |
+| Features | ✅ Complete | FEAT-001, FEAT-002 done |
 
-### Recently Completed (v1.8.1 - v1.8.15)
+### Other Recent Completions (v1.8.1 - v1.9.0)
 
+- FEAT-001: Per-Project RAG Support (v1.9.0)
 - DOC-001: Fixed README package references
 - CODE-001: Added UTILITY to ToolCategory enum
 - CICD-001: Created GitHub Actions CI/CD pipeline
@@ -82,7 +92,7 @@ Check `UNDONE.md` for remaining deferred items and feature requests.
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.8.15 (derived from pyproject.toml)
+**Version:** 1.9.0 (derived from pyproject.toml)
 **Status:** Production/Stable
 **Tests:** 4898+ (85%+ coverage)
 

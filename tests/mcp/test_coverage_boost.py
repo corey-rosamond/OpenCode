@@ -48,19 +48,22 @@ class TestMCPManagerAdditional:
     @pytest.mark.asyncio
     async def test_connect_with_missing_command(self) -> None:
         """Test connect fails for stdio with missing command."""
-        # Create config with None command (bypass validation)
+        from unittest.mock import MagicMock
+
+        # Create config with mock server config (bypass Pydantic validation)
         config = MCPConfig()
-        config.servers["test"] = MCPServerConfig.__new__(MCPServerConfig)
-        config.servers["test"].name = "test"
-        config.servers["test"].transport = "stdio"
-        config.servers["test"].command = None
-        config.servers["test"].enabled = True
-        config.servers["test"].args = None
-        config.servers["test"].env = None
-        config.servers["test"].cwd = None
-        config.servers["test"].url = None
-        config.servers["test"].headers = None
-        config.servers["test"].auto_connect = True
+        mock_server = MagicMock(spec=MCPServerConfig)
+        mock_server.name = "test"
+        mock_server.transport = "stdio"
+        mock_server.command = None
+        mock_server.enabled = True
+        mock_server.args = None
+        mock_server.env = None
+        mock_server.cwd = None
+        mock_server.url = None
+        mock_server.headers = None
+        mock_server.auto_connect = True
+        config.servers["test"] = mock_server
 
         manager = MCPManager(config)
 
@@ -69,20 +72,24 @@ class TestMCPManagerAdditional:
 
     @pytest.mark.asyncio
     async def test_connect_with_missing_url(self) -> None:
-        """Test connect fails for http with missing url."""
-        # Create config with None url (bypass validation)
+        """Test connect fails for streamable-http with missing url."""
+        from unittest.mock import MagicMock
+        from code_forge.config.models import TransportType
+
+        # Create config with mock server config (bypass Pydantic validation)
         config = MCPConfig()
-        config.servers["test"] = MCPServerConfig.__new__(MCPServerConfig)
-        config.servers["test"].name = "test"
-        config.servers["test"].transport = "http"
-        config.servers["test"].url = None
-        config.servers["test"].enabled = True
-        config.servers["test"].command = None
-        config.servers["test"].args = None
-        config.servers["test"].env = None
-        config.servers["test"].cwd = None
-        config.servers["test"].headers = None
-        config.servers["test"].auto_connect = True
+        mock_server = MagicMock(spec=MCPServerConfig)
+        mock_server.name = "test"
+        mock_server.transport = TransportType.STREAMABLE_HTTP
+        mock_server.url = None
+        mock_server.enabled = True
+        mock_server.command = None
+        mock_server.args = None
+        mock_server.env = None
+        mock_server.cwd = None
+        mock_server.headers = None
+        mock_server.auto_connect = True
+        config.servers["test"] = mock_server
 
         manager = MCPManager(config)
 
@@ -282,7 +289,7 @@ class TestMCPConfigEdgeCases:
 
     def test_mcp_settings_from_dict_empty(self) -> None:
         """Test settings from empty dict uses defaults."""
-        settings = MCPSettings.from_dict({})
+        settings = MCPSettings.model_validate({})
         assert settings.auto_connect is True
         assert settings.reconnect_attempts == 3
         assert settings.reconnect_delay == 5
@@ -290,7 +297,7 @@ class TestMCPConfigEdgeCases:
 
     def test_mcp_config_from_dict_empty(self) -> None:
         """Test config from empty dict."""
-        config = MCPConfig.from_dict({})
+        config = MCPConfig.model_validate({})
         assert config.servers == {}
         assert config.settings.auto_connect is True
 

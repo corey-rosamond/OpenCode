@@ -335,8 +335,8 @@ class TestRuleSet:
     def test_creation_with_rules(self):
         """Test creating rule set with rules."""
         rules = [
-            PermissionRule("tool:read", PermissionLevel.ALLOW),
-            PermissionRule("tool:bash", PermissionLevel.ASK),
+            PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW),
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK),
         ]
         ruleset = RuleSet(rules=rules, default=PermissionLevel.DENY)
         assert len(ruleset) == 2
@@ -345,13 +345,13 @@ class TestRuleSet:
     def test_add_rule(self):
         """Test adding a rule."""
         ruleset = RuleSet()
-        ruleset.add_rule(PermissionRule("tool:bash", PermissionLevel.ASK))
+        ruleset.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK))
         assert len(ruleset) == 1
 
     def test_remove_rule_exists(self):
         """Test removing an existing rule."""
         ruleset = RuleSet()
-        ruleset.add_rule(PermissionRule("tool:bash", PermissionLevel.ASK))
+        ruleset.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK))
         assert ruleset.remove_rule("tool:bash") is True
         assert len(ruleset) == 0
 
@@ -363,7 +363,7 @@ class TestRuleSet:
     def test_get_rule_exists(self):
         """Test getting an existing rule."""
         ruleset = RuleSet()
-        rule = PermissionRule("tool:bash", PermissionLevel.ASK)
+        rule = PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK)
         ruleset.add_rule(rule)
         found = ruleset.get_rule("tool:bash")
         assert found is rule
@@ -376,8 +376,8 @@ class TestRuleSet:
     def test_iterate_rules(self):
         """Test iterating over rules."""
         rules = [
-            PermissionRule("tool:read", PermissionLevel.ALLOW),
-            PermissionRule("tool:bash", PermissionLevel.ASK),
+            PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW),
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK),
         ]
         ruleset = RuleSet(rules=rules)
         collected = list(ruleset)
@@ -398,7 +398,7 @@ class TestRuleSetEvaluate:
     def test_matching_rule_returns_its_permission(self):
         """Test matching rule returns its permission level."""
         ruleset = RuleSet()
-        ruleset.add_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
+        ruleset.add_rule(PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW))
         result = ruleset.evaluate("read", {})
         assert result.level == PermissionLevel.ALLOW
         assert isinstance(result.rule, PermissionRule)
@@ -408,7 +408,7 @@ class TestRuleSetEvaluate:
         """Test that disabled rules are not matched."""
         ruleset = RuleSet()
         ruleset.add_rule(
-            PermissionRule("tool:bash", PermissionLevel.DENY, enabled=False)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY, enabled=False)
         )
         result = ruleset.evaluate("bash", {})
         assert result.level == PermissionLevel.ASK  # Default
@@ -417,9 +417,9 @@ class TestRuleSetEvaluate:
     def test_most_specific_rule_wins(self):
         """Test that more specific rule wins over general."""
         ruleset = RuleSet()
-        ruleset.add_rule(PermissionRule("tool:bash", PermissionLevel.ASK))
+        ruleset.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK))
         ruleset.add_rule(
-            PermissionRule("tool:bash,arg:command:ls", PermissionLevel.ALLOW)
+            PermissionRule(pattern="tool:bash,arg:command:ls", permission=PermissionLevel.ALLOW)
         )
         result = ruleset.evaluate("bash", {"command": "ls"})
         assert result.level == PermissionLevel.ALLOW
@@ -428,10 +428,10 @@ class TestRuleSetEvaluate:
         """Test that higher priority rule wins."""
         ruleset = RuleSet()
         ruleset.add_rule(
-            PermissionRule("tool:bash", PermissionLevel.ALLOW, priority=0)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW, priority=0)
         )
         ruleset.add_rule(
-            PermissionRule("tool:bash", PermissionLevel.DENY, priority=10)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY, priority=10)
         )
         result = ruleset.evaluate("bash", {})
         assert result.level == PermissionLevel.DENY
@@ -440,10 +440,10 @@ class TestRuleSetEvaluate:
         """Test that more restrictive rule wins on tie."""
         ruleset = RuleSet()
         ruleset.add_rule(
-            PermissionRule("tool:bash", PermissionLevel.ALLOW, priority=0)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.ALLOW, priority=0)
         )
         ruleset.add_rule(
-            PermissionRule("tool:bash", PermissionLevel.DENY, priority=0)
+            PermissionRule(pattern="tool:bash", permission=PermissionLevel.DENY, priority=0)
         )
         result = ruleset.evaluate("bash", {})
         assert result.level == PermissionLevel.DENY
@@ -453,8 +453,8 @@ class TestRuleSetEvaluate:
         ruleset = RuleSet()
         ruleset.add_rule(
             PermissionRule(
-                "tool:bash",
-                PermissionLevel.ASK,
+                pattern="tool:bash",
+                permission=PermissionLevel.ASK,
                 description="Confirm shell commands",
             )
         )
@@ -464,7 +464,7 @@ class TestRuleSetEvaluate:
     def test_rule_pattern_in_reason_when_no_description(self):
         """Test that rule pattern appears in reason when no description."""
         ruleset = RuleSet()
-        ruleset.add_rule(PermissionRule("tool:bash", PermissionLevel.ASK))
+        ruleset.add_rule(PermissionRule(pattern="tool:bash", permission=PermissionLevel.ASK))
         result = ruleset.evaluate("bash", {})
         assert "tool:bash" in result.reason
 
@@ -475,7 +475,7 @@ class TestRuleSetSerialization:
     def test_to_dict(self):
         """Test serialization to dictionary."""
         ruleset = RuleSet(default=PermissionLevel.DENY)
-        ruleset.add_rule(PermissionRule("tool:read", PermissionLevel.ALLOW))
+        ruleset.add_rule(PermissionRule(pattern="tool:read", permission=PermissionLevel.ALLOW))
         data = ruleset.to_dict()
         assert data["default"] == "deny"
         assert len(data["rules"]) == 1
@@ -505,8 +505,8 @@ class TestRuleSetSerialization:
         original = RuleSet(default=PermissionLevel.DENY)
         original.add_rule(
             PermissionRule(
-                "tool:bash,arg:command:*rm*",
-                PermissionLevel.DENY,
+                pattern="tool:bash,arg:command:*rm*",
+                permission=PermissionLevel.DENY,
                 description="Block rm",
                 priority=50,
             )
