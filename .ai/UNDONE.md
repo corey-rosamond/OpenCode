@@ -30,16 +30,7 @@ _All critical issues resolved._
 - config/models.py uses Pydantic (canonical)
 - mcp/config.py uses dataclasses (MCPServerConfig duplicates Pydantic version)
 - hooks/config.py and permissions/config.py use class methods
-- web/config.py uses dataclasses (currently unused)
 Migration plan: Create common base, migrate one module at a time with tests.
-
-#### CODE-002: Dead Code - Unused WebConfig
-**Status:** Pending
-**Priority:** High
-**Phase Directory:** `.ai/phase/code-cleanup/`
-**Files:** `src/code_forge/web/config.py`
-**Issue:** `WebConfig` class appears to be completely unused - never instantiated
-**Impact:** Dead code increases maintenance burden and confusion
 
 #### CODE-003: Version Synchronization Burden
 **Status:** Pending
@@ -178,21 +169,20 @@ Migration plan: Create common base, migrate one module at a time with tests.
 | Priority | Pending | Deferred | Complete | Total |
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
-| **P1 High** | 3 | 1 | 0 | 4 |
+| **P1 High** | 2 | 1 | 1 | 4 |
 | **P2 Medium** | 3 | 2 | 0 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **7** | **9** | **6** | **22** |
+| **TOTAL** | **6** | **9** | **7** | **22** |
 
 ### Priority Order for Implementation
 
-1. **CODE-002** - Remove dead WebConfig code
-2. **CODE-003** - Fix version synchronization
-3. **SEC-022** - Address SSRF vulnerability
-4. **ARCH-004** - Consolidate config patterns
-5. **CODE-004** - Audit threading/async locking
-6. **CODE-005** - Centralize magic numbers
-7. **SESS-007** - Implement session cleanup
+1. **CODE-003** - Fix version synchronization
+2. **SEC-022** - Address SSRF vulnerability
+3. **ARCH-004** - Consolidate config patterns
+4. **CODE-004** - Audit threading/async locking
+5. **CODE-005** - Centralize magic numbers
+6. **SESS-007** - Implement session cleanup
 
 ---
 
@@ -200,6 +190,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.4 | 2025-12-27 | Dead code removal (CODE-002): Removed unused WebConfig and related classes |
 | 1.8.3 | 2025-12-27 | CI/CD (CICD-001): Added GitHub Actions workflows for testing and releases |
 | 1.8.2 | 2025-12-27 | Code fix (CODE-001): Added UTILITY to ToolCategory enum |
 | 1.8.1 | 2025-12-27 | Documentation fix (DOC-001): Fixed package references forge → code_forge |
