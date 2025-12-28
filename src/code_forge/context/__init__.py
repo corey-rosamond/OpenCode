@@ -51,6 +51,19 @@ from .tokens import (
     TokenCounter,
     get_counter,
 )
+from .profiles import (
+    LanguageProfile,
+    generate_project_context,
+    get_profile,
+    get_profile_for_project,
+)
+from .project_detector import (
+    ProjectInfo,
+    ProjectType,
+    ProjectTypeDetector,
+    detect_project,
+    get_detector,
+)
 
 __all__ = [
     "ApproximateCounter",
@@ -64,6 +77,10 @@ __all__ = [
     "ContextLimits",
     "ContextManager",
     "ContextTracker",
+    "LanguageProfile",
+    "ProjectInfo",
+    "ProjectType",
+    "ProjectTypeDetector",
     "SelectiveTruncationStrategy",
     "SlidingWindowStrategy",
     "SmartTruncationStrategy",
@@ -74,7 +91,12 @@ __all__ = [
     "TruncationMode",
     "TruncationStrategy",
     "WarningLevel",
+    "detect_project",
+    "generate_project_context",
     "get_counter",
+    "get_detector",
+    "get_profile",
+    "get_profile_for_project",
     "get_strategy",
     "get_warning_level",
 ]

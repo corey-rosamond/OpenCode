@@ -357,8 +357,8 @@ Extend ErrorExplainer (already created) with auto-suggestions and recovery actio
 
 ---
 
-### 🟡 CONV-004: Smart Project Type Detection
-**Status:** Pending
+### ✅ CONV-004: Smart Project Type Detection
+**Status:** ✅ COMPLETED v1.15.0
 **Priority:** High (P1)
 **Impact:** 7.5/10
 **Complexity:** Low
@@ -529,8 +529,8 @@ Based on **impact × (1/effort)** analysis:
 |-------|---------|--------|--------|-----------|-----------|
 | ~~1~~ | ~~CTX-001~~ | ~~9.0~~ | ~~Low~~ | ✅ | **COMPLETED v1.13.0** |
 | ~~1~~ | ~~CONV-003~~ | ~~8.5~~ | ~~Low~~ | ✅ | **COMPLETED v1.14.0** |
-| **1** | CONV-004 | 7.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, better context awareness |
-| **3** | CONV-005 | 8.0 | Medium | ⭐⭐⭐⭐ | Enables pronoun resolution, foundational |
+| ~~1~~ | ~~CONV-004~~ | ~~7.5~~ | ~~Low~~ | ✅ | **COMPLETED v1.15.0** |
+| **1** | CONV-005 | 8.0 | Medium | ⭐⭐⭐⭐ | Enables pronoun resolution, foundational |
 | **4** | CONV-001 | 9.5 | High | ⭐⭐⭐⭐ | Transformative, but complex |
 | **5** | CONV-002 | 9.0 | Medium | ⭐⭐⭐ | Builds on existing workflow system |
 | **6** | CONV-006 | 6.0 | Medium | ⭐⭐⭐ | Polish, nice-to-have |
@@ -541,7 +541,7 @@ Based on **impact × (1/effort)** analysis:
 **Sprint 1 (2-3 days): Quick Wins**
 - [x] CTX-001: Context Compression Visibility & Control ✅ COMPLETED v1.13.0
 - [x] CONV-003: Error Recovery Expansion ✅ COMPLETED v1.14.0
-- [ ] CONV-004: Project Type Detection
+- [x] CONV-004: Project Type Detection ✅ COMPLETED v1.15.0
 
 **Sprint 2 (4-5 days): Context Foundation**
 - [ ] CONV-005: Session Context Continuity
@@ -559,10 +559,10 @@ Based on **impact × (1/effort)** analysis:
 
 1. ~~**CTX-001** - Context Compression Visibility & Control~~ ✅ **COMPLETED v1.13.0**
 2. ~~**CONV-003** - Context-Aware Error Recovery~~ ✅ **COMPLETED v1.14.0**
-3. **CONV-004** - Smart Project Type Detection (P1, Impact 7.5) ⚡ Quick Win ⭐ **NEXT**
-4. **CONV-001** - Conversational Translation Layer (P0, Impact 9.5)
-5. **CONV-002** - Workflow Orchestration (P0, Impact 9.0)
-6. **CONV-005** - Session Context Continuity (P1, Impact 8.0)
+3. ~~**CONV-004** - Smart Project Type Detection~~ ✅ **COMPLETED v1.15.0**
+4. **CONV-005** - Session Context Continuity (P1, Impact 8.0) ⭐ **NEXT**
+5. **CONV-001** - Conversational Translation Layer (P0, Impact 9.5)
+6. **CONV-002** - Workflow Orchestration (P0, Impact 9.0)
 7. **CONV-006** - Visual Interface Enhancements (P2, Impact 6.0)
 8. **SEC-022** - Address SSRF vulnerability (documented, complex)
 

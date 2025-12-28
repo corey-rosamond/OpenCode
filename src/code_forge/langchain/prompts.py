@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 import platform
 from datetime import date
 from pathlib import Path
+
+from code_forge.context.profiles import generate_project_context
+from code_forge.context.project_detector import ProjectInfo, detect_project
+
+logger = logging.getLogger(__name__)
 
 
 def get_system_prompt(
     tool_names: list[str],
     working_directory: str | None = None,
     model: str | None = None,
+    project_info: ProjectInfo | None = None,
 ) -> str:
     """
     Generate comprehensive system prompt for the Code-Forge agent.
@@ -19,6 +26,7 @@ def get_system_prompt(
         tool_names: List of available tool names.
         working_directory: Current working directory.
         model: Current model name.
+        project_info: Optional pre-detected project info. If None, will auto-detect.
 
     Returns:
         Complete system prompt string.
@@ -27,13 +35,26 @@ def get_system_prompt(
     today = date.today().isoformat()
     os_info = f"{platform.system()} {platform.release()}"
 
+    # Detect project type if not provided
+    if project_info is None:
+        try:
+            project_info = detect_project(cwd)
+        except Exception as e:
+            logger.debug(f"Project detection failed: {e}")
+            project_info = ProjectInfo()
+
+    # Generate project context
+    project_context = ""
+    if project_info and project_info.project_type.value != "unknown":
+        project_context = f"\n\n{generate_project_context(project_info)}"
+
     return f"""You are Code-Forge, an AI-powered CLI development assistant. You help users with software engineering tasks including writing code, debugging, explaining code, running commands, and managing files.
 
 # Environment
 Working directory: {cwd}
 Platform: {os_info}
 Date: {today}
-Model: {model or "Not specified"}
+Model: {model or "Not specified"}{project_context}
 
 # Available Tools
 {', '.join(tool_names)}
