@@ -112,8 +112,9 @@ Usage:
             ToolParameter(
                 name="old_string",
                 type="string",
-                description="The text to replace (must be found exactly)",
+                description="The text to replace (must be found exactly, cannot be empty)",
                 required=True,
+                min_length=1,
             ),
             ToolParameter(
                 name="new_string",
