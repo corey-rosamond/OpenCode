@@ -57,8 +57,8 @@ Create a class that extends `Plugin`:
 ```python
 """My plugin implementation."""
 
-from forge.plugins import Plugin, PluginMetadata, PluginCapabilities, PluginContext
-from forge.tools import BaseTool, ToolParameter, ToolResult, ToolCategory
+from code_forge.plugins import Plugin, PluginMetadata, PluginCapabilities, PluginContext
+from code_forge.tools import BaseTool, ToolParameter, ToolResult, ToolCategory
 
 
 class MyTool(BaseTool):
@@ -146,7 +146,7 @@ def register_tools(self) -> list[BaseTool]:
 Provide slash commands:
 
 ```python
-from forge.commands import Command, CommandResult
+from code_forge.commands import Command, CommandResult
 
 class MyCommand(Command):
     @property
@@ -165,7 +165,7 @@ def register_commands(self) -> list[Command]:
 Register event hooks:
 
 ```python
-from forge.hooks import Hook
+from code_forge.hooks import Hook
 
 def register_hooks(self) -> list[Hook]:
     return [

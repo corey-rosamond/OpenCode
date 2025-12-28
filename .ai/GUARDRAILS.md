@@ -93,10 +93,10 @@ ls tests/
 pytest tests/ -v
 
 # Before saying "the module exists"
-ls forge/core/
+ls src/code_forge/core/
 
 # Before saying "the function works"
-python -c "from forge.core import Result; print(Result.ok('test'))"
+python -c "from code_forge.core import Result; print(Result.ok('test'))"
 ```
 
 ### ❌ Don't

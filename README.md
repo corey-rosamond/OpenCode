@@ -107,7 +107,7 @@ forge --help
 
 ```
 Code-Forge/
-├── src/forge/           # Source code
+├── src/code_forge/      # Source code
 │   ├── core/               # Core interfaces, types, errors, logging
 │   ├── config/             # Configuration system
 │   ├── cli/                # REPL, themes, status bar
@@ -138,7 +138,7 @@ Code-Forge/
 ### File Tools
 
 ```python
-from forge.tools.file import ReadTool, WriteTool, EditTool, GlobTool, GrepTool
+from code_forge.tools.file import ReadTool, WriteTool, EditTool, GlobTool, GrepTool
 
 # Read files with offset/limit support
 read = ReadTool()
@@ -168,7 +168,7 @@ result = await grep.execute(pattern="class.*Tool", path="/src")
 ### Execution Tools
 
 ```python
-from forge.tools.execution import BashTool, BashOutputTool, KillShellTool
+from code_forge.tools.execution import BashTool, BashOutputTool, KillShellTool
 
 # Execute shell commands
 bash = BashTool()
@@ -189,7 +189,7 @@ result = await kill.execute(shell_id="abc123")
 ## Permission System
 
 ```python
-from forge.permissions import PermissionChecker, PermissionLevel
+from code_forge.permissions import PermissionChecker, PermissionLevel
 
 checker = PermissionChecker()
 
@@ -241,7 +241,7 @@ Execute custom shell commands in response to lifecycle events.
 ### Programmatic Usage
 
 ```python
-from forge.hooks import HookRegistry, HookExecutor, HookEvent, Hook, fire_event
+from code_forge.hooks import HookRegistry, HookExecutor, HookEvent, Hook, fire_event
 
 # Register a hook
 registry = HookRegistry.get_instance()
@@ -264,7 +264,7 @@ for result in results:
 ## Session Management
 
 ```python
-from forge.sessions import SessionManager, Session
+from code_forge.sessions import SessionManager, Session
 
 # Get singleton manager instance
 manager = SessionManager.get_instance()
@@ -317,7 +317,7 @@ manager.register_hook("session:save", lambda s: print(f"Saved: {s.id}"))
 ## Context Management
 
 ```python
-from forge.context import ContextManager, TruncationMode
+from code_forge.context import ContextManager, TruncationMode
 
 # Create context manager for a model
 manager = ContextManager(
@@ -361,7 +361,7 @@ manager.reset()
 ### Token Counting
 
 ```python
-from forge.context import get_counter, TiktokenCounter, ApproximateCounter
+from code_forge.context import get_counter, TiktokenCounter, ApproximateCounter
 
 # Get appropriate counter for model
 counter = get_counter("claude-3-opus")
@@ -384,7 +384,7 @@ approx = ApproximateCounter(tokens_per_word=1.3)
 ### Truncation Strategies
 
 ```python
-from forge.context import (
+from code_forge.context import (
     SlidingWindowStrategy,
     TokenBudgetStrategy,
     SmartTruncationStrategy,
@@ -476,7 +476,7 @@ Code-Forge provides an extensible slash command system for quick actions within 
 ### Programmatic Usage
 
 ```python
-from forge.commands import CommandRegistry, CommandExecutor, CommandContext
+from code_forge.commands import CommandRegistry, CommandExecutor, CommandContext
 
 # Get command registry
 registry = CommandRegistry.get_instance()
@@ -515,7 +515,7 @@ Code-Forge supports different operating modes that modify assistant behavior for
 ### Programmatic Usage
 
 ```python
-from forge.modes import ModeManager, ModeContext, ModeName, setup_modes
+from code_forge.modes import ModeManager, ModeContext, ModeName, setup_modes
 
 # Set up all default modes
 manager = setup_modes()
@@ -540,7 +540,7 @@ manager.switch_mode(ModeName.NORMAL, context)
 ### Plan Mode
 
 ```python
-from forge.modes import PlanMode, Plan, PlanStep
+from code_forge.modes import PlanMode, Plan, PlanStep
 
 mode = PlanMode()
 
@@ -568,7 +568,7 @@ todos = mode.execute_plan()
 ### Thinking Mode
 
 ```python
-from forge.modes import ThinkingMode, ThinkingConfig
+from code_forge.modes import ThinkingMode, ThinkingConfig
 
 # Configure thinking mode
 config = ThinkingConfig(
@@ -592,7 +592,7 @@ if result:
 ### Headless Mode
 
 ```python
-from forge.modes import HeadlessMode, HeadlessConfig, OutputFormat
+from code_forge.modes import HeadlessMode, HeadlessConfig, OutputFormat
 
 # Configure headless mode for CI/CD
 config = HeadlessConfig(
@@ -651,16 +651,16 @@ source .venv/bin/activate
 pytest tests/ -v
 
 # Run tests with coverage
-pytest tests/ --cov=src/forge --cov-report=term-missing
+pytest tests/ --cov=src/code_forge --cov-report=term-missing
 
 # Type checking (strict mode)
-mypy src/forge/
+mypy src/code_forge/
 
 # Linting
-ruff check src/forge/
+ruff check src/code_forge/
 
 # Format code
-ruff format src/forge/
+ruff format src/code_forge/
 ```
 
 ### Quality Gates
