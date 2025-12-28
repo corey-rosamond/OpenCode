@@ -194,6 +194,7 @@ No active development. All critical issues resolved.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.11.0 | 2025-12-28 | RAG UX (RAG-001): Hybrid search, scope indicator, low confidence warning, TOOL-011 edit fix |
 | 1.10.0 | 2025-12-28 | Multi-Agent Tools (FEAT-002): TaskTool, WebSearchBaseTool, WebFetchBaseTool, RAG integration, 49 new tests |
 | 1.9.0 | 2025-12-28 | RAG Support (FEAT-001): Per-project RAG with semantic search, 348 tests |
 | 1.8.15 | 2025-12-28 | Token counter fix (CLI-003): Fixed streaming token counter showing 0/200000 |

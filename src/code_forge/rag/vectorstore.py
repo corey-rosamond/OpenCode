@@ -129,6 +129,15 @@ class VectorStore(ABC):
         """
         ...
 
+    @abstractmethod
+    async def get_all_chunk_ids(self) -> list[str]:
+        """Get all chunk IDs in the store.
+
+        Returns:
+            List of all chunk IDs.
+        """
+        ...
+
     @property
     @abstractmethod
     def name(self) -> str:
@@ -480,6 +489,22 @@ class ChromaStore(VectorStore):
             "collection_name": self._collection_name,
             "initialized": True,
         }
+
+    async def get_all_chunk_ids(self) -> list[str]:
+        """Get all chunk IDs in the store.
+
+        Returns:
+            List of all chunk IDs.
+        """
+        await self._ensure_initialized()
+
+        def _get_ids() -> list[str]:
+            # Get all IDs from collection
+            results = self._collection.get(include=[])
+            return results.get("ids", [])
+
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _get_ids)
 
 
 class FAISSStore(VectorStore):
@@ -889,6 +914,15 @@ class FAISSStore(VectorStore):
             "initialized": True,
         }
 
+    async def get_all_chunk_ids(self) -> list[str]:
+        """Get all chunk IDs in the store.
+
+        Returns:
+            List of all chunk IDs.
+        """
+        await self._ensure_initialized()
+        return list(self._id_to_idx.keys())
+
 
 class MockVectorStore(VectorStore):
     """In-memory vector store for testing.
@@ -1063,6 +1097,14 @@ class MockVectorStore(VectorStore):
             "backend": "mock",
             "initialized": True,
         }
+
+    async def get_all_chunk_ids(self) -> list[str]:
+        """Get all chunk IDs in the store.
+
+        Returns:
+            List of all chunk IDs.
+        """
+        return list(self._chunks.keys())
 
 
 def get_vector_store(

@@ -4,7 +4,7 @@ import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -398,6 +398,9 @@ class TestRAGCommandsWithMockManager:
         self, context_with_manager: MockCommandContext
     ) -> None:
         """Test search command with no results."""
+        # Mock search_hybrid to return empty results
+        context_with_manager.rag_manager.search_hybrid = AsyncMock(return_value=([], False))
+
         cmd = RAGSearchCommand()
         parsed = MockParsedCommand(args=["test", "query"])
 
@@ -406,7 +409,7 @@ class TestRAGCommandsWithMockManager:
         )
 
         assert result.success is True
-        assert "No results" in result.output
+        assert "No matches found" in result.output
 
     def test_search_command_with_results(
         self, context_with_manager: MockCommandContext
@@ -419,7 +422,10 @@ class TestRAGCommandsWithMockManager:
         mock_result.score = 0.95
         mock_result.snippet = "def test_function(): pass"
 
-        context_with_manager.rag_manager.search.return_value = [mock_result]
+        # Mock search_hybrid to return results
+        context_with_manager.rag_manager.search_hybrid = AsyncMock(
+            return_value=([mock_result], False)
+        )
 
         cmd = RAGSearchCommand()
         parsed = MockParsedCommand(args=["test"])

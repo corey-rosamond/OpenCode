@@ -117,12 +117,39 @@ class RAGSearchCommand(Command):
             return CommandResult.fail("Search query required")
 
         try:
-            results = await manager.search(query)
+            # Show scope indicator
+            context.print(f"Searching indexed files in: {manager.project_root}")
+
+            # Use hybrid search - falls back to text search when vector scores are low
+            results, used_fallback = await manager.search_hybrid(query)
 
             if not results:
-                return CommandResult.ok(f"No results found for: {query}")
+                return CommandResult.ok(
+                    f"No matches found for: {query}\n\n"
+                    f"Note: Only files within the project directory are indexed.\n"
+                    f"Use `grep` or `glob` for files outside the index scope."
+                )
+
+            # Check for low confidence results (only if not using fallback)
+            LOW_CONFIDENCE_THRESHOLD = 0.3
+            max_score = max(r.score for r in results)
+            low_confidence = not used_fallback and max_score < LOW_CONFIDENCE_THRESHOLD
 
             lines = [f"Found {len(results)} results for: {query}", ""]
+
+            if used_fallback:
+                lines.append(
+                    "📝 **Text search used** - exact matches found via keyword search."
+                )
+                lines.append("")
+            elif low_confidence:
+                lines.append(
+                    "⚠️  **Low confidence matches** - exact content may not exist in index."
+                )
+                lines.append(
+                    "    These are semantically similar results, not exact matches."
+                )
+                lines.append("")
 
             for i, result in enumerate(results, 1):
                 lines.append(

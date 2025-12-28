@@ -16,6 +16,15 @@ No active development tasks. All critical issues resolved.
 
 ### Recently Completed
 
+**RAG-001: RAG Search UX Enhancements** - ✅ Complete (v1.11.0)
+- Hybrid search combining vector + text search fallback
+- Scope indicator showing project root when searching
+- Low confidence warning for vector scores < 0.3
+- Better "no results" messaging with guidance
+
+**TOOL-011: Edit Tool Empty String Validation** - ✅ Complete (v1.11.0)
+- Added min_length=1 to prevent empty string replacement
+
 **FEAT-002: Multi-Agent Tools & Web Search Integration** - ✅ Complete (v1.10.0)
 - Phase directory: `.ai/phase/llm-tool-integration/`
 - TaskTool, WebSearchBaseTool, WebFetchBaseTool
@@ -92,9 +101,9 @@ No active development tasks. All critical issues resolved.
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.9.0 (derived from pyproject.toml)
+**Version:** 1.11.0 (derived from pyproject.toml)
 **Status:** Production/Stable
-**Tests:** 4898+ (85%+ coverage)
+**Tests:** 5293+ (85%+ coverage)
 
 ---
 

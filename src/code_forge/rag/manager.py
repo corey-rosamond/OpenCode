@@ -269,6 +269,43 @@ class RAGManager:
             max_results=max_results,
         )
 
+    async def search_hybrid(
+        self,
+        query: str,
+        filter: SearchFilter | None = None,
+        max_results: int | None = None,
+        fallback_threshold: float = 0.3,
+    ) -> tuple[list[SearchResult], bool]:
+        """Hybrid search combining vector and text search.
+
+        First performs vector search. If results are below the confidence
+        threshold, falls back to exact text matching within indexed content.
+
+        Args:
+            query: Natural language search query.
+            filter: Optional search filters.
+            max_results: Maximum number of results.
+            fallback_threshold: Score threshold below which to use text search.
+
+        Returns:
+            Tuple of (results, used_fallback) where used_fallback indicates
+            if text search was used instead of vector search.
+
+        Raises:
+            RuntimeError: If RAG is not enabled or initialized.
+        """
+        await self._ensure_initialized()
+
+        if self._retriever is None:
+            raise RuntimeError("Retriever not initialized")
+
+        return await self._retriever.search_hybrid(
+            query=query,
+            filter=filter,
+            max_results=max_results,
+            fallback_threshold=fallback_threshold,
+        )
+
     async def search_code(
         self,
         query: str,

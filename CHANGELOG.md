@@ -5,6 +5,31 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2025-12-28
+
+### Improved
+- **RAG-001: RAG Search UX Enhancements**
+  - Added scope indicator showing project root when searching
+  - Added low confidence warning when vector similarity scores are below 0.3
+  - Added better "no results" messaging with guidance for out-of-scope files
+  - Implemented hybrid search combining vector similarity with keyword text matching
+  - Text search fallback when vector search scores are low for exact matches
+
+### Fixed
+- **TOOL-011: Edit Tool Empty String Validation**
+  - Added `min_length=1` validation to prevent empty string replacement
+  - Error message now clearly states empty strings are not allowed
+
+## [1.10.0] - 2025-12-28
+
+### Added
+- **FEAT-002: Multi-Agent Tools & Web Search Integration**
+  - TaskTool: LLM can now spawn any of 20+ specialized agent types
+  - WebSearchBaseTool: LLM can search the web via DuckDuckGo
+  - WebFetchBaseTool: LLM can fetch and parse web pages
+  - RAG integration: Spawned agents have access to RAG context
+  - 49 new unit tests for all new tools
+
 ## [1.9.0] - 2025-12-28
 
 ### Added

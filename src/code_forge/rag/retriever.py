@@ -526,3 +526,110 @@ class RAGRetriever:
     def clear_cache(self) -> None:
         """Clear the document cache."""
         self._document_cache.clear()
+
+    async def search_hybrid(
+        self,
+        query: str,
+        filter: SearchFilter | None = None,
+        max_results: int | None = None,
+        fallback_threshold: float = 0.3,
+    ) -> tuple[list[SearchResult], bool]:
+        """Hybrid search combining vector and text search.
+
+        First performs vector search. If results are below the confidence
+        threshold, falls back to exact text matching within indexed content.
+
+        Args:
+            query: Search query.
+            filter: Optional search filters.
+            max_results: Maximum number of results.
+            fallback_threshold: Score threshold below which to use text search.
+
+        Returns:
+            Tuple of (results, used_fallback) where used_fallback indicates
+            if text search was used instead of vector search.
+        """
+        # First try vector search
+        results = await self.search(
+            query=query,
+            filter=filter,
+            max_results=max_results,
+        )
+
+        # Check if results are good enough
+        if results:
+            max_score = max(r.score for r in results)
+            if max_score >= fallback_threshold:
+                return results, False
+
+        # Fall back to text search
+        text_results = await self._text_search(
+            query=query,
+            max_results=max_results or self.config.default_max_results,
+        )
+
+        if text_results:
+            logger.debug(
+                f"Hybrid search: vector scores low, using text search. "
+                f"Found {len(text_results)} text matches."
+            )
+            return text_results, True
+
+        # Return vector results even if low confidence
+        return results, False
+
+    async def _text_search(
+        self,
+        query: str,
+        max_results: int = 10,
+    ) -> list[SearchResult]:
+        """Perform exact text search within indexed content.
+
+        Args:
+            query: Text to search for.
+            max_results: Maximum number of results.
+
+        Returns:
+            List of search results with exact text matches.
+        """
+        # Get all chunks from vector store and search for exact matches
+        # This is a simple implementation - could be optimized with a text index
+        results: list[SearchResult] = []
+        query_lower = query.lower()
+
+        # Search through indexed chunks
+        all_chunk_ids = await self.vector_store.get_all_chunk_ids()
+
+        for chunk_id in all_chunk_ids:
+            if len(results) >= max_results:
+                break
+
+            chunk_data = await self.vector_store.get_chunk(chunk_id)
+            if chunk_data is None:
+                continue
+
+            content = chunk_data.get("content", "")
+            if query_lower in content.lower():
+                chunk = self._reconstruct_chunk(chunk_data)
+                document = self._reconstruct_document(chunk_data)
+
+                # Calculate a simple relevance score based on frequency
+                count = content.lower().count(query_lower)
+                score = min(1.0, 0.5 + (count * 0.1))  # Base 0.5 + bonus for multiple matches
+
+                result = SearchResult.create(
+                    chunk=chunk,
+                    document=document,
+                    score=score,
+                    rank=len(results) + 1,
+                )
+                results.append(result)
+
+        # Sort by score descending
+        results.sort(key=lambda r: r.score, reverse=True)
+
+        # Update ranks after sorting
+        for i, result in enumerate(results):
+            result.rank = i + 1
+
+        return results
