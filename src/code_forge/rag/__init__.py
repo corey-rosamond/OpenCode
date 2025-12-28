@@ -44,6 +44,15 @@ Configuration:
     }
 """
 
+from .chunking import (
+    ChunkingStrategy,
+    GenericChunker,
+    JavaScriptChunker,
+    MarkdownChunker,
+    PythonCodeChunker,
+    detect_language,
+    get_chunker,
+)
 from .config import (
     DEFAULT_EXCLUDE_PATTERNS,
     DEFAULT_INCLUDE_PATTERNS,
@@ -58,6 +67,19 @@ from .embeddings import (
     SentenceTransformerProvider,
     get_embedding_provider,
 )
+from .indexer import (
+    FileProcessor,
+    ProjectIndexer,
+)
+from .integration import (
+    RAGContextAugmenter,
+    RAGMessageProcessor,
+    create_augmenter,
+)
+from .manager import (
+    RAGManager,
+    RAGStatus,
+)
 from .models import (
     Chunk,
     ChunkType,
@@ -68,8 +90,29 @@ from .models import (
     SearchFilter,
     SearchResult,
 )
+from .retriever import (
+    RAGRetriever,
+    RankerConfig,
+    ResultRanker,
+    RetrievalContext,
+)
+from .vectorstore import (
+    ChromaStore,
+    FAISSStore,
+    MockVectorStore,
+    VectorStore,
+    get_vector_store,
+)
 
 __all__ = [
+    # Chunking
+    "ChunkingStrategy",
+    "GenericChunker",
+    "JavaScriptChunker",
+    "MarkdownChunker",
+    "PythonCodeChunker",
+    "detect_language",
+    "get_chunker",
     # Config
     "DEFAULT_EXCLUDE_PATTERNS",
     "DEFAULT_INCLUDE_PATTERNS",
@@ -91,4 +134,25 @@ __all__ = [
     "IndexStats",
     "SearchFilter",
     "SearchResult",
+    # Indexer
+    "FileProcessor",
+    "ProjectIndexer",
+    # Retriever
+    "RAGRetriever",
+    "RankerConfig",
+    "ResultRanker",
+    "RetrievalContext",
+    # Vector Stores
+    "ChromaStore",
+    "FAISSStore",
+    "MockVectorStore",
+    "VectorStore",
+    "get_vector_store",
+    # Manager
+    "RAGManager",
+    "RAGStatus",
+    # Integration
+    "RAGContextAugmenter",
+    "RAGMessageProcessor",
+    "create_augmenter",
 ]

@@ -7,7 +7,7 @@
 ## Active Tasks
 
 ### FEAT-001: Per-Project RAG Support
-**Status:** In Progress (Phase 1/5 Complete)
+**Status:** In Progress (Phase 4/5 Complete)
 **Priority:** High
 **Version Target:** 1.9.0
 **Phase Directory:** `.ai/phase/per-project-rag/`
@@ -19,19 +19,29 @@
   - RAGConfig integrated into CodeForgeConfig
   - Embedding providers: SentenceTransformer (local), OpenAI, Mock
   - 72 unit tests passing
-- [ ] Phase 2: Vector Store & Chunking
-- [ ] Phase 3: Indexer & Retriever
-- [ ] Phase 4: Manager & Commands
+- [x] Phase 2: Vector Store & Chunking (Complete)
+  - VectorStore abstraction with ChromaDB, FAISS, and Mock backends
+  - Intelligent code chunking with AST-aware splitting
+  - Language detection and syntax-aware chunking
+  - 86 unit tests passing
+- [x] Phase 3: Indexer & Retriever (Complete)
+  - ProjectIndexer for file discovery and processing
+  - RAGRetriever for semantic search with ranking
+  - Incremental indexing with change detection
+  - 234 tests, 90%+ coverage
+- [x] Phase 4: Manager & Commands (Complete)
+  - RAGManager as central coordinator
+  - CLI commands: /rag index, search, status, clear, config
+  - RAGContextAugmenter for LLM context integration
+  - 325 tests, 92% coverage for Phase 4 modules
 - [ ] Phase 5: Integration & Polish
 
-**Files Created (Phase 1):**
-- `src/code_forge/rag/__init__.py`
-- `src/code_forge/rag/models.py`
-- `src/code_forge/rag/config.py`
-- `src/code_forge/rag/embeddings.py`
-- `tests/unit/rag/test_models.py`
-- `tests/unit/rag/test_config.py`
-- `tests/unit/rag/test_embeddings.py`
+**Files Created:**
+- Phase 1: models.py, config.py, embeddings.py
+- Phase 2: vectorstore.py, chunking.py
+- Phase 3: indexer.py, retriever.py
+- Phase 4: manager.py, commands.py, integration.py
+- Tests: test_*.py for each module (325 total tests)
 
 ---
 
@@ -137,7 +147,7 @@ _FEAT-001 moved to Active Tasks (in progress)._
 
 ### Current Focus
 
-1. **FEAT-001** - Per-Project RAG Support (Phase 1/5 complete)
+1. **FEAT-001** - Per-Project RAG Support (Phase 4/5 complete, 1 phase remaining)
 
 ### Priority Order for Remaining Work
 
