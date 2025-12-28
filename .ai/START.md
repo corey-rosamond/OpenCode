@@ -120,9 +120,9 @@ ruff check src/code_forge/
 
 **When completing any milestone or significant work:**
 
-1. **Update version number** in these files:
-   - `pyproject.toml` - `version = "X.Y.Z"`
-   - `src/code_forge/__init__.py` - `__version__ = "X.Y.Z"`
+1. **Update version number** in `pyproject.toml`:
+   - `version = "X.Y.Z"`
+   - Note: `__version__` in `src/code_forge/__init__.py` is derived automatically from pyproject.toml
 
 2. **Update CHANGELOG.md** with changes:
    ```markdown

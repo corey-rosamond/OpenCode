@@ -5,6 +5,14 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.5] - 2025-12-27
+
+### Improved
+- **CODE-003: Version Synchronization**: Single-source version using importlib.metadata
+  - Version is now derived automatically from pyproject.toml
+  - No longer need to update version in multiple files
+  - Updated documentation in .ai/START.md
+
 ## [1.8.4] - 2025-12-27
 
 ### Removed

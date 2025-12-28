@@ -32,15 +32,6 @@ _All critical issues resolved._
 - hooks/config.py and permissions/config.py use class methods
 Migration plan: Create common base, migrate one module at a time with tests.
 
-#### CODE-003: Version Synchronization Burden
-**Status:** Pending
-**Priority:** High
-**Phase Directory:** `.ai/phase/code-cleanup/`
-**Files:** `pyproject.toml`, `src/code_forge/__init__.py`, `.ai/START.md`
-**Issue:** Version must be manually updated in 4 places
-**Solution:** Use `importlib.metadata.version()` pattern to derive version from pyproject.toml
-**Impact:** Risk of version mismatch, manual overhead
-
 #### SEC-022: Race Condition in SSRF Check
 **Status:** Documented
 **Priority:** High
@@ -169,20 +160,19 @@ Migration plan: Create common base, migrate one module at a time with tests.
 | Priority | Pending | Deferred | Complete | Total |
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
-| **P1 High** | 2 | 1 | 1 | 4 |
+| **P1 High** | 1 | 1 | 2 | 4 |
 | **P2 Medium** | 3 | 2 | 0 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **6** | **9** | **7** | **22** |
+| **TOTAL** | **5** | **9** | **8** | **22** |
 
 ### Priority Order for Implementation
 
-1. **CODE-003** - Fix version synchronization
-2. **SEC-022** - Address SSRF vulnerability
-3. **ARCH-004** - Consolidate config patterns
-4. **CODE-004** - Audit threading/async locking
-5. **CODE-005** - Centralize magic numbers
-6. **SESS-007** - Implement session cleanup
+1. **SEC-022** - Address SSRF vulnerability
+2. **ARCH-004** - Consolidate config patterns
+3. **CODE-004** - Audit threading/async locking
+4. **CODE-005** - Centralize magic numbers
+5. **SESS-007** - Implement session cleanup
 
 ---
 
@@ -190,6 +180,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.5 | 2025-12-27 | Version sync (CODE-003): Single-source version via importlib.metadata |
 | 1.8.4 | 2025-12-27 | Dead code removal (CODE-002): Removed unused WebConfig and related classes |
 | 1.8.3 | 2025-12-27 | CI/CD (CICD-001): Added GitHub Actions workflows for testing and releases |
 | 1.8.2 | 2025-12-27 | Code fix (CODE-001): Added UTILITY to ToolCategory enum |
