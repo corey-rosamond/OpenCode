@@ -17,10 +17,10 @@ Check `UNDONE.md` for remaining deferred items and feature requests.
 | P0 Critical | ✅ Complete | All 3 items resolved |
 | P1 High | 2 deferred | SEC-022 (documented), ARCH-004 (large refactor) |
 | P2 Medium | 2 deferred | CLI-002, SESS-002 |
-| P3 Low | 4 deferred | Minor improvements |
+| P3 Low | 3 deferred | Minor improvements |
 | Features | 1 proposed | FEAT-001 (RAG support) |
 
-### Recently Completed (v1.8.1 - v1.8.10)
+### Recently Completed (v1.8.1 - v1.8.11)
 
 - DOC-001: Fixed README package references
 - CODE-001: Added UTILITY to ToolCategory enum
@@ -32,6 +32,7 @@ Check `UNDONE.md` for remaining deferred items and feature requests.
 - SESS-007: Added `/session cleanup` command
 - MCP-016: Added circular dependency detection to skills
 - TOOL-010: Sanitized exception messages to prevent info leakage
+- TOOL-009: Edit tool preserves file encoding
 
 **When starting new work:**
 1. Check `UNDONE.md` for deferred items or feature requests
@@ -70,7 +71,7 @@ Check `UNDONE.md` for remaining deferred items and feature requests.
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.8.10 (derived from pyproject.toml)
+**Version:** 1.8.11 (derived from pyproject.toml)
 **Status:** Production/Stable
 **Tests:** 4898+ (85%+ coverage)
 

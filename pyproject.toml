@@ -1,6 +1,6 @@
 [project]
 name = "code-forge"
-version = "1.8.10"
+version = "1.8.11"
 description = "AI-powered CLI development assistant with OpenRouter API and LangChain"
 readme = "README.md"
 license = { text = "MIT" }
@@ -49,6 +49,7 @@ dependencies = [
     "beautifulsoup4>=4.12,<5.0",
     "html2text>=2024.2,<2025.0",
     "duckduckgo-search>=4.0,<6.0",
+    "chardet>=5.0,<6.0",
 ]
 
 [project.urls]

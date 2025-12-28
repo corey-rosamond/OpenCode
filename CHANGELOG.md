@@ -5,6 +5,16 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.11] - 2025-12-28
+
+### Fixed
+- **TOOL-009: Edit Tool Preserves File Encoding**: Added automatic encoding detection
+  - Added chardet dependency for encoding detection
+  - Edit tool now detects file encoding before reading
+  - Writes back with the same encoding to preserve original format
+  - Supports UTF-8, UTF-16, Latin-1, Windows-1252, and other common encodings
+  - Falls back to UTF-8 for unknown or empty files
+
 ## [1.8.10] - 2025-12-28
 
 ### Fixed

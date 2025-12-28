@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
+
+import chardet
 
 from code_forge.tools.base import (
     BaseTool,
@@ -13,6 +16,60 @@ from code_forge.tools.base import (
     ToolResult,
 )
 from code_forge.tools.file.utils import validate_path_security
+
+logger = logging.getLogger(__name__)
+
+
+def detect_file_encoding(file_path: str) -> tuple[str, float]:
+    """Detect the encoding of a file.
+
+    Args:
+        file_path: Path to the file to detect encoding for.
+
+    Returns:
+        Tuple of (encoding, confidence) where encoding is the detected
+        encoding name and confidence is a float between 0 and 1.
+        Falls back to UTF-8 if detection fails.
+    """
+    try:
+        with open(file_path, "rb") as f:
+            raw_data = f.read()
+
+        if not raw_data:
+            # Empty file, default to UTF-8
+            return "utf-8", 1.0
+
+        # Check for BOM markers first (chardet sometimes misses these)
+        if raw_data.startswith(b"\xef\xbb\xbf"):
+            return "utf-8-sig", 1.0
+        if raw_data.startswith(b"\xff\xfe"):
+            return "utf-16-le", 1.0
+        if raw_data.startswith(b"\xfe\xff"):
+            return "utf-16-be", 1.0
+
+        # Use chardet for detection
+        result = chardet.detect(raw_data)
+        encoding = result.get("encoding")
+        confidence = result.get("confidence", 0.0)
+
+        if encoding:
+            # Normalize encoding name
+            encoding = encoding.lower()
+            # Map some common chardet names to Python codec names
+            encoding_map = {
+                "ascii": "utf-8",  # ASCII is subset of UTF-8
+                "iso-8859-1": "latin-1",
+                "windows-1252": "cp1252",
+            }
+            encoding = encoding_map.get(encoding, encoding)
+            return encoding, confidence
+
+        # Fallback to UTF-8
+        return "utf-8", 0.0
+
+    except OSError:
+        # Can't read file, fall back to UTF-8
+        return "utf-8", 0.0
 
 
 class EditTool(BaseTool):
@@ -116,7 +173,15 @@ Usage:
     ) -> ToolResult:
         """Perform the actual replacement operation."""
         try:
-            with open(file_path, encoding="utf-8") as f:
+            # Detect file encoding to preserve it
+            encoding, confidence = detect_file_encoding(file_path)
+            logger.debug(
+                "Detected encoding %s (confidence: %.2f) for %s",
+                encoding, confidence, file_path
+            )
+
+            # Read with detected encoding
+            with open(file_path, encoding=encoding) as f:
                 content = f.read()
 
             count = content.count(old_string)
@@ -148,14 +213,15 @@ Usage:
                 new_content = content.replace(old_string, new_string, 1)
                 replacements = 1
 
-            # Write back
-            with open(file_path, "w", encoding="utf-8") as f:
+            # Write back with same encoding
+            with open(file_path, "w", encoding=encoding) as f:
                 f.write(new_content)
 
             return ToolResult.ok(
                 f"Replaced {replacements} occurrence(s) in {file_path}",
                 file_path=file_path,
                 replacements=replacements,
+                encoding=encoding,
             )
 
         except PermissionError:
