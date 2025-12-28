@@ -5,6 +5,17 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.10] - 2025-12-28
+
+### Fixed
+- **TOOL-010: Exception Details Sanitized**: Sanitized error messages to prevent system info leakage
+  - `base.py`: Generic exception handler now shows only exception type
+  - `file/utils.py`: Path validation errors no longer expose OS error details
+  - `bash.py`: Working directory errors sanitized
+  - `grep.py`, `glob.py`: File access errors sanitized
+  - `write.py`: OS errors no longer expose filesystem details
+  - `kill_shell.py`: Shell kill errors sanitized
+
 ## [1.8.9] - 2025-12-28
 
 ### Added

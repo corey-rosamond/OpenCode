@@ -260,5 +260,6 @@ Usage notes:
                 return f"Working directory is not a directory: {working_dir}"
 
             return None
-        except (OSError, RuntimeError) as e:
-            return f"Invalid working directory: {e}"
+        except (OSError, RuntimeError):
+            # Don't expose detailed OS error - could leak filesystem info
+            return f"Invalid working directory: cannot access {working_dir}"

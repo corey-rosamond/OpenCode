@@ -182,8 +182,9 @@ Usage:
                 truncated=truncated,
             )
 
-        except OSError as e:
-            return ToolResult.fail(f"Error searching files: {e!s}")
+        except OSError:
+            # Don't expose detailed OS error - could leak filesystem info
+            return ToolResult.fail("Error searching files: unable to access directory")
 
     def _filter_excludes(self, files: list[str]) -> list[str]:
         """Filter out files matching exclude patterns.

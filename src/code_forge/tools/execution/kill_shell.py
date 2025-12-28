@@ -78,5 +78,6 @@ Usage:
                 command=shell.command,
                 duration_ms=shell.duration_ms,
             )
-        except Exception as e:
-            return ToolResult.fail(f"Failed to kill shell {shell_id}: {e!s}")
+        except Exception:
+            # Don't expose detailed error - could leak process info
+            return ToolResult.fail(f"Failed to kill shell {shell_id}")

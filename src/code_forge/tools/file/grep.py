@@ -237,8 +237,9 @@ Usage:
                 head_limit=head_limit,
             )
 
-        except OSError as e:
-            return ToolResult.fail(f"Error searching: {e!s}")
+        except OSError:
+            # Don't expose detailed OS error - could leak filesystem info
+            return ToolResult.fail("Error searching: unable to access files")
 
     def _search_files_sync(
         self,

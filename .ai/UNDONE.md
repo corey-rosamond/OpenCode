@@ -66,11 +66,10 @@ Migration plan: Create common base, migrate one module at a time with tests.
 **Issue:** Always uses UTF-8, losing original file encoding (latin-1, utf-16)
 **Note:** Requires adding chardet as a dependency.
 
-#### TOOL-010: Exception Details Leaked in Error Messages
-**Status:** Deferred
+#### ~~TOOL-010: Exception Details Leaked in Error Messages~~
+**Status:** ✅ Complete (v1.8.10)
 **Files:** Multiple tool files
-**Issue:** Raw exception strings may leak system information (paths, library versions)
-**Note:** Requires systematic audit of all tools.
+**Resolution:** Sanitized exception messages in base.py, file/utils.py, bash.py, grep.py, glob.py, write.py, kill_shell.py to prevent leaking system information (paths, library versions)
 
 #### LLM-014: Thread Overhead Per Call
 **Status:** Deferred
@@ -136,9 +135,9 @@ Migration plan: Create common base, migrate one module at a time with tests.
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
 | **P2 Medium** | 0 | 2 | 3 | 5 |
-| **P3 Low** | 0 | 5 | 1 | 6 |
+| **P3 Low** | 0 | 4 | 2 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **2** | **8** | **12** | **22** |
+| **TOTAL** | **2** | **7** | **13** | **22** |
 
 ### Priority Order for Implementation
 
@@ -151,6 +150,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.10 | 2025-12-28 | Exception sanitization (TOOL-010): Sanitized error messages |
 | 1.8.9 | 2025-12-28 | Skills dependencies (MCP-016): Added circular dependency detection |
 | 1.8.8 | 2025-12-28 | Session cleanup (SESS-007): Added /session cleanup command |
 | 1.8.7 | 2025-12-28 | Constants module (CODE-005): Created centralized constants for magic numbers |

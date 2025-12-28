@@ -133,5 +133,6 @@ Usage:
 
         except PermissionError:
             return ToolResult.fail(f"Permission denied: {file_path}")
-        except OSError as e:
-            return ToolResult.fail(f"OS error writing file: {e!s}")
+        except OSError:
+            # Don't expose detailed OS error - could leak filesystem info
+            return ToolResult.fail(f"OS error writing file: {file_path}")

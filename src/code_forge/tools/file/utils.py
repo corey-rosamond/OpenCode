@@ -47,16 +47,18 @@ def validate_path_security(
     # Resolve to canonical path (handles .., symlinks in parent dirs, etc.)
     try:
         resolved = path.resolve()
-    except (OSError, RuntimeError) as e:
-        return False, f"Invalid path: {e}"
+    except (OSError, RuntimeError):
+        # Don't expose detailed OS error - could leak filesystem info
+        return False, "Invalid path: cannot resolve path"
 
     # Check base directory restriction - this is the primary security boundary
     # The resolved path must be within the base directory
     if base_dir:
         try:
             base_resolved = Path(base_dir).resolve()
-        except (OSError, RuntimeError) as e:
-            return False, f"Invalid base directory: {e}"
+        except (OSError, RuntimeError):
+            # Don't expose detailed OS error - could leak filesystem info
+            return False, "Invalid base directory: cannot resolve path"
 
         try:
             resolved.relative_to(base_resolved)

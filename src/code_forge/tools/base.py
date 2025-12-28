@@ -296,8 +296,12 @@ class BaseTool(ABC):
         except CodeForgeError as e:
             result = ToolResult.fail(str(e))
         except Exception as e:
+            # Log full exception for debugging, but sanitize user-facing message
+            # to avoid leaking system information (paths, library versions, etc.)
             logger.exception(f"Unexpected error in {self.name}")
-            result = ToolResult.fail(f"Unexpected error: {e!s}")
+            result = ToolResult.fail(
+                f"Unexpected error: {type(e).__name__}. Check logs for details."
+            )
 
         # Step 4: Add timing metadata
         end_time = datetime.now()
