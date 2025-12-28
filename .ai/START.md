@@ -10,6 +10,12 @@
 
 Check `UNDONE.md` for remaining deferred items and feature requests.
 
+### Active Development
+
+**FEAT-001: Per-Project RAG Support** - Phase 1 Complete (v1.9.0-dev)
+- Phase directory: `.ai/phase/per-project-rag/`
+- Progress: Phase 1 of 5 complete (Core Models & Embedding)
+
 ### Remaining Work
 
 | Priority | Status | Items |
@@ -18,7 +24,7 @@ Check `UNDONE.md` for remaining deferred items and feature requests.
 | P1 High | 1 pending | SEC-022 (documented) |
 | P2 Medium | ✅ Complete | All 5 items resolved |
 | P3 Low | 3 deferred | Minor improvements |
-| Features | 1 proposed | FEAT-001 (RAG support) |
+| Features | 1 in progress | FEAT-001 (RAG support) - Phase 1/5 |
 
 ### Recently Completed (v1.8.1 - v1.8.15)
 

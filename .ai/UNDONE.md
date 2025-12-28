@@ -6,7 +6,32 @@
 
 ## Active Tasks
 
-_No active tasks._
+### FEAT-001: Per-Project RAG Support
+**Status:** In Progress (Phase 1/5 Complete)
+**Priority:** High
+**Version Target:** 1.9.0
+**Phase Directory:** `.ai/phase/per-project-rag/`
+
+**Progress:**
+- [x] Phase 1: Core Models & Embedding (Complete)
+  - Created `src/code_forge/rag/` module
+  - Data models: Document, Chunk, SearchResult, SearchFilter, IndexStats, IndexState
+  - RAGConfig integrated into CodeForgeConfig
+  - Embedding providers: SentenceTransformer (local), OpenAI, Mock
+  - 72 unit tests passing
+- [ ] Phase 2: Vector Store & Chunking
+- [ ] Phase 3: Indexer & Retriever
+- [ ] Phase 4: Manager & Commands
+- [ ] Phase 5: Integration & Polish
+
+**Files Created (Phase 1):**
+- `src/code_forge/rag/__init__.py`
+- `src/code_forge/rag/models.py`
+- `src/code_forge/rag/config.py`
+- `src/code_forge/rag/embeddings.py`
+- `tests/unit/rag/test_models.py`
+- `tests/unit/rag/test_config.py`
+- `tests/unit/rag/test_embeddings.py`
 
 ---
 
@@ -93,31 +118,7 @@ _All critical issues resolved._
 
 ## Feature Requests
 
-### FEAT-001: Per-Project RAG Support
-**Status:** Proposed
-**Priority:** High
-**Description:** Add Retrieval-Augmented Generation (RAG) support on a per-project basis
-
-**Benefits:**
-- Index project-specific documentation, code comments, and patterns
-- Semantic search over large codebases beyond context window limits
-- Persistent knowledge across sessions
-- Custom embeddings for domain-specific terminology
-- Better understanding of project architecture and conventions
-
-**Implementation Considerations:**
-- Local vector database (ChromaDB, Qdrant, or FAISS)
-- Configurable embedding models (local or API-based)
-- Automatic indexing on project open/file changes
-- Integration with context management system
-- Project-specific `.forge/index/` directory for vector storage
-- Support for multiple index types (code, docs, comments)
-
-**Potential Components:**
-- `src/code_forge/rag/indexer.py` - Code and document indexing
-- `src/code_forge/rag/embeddings.py` - Embedding generation
-- `src/code_forge/rag/retriever.py` - Semantic search
-- `src/code_forge/rag/config.py` - Per-project RAG configuration
+_FEAT-001 moved to Active Tasks (in progress)._
 
 ---
 
@@ -125,16 +126,20 @@ _All critical issues resolved._
 
 ### Remaining Work
 
-| Priority | Pending | Deferred | Complete | Total |
-|----------|---------|----------|----------|-------|
-| **P0 Critical** | 0 | 0 | 3 | 3 |
-| **P1 High** | 1 | 0 | 3 | 4 |
-| **P2 Medium** | 0 | 0 | 5 | 5 |
-| **P3 Low** | 0 | 3 | 3 | 6 |
-| **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **2** | **3** | **17** | **22** |
+| Priority | Pending | In Progress | Deferred | Complete | Total |
+|----------|---------|-------------|----------|----------|-------|
+| **P0 Critical** | 0 | 0 | 0 | 3 | 3 |
+| **P1 High** | 1 | 0 | 0 | 3 | 4 |
+| **P2 Medium** | 0 | 0 | 0 | 5 | 5 |
+| **P3 Low** | 0 | 0 | 3 | 3 | 6 |
+| **Features** | 0 | 1 | 0 | 3 | 4 |
+| **TOTAL** | **1** | **1** | **3** | **17** | **22** |
 
-### Priority Order for Implementation
+### Current Focus
+
+1. **FEAT-001** - Per-Project RAG Support (Phase 1/5 complete)
+
+### Priority Order for Remaining Work
 
 1. **SEC-022** - Address SSRF vulnerability (documented, complex)
 

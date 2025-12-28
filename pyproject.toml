@@ -67,6 +67,10 @@ dev = [
     "mypy>=1.8,<2.0",
     "ruff>=0.1,<1.0",
 ]
+rag = [
+    "chromadb>=0.4,<1.0",
+    "sentence-transformers>=2.0,<4.0",
+]
 
 [project.scripts]
 forge = "code_forge.cli.main:main"
@@ -152,6 +156,12 @@ ignore = [
     "RUF022",   # __all__ sorting - grouped by category for readability
     "PTH123",   # Path.open() - yaml.safe_load works fine with open()
     "RUF006",   # Task reference storage - cleanup handled by disconnect
+]
+"src/code_forge/rag/*.py" = [
+    "TC001",    # Type checking imports - optional deps need runtime checking
+    "TC002",    # Type checking imports - optional deps need runtime checking
+    "RUF012",   # ClassVar annotations - these are intentionally class-level config
+    "RUF022",   # __all__ sorting - grouped by category for readability
 ]
 
 [tool.ruff.lint.isort]

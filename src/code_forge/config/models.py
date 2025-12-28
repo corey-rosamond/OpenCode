@@ -282,6 +282,44 @@ class SessionConfig(BaseModel):
     token_cache_size: int = Field(default=1000, ge=100, le=10000)
 
 
+class RAGConfig(BaseModel):
+    """RAG (Retrieval-Augmented Generation) configuration.
+
+    This is a lightweight reference to the full RAGConfig in the rag module.
+    For the complete implementation, see code_forge.rag.config.RAGConfig.
+
+    Attributes:
+        enabled: Whether RAG is enabled for this project.
+        auto_index: Automatically index project on startup.
+        embedding_provider: Which embedding provider to use (local/openai).
+        embedding_model: Model name for embeddings.
+        index_directory: Directory for storing index.
+        chunk_size: Target tokens per chunk.
+        default_max_results: Default max results for search.
+        context_token_budget: Max tokens to add to context.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    enabled: bool = False  # Disabled by default until user enables
+    auto_index: bool = True
+    watch_files: bool = True
+    embedding_provider: str = "local"
+    embedding_model: str = "all-MiniLM-L6-v2"
+    openai_embedding_model: str = "text-embedding-3-small"
+    vector_store: str = "chroma"
+    index_directory: str = ".forge/index"
+    include_patterns: list[str] = Field(default_factory=list)
+    exclude_patterns: list[str] = Field(default_factory=list)
+    max_file_size_kb: int = Field(default=500, ge=1, le=10000)
+    respect_gitignore: bool = True
+    chunk_size: int = Field(default=1000, ge=100, le=10000)
+    chunk_overlap: int = Field(default=100, ge=0, le=500)
+    default_max_results: int = Field(default=5, ge=1, le=100)
+    default_min_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    context_token_budget: int = Field(default=4000, ge=100, le=50000)
+
+
 class CodeForgeConfig(BaseModel):
     """Root configuration model.
 
@@ -296,6 +334,7 @@ class CodeForgeConfig(BaseModel):
         mcp_servers: MCP server definitions.
         display: Display/UI preferences.
         session: Session management settings.
+        rag: RAG (Retrieval-Augmented Generation) settings.
         api_key: OpenRouter API key (sensitive).
     """
 
@@ -310,6 +349,7 @@ class CodeForgeConfig(BaseModel):
     mcp_servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
     display: DisplayConfig = Field(default_factory=DisplayConfig)
     session: SessionConfig = Field(default_factory=SessionConfig)
+    rag: RAGConfig = Field(default_factory=RAGConfig)
 
     # Sensitive - use SecretStr to prevent logging
     api_key: SecretStr | None = None
