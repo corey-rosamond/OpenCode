@@ -1,6 +1,6 @@
 # Code-Forge: Current Work
 
-**Last Updated:** 2025-12-27
+**Last Updated:** 2025-12-28
 
 ---
 
@@ -23,8 +23,8 @@ _All critical issues resolved._
 #### ARCH-004: Configuration System Fragmentation
 **Status:** Deferred
 **Phase Directory:** `.ai/phase/config-consolidation/` (to be created)
-**Files:** `config/`, `mcp/config.py`, `hooks/config.py`, `permissions/config.py`, `web/config.py`
-**Issue:** 6+ modules use different config patterns (Pydantic vs dataclass vs custom)
+**Files:** `config/`, `mcp/config.py`, `hooks/config.py`, `permissions/config.py`
+**Issue:** Multiple modules use different config patterns (Pydantic vs dataclass vs custom)
 **Impact:** Inconsistent API, hard to compose/test configurations
 **Note:** Large refactoring task requiring careful migration:
 - config/models.py uses Pydantic (canonical)

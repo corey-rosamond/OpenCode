@@ -4,32 +4,36 @@
 
 ---
 
-## Current Priority Tasks
+## Current Status
 
-**Check `UNDONE.md` immediately for the current priority order.**
+**All critical (P0) and most high-priority (P1/P2) issues have been resolved.**
 
-The following tasks are ranked by priority and should be addressed in order:
+Check `UNDONE.md` for remaining deferred items and feature requests.
 
-### Critical (P0) - Do These First
+### Remaining Work
 
-| ID | Task | Phase Directory | Effort |
-|----|------|-----------------|--------|
-| DOC-001 | Fix README package references (`forge.` → `code_forge.`) | `.ai/phase/documentation-fix/` | 2-4h |
-| CODE-001 | Fix ToolCategory enum (add UTILITY) | `.ai/phase/code-cleanup/` | 30min |
-| CICD-001 | Create CI/CD pipeline (GitHub Actions) | `.ai/phase/cicd-setup/` | 4-6h |
+| Priority | Status | Items |
+|----------|--------|-------|
+| P0 Critical | ✅ Complete | All 3 items resolved |
+| P1 High | 2 deferred | SEC-022 (documented), ARCH-004 (large refactor) |
+| P2 Medium | 2 deferred | CLI-002, SESS-002 |
+| P3 Low | 6 deferred | Minor improvements |
+| Features | 1 proposed | FEAT-001 (RAG support) |
 
-### High Priority (P1) - Do After P0
+### Recently Completed (v1.8.1 - v1.8.8)
 
-| ID | Task | Phase Directory |
-|----|------|-----------------|
-| CODE-002 | Remove dead WebConfig code | `.ai/phase/code-cleanup/` |
-| CODE-003 | Fix version synchronization (single source) | `.ai/phase/code-cleanup/` |
-| SEC-022 | Address SSRF vulnerability | Needs phase created |
-| ARCH-004 | Consolidate config patterns | Needs phase created |
+- DOC-001: Fixed README package references
+- CODE-001: Added UTILITY to ToolCategory enum
+- CICD-001: Created GitHub Actions CI/CD pipeline
+- CODE-002: Removed dead WebConfig code
+- CODE-003: Single-source version via importlib.metadata
+- CODE-004: Audited threading.Lock usage
+- CODE-005: Created centralized constants module
+- SESS-007: Added `/session cleanup` command
 
-**When starting work:**
-1. Check `UNDONE.md` for the current highest-priority pending task
-2. Read the corresponding phase directory's `PLAN.md`
+**When starting new work:**
+1. Check `UNDONE.md` for deferred items or feature requests
+2. Read the corresponding phase directory's `PLAN.md` if one exists
 3. Follow `COMPLETION_CRITERIA.md` to know when you're done
 4. Use `TESTS.md` to verify your work
 5. Follow `REVIEW.md` before committing
@@ -64,9 +68,9 @@ The following tasks are ranked by priority and should be addressed in order:
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.8.0
-**Status:** Production/Stable (with known issues - see UNDONE.md)
-**Tests:** 4898 (85%+ coverage)
+**Version:** 1.8.8 (derived from pyproject.toml)
+**Status:** Production/Stable
+**Tests:** 4898+ (85%+ coverage)
 
 ---
 
