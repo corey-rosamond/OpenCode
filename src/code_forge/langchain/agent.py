@@ -585,10 +585,15 @@ class CodeForgeAgent:
                     # LangChain includes usage_metadata on final chunk for many providers
                     if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
                         usage = chunk.usage_metadata
-                        if hasattr(usage, "input_tokens"):
-                            total_prompt_tokens += usage.input_tokens
-                        if hasattr(usage, "output_tokens"):
-                            total_completion_tokens += usage.output_tokens
+                        # Handle both dict and object access patterns
+                        if isinstance(usage, dict):
+                            total_prompt_tokens += usage.get("input_tokens", 0)
+                            total_completion_tokens += usage.get("output_tokens", 0)
+                        else:
+                            if hasattr(usage, "input_tokens"):
+                                total_prompt_tokens += usage.input_tokens
+                            if hasattr(usage, "output_tokens"):
+                                total_completion_tokens += usage.output_tokens
 
                 # Yield LLM end event
                 yield AgentEvent(

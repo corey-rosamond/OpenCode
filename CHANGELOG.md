@@ -5,6 +5,14 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.15] - 2025-12-28
+
+### Fixed
+- **CLI-003: Token Counter Fix**: Fixed streaming token counter showing 0/200000
+  - Updated `langchain/llm.py` to pass `usage_metadata` through streaming chunks
+  - Updated `langchain/agent.py` to handle both dict and object access patterns for usage metadata
+  - Token count now updates correctly after each streaming response
+
 ## [1.8.14] - 2025-12-28
 
 ### Improved

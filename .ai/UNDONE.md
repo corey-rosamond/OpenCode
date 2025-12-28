@@ -144,6 +144,7 @@ _All critical issues resolved._
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.15 | 2025-12-28 | Token counter fix (CLI-003): Fixed streaming token counter showing 0/200000 |
 | 1.8.14 | 2025-12-28 | Config consolidation (ARCH-004): Unified config patterns to Pydantic |
 | 1.8.13 | 2025-12-28 | Output options (CLI-002): Added --json, --no-color, -q CLI flags |
 | 1.8.12 | 2025-12-28 | Cache monitoring (SESS-002): Token cache config and /session cache command |

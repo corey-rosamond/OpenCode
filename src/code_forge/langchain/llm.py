@@ -304,15 +304,26 @@ class OpenRouterLLM(BaseChatModel):
                         }
                     )
 
+            # Build usage metadata if available (OpenRouter sends on final chunk)
+            usage_metadata = None
+            if chunk.usage:
+                usage_metadata = {
+                    "input_tokens": chunk.usage.prompt_tokens,
+                    "output_tokens": chunk.usage.completion_tokens,
+                    "total_tokens": chunk.usage.total_tokens,
+                }
+
             message_chunk = AIMessageChunk(
                 content=content,
                 tool_call_chunks=tool_call_chunks if tool_call_chunks else [],  # type: ignore[arg-type]
+                usage_metadata=usage_metadata,  # type: ignore[arg-type]
             )
 
             yield ChatGenerationChunk(
                 message=message_chunk,
                 generation_info={
                     "finish_reason": chunk.finish_reason,
+                    "usage": usage_metadata,
                 },
             )
 
