@@ -20,17 +20,15 @@ _All critical issues resolved._
 
 ### High Priority (P1)
 
-#### ARCH-004: Configuration System Fragmentation
-**Status:** Deferred
-**Phase Directory:** `.ai/phase/config-consolidation/` (to be created)
-**Files:** `config/`, `mcp/config.py`, `hooks/config.py`, `permissions/config.py`
-**Issue:** Multiple modules use different config patterns (Pydantic vs dataclass vs custom)
-**Impact:** Inconsistent API, hard to compose/test configurations
-**Note:** Large refactoring task requiring careful migration:
-- config/models.py uses Pydantic (canonical)
-- mcp/config.py uses dataclasses (MCPServerConfig duplicates Pydantic version)
-- hooks/config.py and permissions/config.py use class methods
-Migration plan: Create common base, migrate one module at a time with tests.
+#### ~~ARCH-004: Configuration System Fragmentation~~
+**Status:** ✅ Complete (v1.8.14)
+**Files:** `config/models.py`, `mcp/config.py`, `hooks/registry.py`, `permissions/models.py`
+**Resolution:** Migrated all config models to Pydantic BaseModel:
+- MCP config models (MCPServerConfig, MCPSettings, MCPConfig) now use Pydantic
+- Hook model now uses Pydantic with field validators
+- PermissionRule now uses Pydantic
+- Eliminated duplicate dataclass MCPServerConfig in mcp/config.py
+- Loaders remain for file I/O; models use model_validate() and model_dump()
 
 #### SEC-022: Race Condition in SSRF Check
 **Status:** Documented
@@ -130,16 +128,15 @@ Migration plan: Create common base, migrate one module at a time with tests.
 | Priority | Pending | Deferred | Complete | Total |
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
-| **P1 High** | 1 | 1 | 2 | 4 |
+| **P1 High** | 1 | 0 | 3 | 4 |
 | **P2 Medium** | 0 | 0 | 5 | 5 |
 | **P3 Low** | 0 | 3 | 3 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **2** | **4** | **16** | **22** |
+| **TOTAL** | **2** | **3** | **17** | **22** |
 
 ### Priority Order for Implementation
 
 1. **SEC-022** - Address SSRF vulnerability (documented, complex)
-2. **ARCH-004** - Consolidate config patterns (deferred, large refactoring)
 
 ---
 
@@ -147,6 +144,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.14 | 2025-12-28 | Config consolidation (ARCH-004): Unified config patterns to Pydantic |
 | 1.8.13 | 2025-12-28 | Output options (CLI-002): Added --json, --no-color, -q CLI flags |
 | 1.8.12 | 2025-12-28 | Cache monitoring (SESS-002): Token cache config and /session cache command |
 | 1.8.11 | 2025-12-28 | File encoding (TOOL-009): Edit tool preserves file encoding |

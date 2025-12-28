@@ -1,188 +1,34 @@
-"""MCP server configuration."""
+"""MCP server configuration.
+
+This module provides the MCPConfigLoader for loading MCP configuration
+from YAML files. The configuration models (MCPServerConfig, MCPSettings,
+MCPConfig) are defined in code_forge.config.models for consistency with
+other configuration models.
+"""
 
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+# Import Pydantic models from canonical location
+from code_forge.config.models import (
+    MCPConfig,
+    MCPServerConfig,
+    MCPSettings,
+    TransportType,
+)
 
-@dataclass
-class MCPServerConfig:
-    """Configuration for an MCP server."""
-
-    name: str
-    transport: str  # "stdio" or "http"
-    command: str | None = None  # for stdio
-    args: list[str] | None = None
-    url: str | None = None  # for http
-    headers: dict[str, str] | None = None
-    env: dict[str, str] | None = None
-    cwd: str | None = None
-    enabled: bool = True
-    auto_connect: bool = True
-
-    def __post_init__(self) -> None:
-        """Validate configuration."""
-        if self.transport not in ("stdio", "http"):
-            raise ValueError(
-                f"Server {self.name}: transport must be 'stdio' or 'http', "
-                f"got '{self.transport}'"
-            )
-        if self.transport == "stdio" and not self.command:
-            raise ValueError(f"Server {self.name}: stdio transport requires command")
-        if self.transport == "http" and not self.url:
-            raise ValueError(f"Server {self.name}: http transport requires url")
-
-    @classmethod
-    def from_dict(cls, name: str, data: dict[str, Any]) -> MCPServerConfig:
-        """Create from dictionary.
-
-        Args:
-            name: Server name.
-            data: Configuration data.
-
-        Returns:
-            Server configuration.
-        """
-        return cls(
-            name=name,
-            transport=data.get("transport", "stdio"),
-            command=data.get("command"),
-            args=data.get("args"),
-            url=data.get("url"),
-            headers=data.get("headers"),
-            env=data.get("env"),
-            cwd=data.get("cwd"),
-            enabled=data.get("enabled", True),
-            auto_connect=data.get("auto_connect", True),
-        )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary.
-
-        Returns:
-            Configuration as dictionary.
-        """
-        result: dict[str, Any] = {
-            "transport": self.transport,
-            "enabled": self.enabled,
-            "auto_connect": self.auto_connect,
-        }
-        if self.command is not None:
-            result["command"] = self.command
-        if self.args is not None:
-            result["args"] = self.args
-        if self.url is not None:
-            result["url"] = self.url
-        if self.headers is not None:
-            result["headers"] = self.headers
-        if self.env is not None:
-            result["env"] = self.env
-        if self.cwd is not None:
-            result["cwd"] = self.cwd
-        return result
-
-
-@dataclass
-class MCPSettings:
-    """Global MCP settings."""
-
-    auto_connect: bool = True
-    reconnect_attempts: int = 3
-    reconnect_delay: int = 5
-    timeout: int = 30
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> MCPSettings:
-        """Create from dictionary.
-
-        Args:
-            data: Settings data.
-
-        Returns:
-            Settings object.
-        """
-        return cls(
-            auto_connect=data.get("auto_connect", True),
-            reconnect_attempts=data.get("reconnect_attempts", 3),
-            reconnect_delay=data.get("reconnect_delay", 5),
-            timeout=data.get("timeout", 30),
-        )
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary.
-
-        Returns:
-            Settings as dictionary.
-        """
-        return {
-            "auto_connect": self.auto_connect,
-            "reconnect_attempts": self.reconnect_attempts,
-            "reconnect_delay": self.reconnect_delay,
-            "timeout": self.timeout,
-        }
-
-
-@dataclass
-class MCPConfig:
-    """Complete MCP configuration."""
-
-    servers: dict[str, MCPServerConfig] = field(default_factory=dict)
-    settings: MCPSettings = field(default_factory=MCPSettings)
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> MCPConfig:
-        """Create from dictionary.
-
-        Args:
-            data: Configuration data.
-
-        Returns:
-            Configuration object.
-        """
-        servers: dict[str, MCPServerConfig] = {}
-        for name, server_data in data.get("servers", {}).items():
-            servers[name] = MCPServerConfig.from_dict(name, server_data)
-
-        settings_data = data.get("settings", {})
-        settings = MCPSettings.from_dict(settings_data)
-
-        return cls(servers=servers, settings=settings)
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert to dictionary.
-
-        Returns:
-            Configuration as dictionary.
-        """
-        return {
-            "servers": {name: cfg.to_dict() for name, cfg in self.servers.items()},
-            "settings": self.settings.to_dict(),
-        }
-
-    def get_enabled_servers(self) -> list[MCPServerConfig]:
-        """Get list of enabled servers.
-
-        Returns:
-            List of enabled server configs.
-        """
-        return [s for s in self.servers.values() if s.enabled]
-
-    def get_auto_connect_servers(self) -> list[MCPServerConfig]:
-        """Get list of servers to auto-connect.
-
-        Returns:
-            List of server configs with auto_connect=True.
-        """
-        return [
-            s
-            for s in self.servers.values()
-            if s.enabled and s.auto_connect and self.settings.auto_connect
-        ]
+# Re-export for backward compatibility
+__all__ = [
+    "MCPConfig",
+    "MCPConfigLoader",
+    "MCPServerConfig",
+    "MCPSettings",
+]
 
 
 class MCPConfigLoader:
@@ -260,7 +106,40 @@ class MCPConfigLoader:
         # Expand environment variables in values
         data = self._expand_env_vars(data)
 
-        return MCPConfig.from_dict(data)
+        return self._parse_config(data)
+
+    def _parse_config(self, data: dict[str, Any]) -> MCPConfig:
+        """Parse configuration data into Pydantic models.
+
+        Args:
+            data: Raw configuration dictionary.
+
+        Returns:
+            Parsed MCPConfig.
+        """
+        servers: dict[str, MCPServerConfig] = {}
+        for name, server_data in data.get("servers", {}).items():
+            # Convert transport string to enum if needed
+            transport = server_data.get("transport", "stdio")
+            if transport == "http":
+                transport = "streamable-http"
+            server_data["transport"] = transport
+            server_data["name"] = name
+
+            # Handle None values for list/dict fields
+            if server_data.get("args") is None:
+                server_data["args"] = []
+            if server_data.get("headers") is None:
+                server_data["headers"] = {}
+            if server_data.get("env") is None:
+                server_data["env"] = {}
+
+            servers[name] = MCPServerConfig.model_validate(server_data)
+
+        settings_data = data.get("settings", {})
+        settings = MCPSettings.model_validate(settings_data)
+
+        return MCPConfig(servers=servers, settings=settings)
 
     def merge_configs(self, *configs: MCPConfig) -> MCPConfig:
         """Merge multiple configurations.
@@ -274,23 +153,24 @@ class MCPConfigLoader:
             Merged configuration.
         """
         merged_servers: dict[str, MCPServerConfig] = {}
-        merged_settings = MCPSettings()
+        merged_settings_dict: dict[str, Any] = {}
 
-        # Create default instance once for comparison
+        # Create default instance for comparison
         default_settings = MCPSettings()
 
         for config in configs:
             # Merge servers (later overrides)
             merged_servers.update(config.servers)
 
-            # Merge settings field by field using dataclass fields iteration
+            # Merge settings field by field
             settings = config.settings
-            for f in fields(MCPSettings):
-                current_value = getattr(settings, f.name)
-                default_value = getattr(default_settings, f.name)
+            for field_name in MCPSettings.model_fields:
+                current_value = getattr(settings, field_name)
+                default_value = getattr(default_settings, field_name)
                 if current_value != default_value:
-                    setattr(merged_settings, f.name, current_value)
+                    merged_settings_dict[field_name] = current_value
 
+        merged_settings = MCPSettings.model_validate(merged_settings_dict)
         return MCPConfig(servers=merged_servers, settings=merged_settings)
 
     def _expand_env_vars(self, data: Any) -> Any:
@@ -354,5 +234,30 @@ class MCPConfigLoader:
             )
 
         path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Convert Pydantic models to dict for YAML serialization
+        config_dict = self._config_to_dict(config)
         with open(path, "w") as f:
-            yaml.safe_dump(config.to_dict(), f, default_flow_style=False)
+            yaml.safe_dump(config_dict, f, default_flow_style=False)
+
+    def _config_to_dict(self, config: MCPConfig) -> dict[str, Any]:
+        """Convert MCPConfig to dictionary for serialization.
+
+        Args:
+            config: Configuration to convert.
+
+        Returns:
+            Dictionary representation.
+        """
+        servers_dict: dict[str, Any] = {}
+        for name, server in config.servers.items():
+            server_dict = server.model_dump(exclude={"name"}, exclude_none=True)
+            # Convert transport enum to string
+            if "transport" in server_dict:
+                server_dict["transport"] = server_dict["transport"].value
+            servers_dict[name] = server_dict
+
+        return {
+            "servers": servers_dict,
+            "settings": config.settings.model_dump(),
+        }

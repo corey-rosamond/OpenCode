@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class PermissionLevel(str, Enum):
     """
@@ -57,8 +59,7 @@ class PermissionCategory(str, Enum):
     OTHER = "other_operations"
 
 
-@dataclass
-class PermissionRule:
+class PermissionRule(BaseModel):
     """
     A single permission rule.
 
@@ -70,11 +71,13 @@ class PermissionRule:
         priority: Manual priority override (higher = checked first)
     """
 
+    model_config = ConfigDict(validate_assignment=True)
+
     pattern: str
     permission: PermissionLevel
     description: str = ""
     enabled: bool = True
-    priority: int = 0
+    priority: int = Field(default=0, ge=-100, le=100)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize rule to dictionary."""
@@ -89,13 +92,13 @@ class PermissionRule:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PermissionRule:
         """Deserialize rule from dictionary."""
-        return cls(
-            pattern=data["pattern"],
-            permission=PermissionLevel(data["permission"]),
-            description=data.get("description", ""),
-            enabled=data.get("enabled", True),
-            priority=data.get("priority", 0),
-        )
+        return cls.model_validate({
+            "pattern": data["pattern"],
+            "permission": PermissionLevel(data["permission"]),
+            "description": data.get("description", ""),
+            "enabled": data.get("enabled", True),
+            "priority": data.get("priority", 0),
+        })
 
 
 @dataclass

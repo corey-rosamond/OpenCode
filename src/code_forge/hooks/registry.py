@@ -5,15 +5,15 @@ from __future__ import annotations
 import fnmatch
 import threading
 from collections.abc import Iterator
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, ClassVar
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from code_forge.hooks.events import HookEvent
 
 
-@dataclass
-class Hook:
+class Hook(BaseModel):
     """
     A registered hook.
 
@@ -30,6 +30,8 @@ class Hook:
         description: Human-readable description
     """
 
+    model_config = ConfigDict(validate_assignment=True)
+
     # Timeout bounds to prevent runaway or effectively-disabled hooks
     MIN_TIMEOUT: ClassVar[float] = 0.1  # 100ms minimum
     MAX_TIMEOUT: ClassVar[float] = 300.0  # 5 minutes maximum
@@ -38,20 +40,25 @@ class Hook:
     command: str
     timeout: float = 10.0
     working_dir: str | None = None
-    env: dict[str, str] = field(default_factory=dict)
+    env: dict[str, str] = Field(default_factory=dict)
     enabled: bool = True
     description: str = ""
 
-    def __post_init__(self) -> None:
+    @field_validator("timeout")
+    @classmethod
+    def clamp_timeout(cls, v: float) -> float:
         """Validate and clamp timeout to safe bounds."""
-        if self.timeout <= 0 or self.timeout < self.MIN_TIMEOUT:
-            self.timeout = self.MIN_TIMEOUT
-        elif self.timeout > self.MAX_TIMEOUT:
-            self.timeout = self.MAX_TIMEOUT
+        if v <= 0 or v < cls.MIN_TIMEOUT:
+            return cls.MIN_TIMEOUT
+        elif v > cls.MAX_TIMEOUT:
+            return cls.MAX_TIMEOUT
+        return v
 
-        # Ensure env is never None
-        if self.env is None:
-            self.env = {}
+    @field_validator("env", mode="before")
+    @classmethod
+    def ensure_env_dict(cls, v: dict[str, str] | None) -> dict[str, str]:
+        """Ensure env is never None."""
+        return v if v is not None else {}
 
     def matches(self, event: HookEvent) -> bool:
         """
@@ -112,7 +119,11 @@ class Hook:
         return False
 
     def to_dict(self) -> dict[str, Any]:
-        """Serialize hook to dictionary."""
+        """Serialize hook to dictionary.
+
+        Uses 'event' key for backward compatibility with config files.
+        Only includes non-default values.
+        """
         data: dict[str, Any] = {
             "event": self.event_pattern,
             "command": self.command,
@@ -131,16 +142,19 @@ class Hook:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Hook:
-        """Deserialize hook from dictionary."""
-        return cls(
-            event_pattern=data["event"],
-            command=data["command"],
-            timeout=data.get("timeout", 10.0),
-            working_dir=data.get("working_dir"),
-            env=data.get("env") or {},
-            enabled=data.get("enabled", True),
-            description=data.get("description", ""),
-        )
+        """Deserialize hook from dictionary.
+
+        Accepts 'event' key for backward compatibility with config files.
+        """
+        return cls.model_validate({
+            "event_pattern": data["event"],
+            "command": data["command"],
+            "timeout": data.get("timeout", 10.0),
+            "working_dir": data.get("working_dir"),
+            "env": data.get("env") or {},
+            "enabled": data.get("enabled", True),
+            "description": data.get("description", ""),
+        })
 
 
 class HookRegistry:

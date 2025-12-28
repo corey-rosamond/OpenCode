@@ -5,6 +5,18 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.14] - 2025-12-28
+
+### Improved
+- **ARCH-004: Configuration System Consolidation**: Unified config patterns to use Pydantic
+  - Migrated MCP config models (MCPServerConfig, MCPSettings, MCPConfig) to Pydantic BaseModel
+  - Migrated Hook model in hooks/registry.py to Pydantic BaseModel
+  - Migrated PermissionRule in permissions/models.py to Pydantic BaseModel
+  - All config models now use consistent Pydantic patterns with validation
+  - Eliminated duplicate MCPServerConfig dataclass in mcp/config.py
+  - Loaders (MCPConfigLoader, HookConfig, PermissionConfig) remain for file I/O
+  - Backward compatible: to_dict() and from_dict() methods preserved
+
 ## [1.8.13] - 2025-12-28
 
 ### Added

@@ -134,21 +134,31 @@ class MCPServerConfig(BaseModel):
     """MCP server configuration.
 
     Attributes:
+        name: Server identifier (set when loading from config).
         transport: Transport type (stdio or streamable-http).
         command: Command to execute (for stdio transport).
         args: Command arguments.
         url: Server URL (for HTTP transport).
+        headers: HTTP headers (for HTTP transport).
         env: Environment variables for the server.
+        cwd: Working directory for the server process.
+        enabled: Whether the server is enabled.
+        auto_connect: Whether to auto-connect on startup.
         oauth_client_id: OAuth 2.1 client ID.
     """
 
     model_config = ConfigDict(validate_assignment=True)
 
-    transport: TransportType
+    name: str = ""
+    transport: TransportType = TransportType.STDIO
     command: str | None = None
     args: list[str] = Field(default_factory=list)
     url: str | None = None
+    headers: dict[str, str] = Field(default_factory=dict)
     env: dict[str, str] = Field(default_factory=dict)
+    cwd: str | None = None
+    enabled: bool = True
+    auto_connect: bool = True
     oauth_client_id: str | None = None
 
     @field_validator("command")
@@ -158,6 +168,58 @@ class MCPServerConfig(BaseModel):
         if v is not None:
             return v.strip() if v.strip() else None
         return v
+
+
+class MCPSettings(BaseModel):
+    """Global MCP settings.
+
+    Attributes:
+        auto_connect: Whether to auto-connect enabled servers.
+        reconnect_attempts: Number of reconnection attempts.
+        reconnect_delay: Delay between reconnection attempts in seconds.
+        timeout: Default operation timeout in seconds.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    auto_connect: bool = True
+    reconnect_attempts: int = Field(default=3, ge=0, le=10)
+    reconnect_delay: int = Field(default=5, ge=1, le=60)
+    timeout: int = Field(default=30, ge=1, le=300)
+
+
+class MCPConfig(BaseModel):
+    """Complete MCP configuration.
+
+    Attributes:
+        servers: Dictionary of server configurations by name.
+        settings: Global MCP settings.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    servers: dict[str, MCPServerConfig] = Field(default_factory=dict)
+    settings: MCPSettings = Field(default_factory=MCPSettings)
+
+    def get_enabled_servers(self) -> list[MCPServerConfig]:
+        """Get list of enabled servers.
+
+        Returns:
+            List of enabled server configs.
+        """
+        return [s for s in self.servers.values() if s.enabled]
+
+    def get_auto_connect_servers(self) -> list[MCPServerConfig]:
+        """Get list of servers to auto-connect.
+
+        Returns:
+            List of server configs with auto_connect=True.
+        """
+        return [
+            s
+            for s in self.servers.values()
+            if s.enabled and s.auto_connect and self.settings.auto_connect
+        ]
 
 
 class DisplayConfig(BaseModel):
