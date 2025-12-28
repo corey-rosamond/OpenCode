@@ -204,6 +204,61 @@ _All critical issues resolved._
 
 ## Feature Requests
 
+### 🔴 CTX-001: Context Compression Visibility & Control
+**Status:** Pending
+**Priority:** Critical (P0)
+**Impact:** 9.0/10
+**Complexity:** Low
+
+**Problem:**
+- Context compression happens silently with no user notification
+- Token counter in status bar doesn't update after compression (shows stale count)
+- No warning when approaching context limit (80%, 90% thresholds)
+- No manual control over compression behavior
+- Users don't know why responses become less context-aware
+
+**Solution:**
+Add event hooks for compression events, update UI, provide manual controls.
+
+**Phase Plan:**
+
+| Phase | Description | Deliverables |
+|-------|-------------|--------------|
+| **Phase 1: Compression Events** | Add observable events for truncation/compaction | CompressionEvent, observer pattern in ContextManager |
+| **Phase 2: Token Counter Update** | Update StatusBar after compression | Hook _truncate() and compact_if_needed() to status bar |
+| **Phase 3: Threshold Warnings** | Visual warning at 80%, 90% context usage | StatusBar indicator, console warning |
+| **Phase 4: Manual Control** | /context command for status and manual compression | /context status, /context compress, /context clear |
+| **Phase 5: Configuration** | Config options for compression threshold and behavior | ContextConfig model |
+
+**Files to Modify:**
+- `src/code_forge/context/manager.py` - Add compression events
+- `src/code_forge/cli/main.py` - Wire events to StatusBar
+- `src/code_forge/cli/status.py` - Add compression indicator
+- `src/code_forge/commands/builtin/context_commands.py` - Add /context command
+- `src/code_forge/config/models.py` - Add ContextConfig
+
+**Key Changes:**
+
+```python
+# In ContextManager._truncate():
+def _truncate(self) -> None:
+    old_count = len(self._messages)
+    old_tokens = self.token_usage
+    # ... existing truncation logic ...
+    if len(truncated) < old_count:
+        self._notify_compression(old_tokens, self.token_usage, "truncation")
+
+# New event:
+@dataclass
+class CompressionEvent:
+    type: str  # "truncation" | "compaction" | "warning"
+    tokens_before: int
+    tokens_after: int
+    messages_removed: int
+```
+
+---
+
 ### 🔴 CONV-001: Conversational Translation Layer
 **Status:** Pending
 **Priority:** Critical (P0)
@@ -396,12 +451,12 @@ Add Rich-based visual enhancements for diffs, suggestions, and file browsing.
 
 | Priority | Pending | In Progress | Deferred | Complete | Total |
 |----------|---------|-------------|----------|----------|-------|
-| **P0 Critical** | 2 | 0 | 0 | 4 | 6 |
+| **P0 Critical** | 3 | 0 | 0 | 4 | 7 |
 | **P1 High** | 4 | 0 | 0 | 4 | 8 |
 | **P2 Medium** | 1 | 0 | 0 | 5 | 6 |
 | **P3 Low** | 0 | 0 | 3 | 3 | 6 |
-| **Features** | 6 | 0 | 0 | 6 | 12 |
-| **TOTAL** | **7** | **0** | **3** | **22** | **32** |
+| **Features** | 7 | 0 | 0 | 6 | 13 |
+| **TOTAL** | **8** | **0** | **3** | **22** | **33** |
 
 ### Current Focus
 
@@ -412,6 +467,28 @@ Add Rich-based visual enhancements for diffs, suggestions, and file browsing.
 ## 🚀 Quick Wins
 
 These features provide **high impact with low implementation effort** - ideal starting points:
+
+### 0. CTX-001: Context Compression Visibility & Control ⭐ TOP PRIORITY
+**Effort:** 1-2 days | **Impact:** 9.0/10 | **ROI:** Excellent
+
+**Why it's a quick win:**
+- Infrastructure exists (ContextManager, StatusBar, ContextCompactor)
+- Just needs event hooks and UI notifications
+- Critical UX gap - users have no visibility into context state
+
+**Current Problems:**
+- No notification when context is compressed/truncated
+- Token counter doesn't update after compression (shows stale count)
+- No warning when approaching context limit
+- No control over compression threshold or behavior
+
+**Implementation:**
+```
+Day 1: Add compression events, update token counter after truncation
+Day 2: Add warning indicator, /context command for manual control
+```
+
+---
 
 ### 1. CONV-003: Context-Aware Error Recovery
 **Effort:** 1-2 days | **Impact:** 8.5/10 | **ROI:** Excellent
@@ -462,17 +539,19 @@ Based on **impact × (1/effort)** analysis:
 
 | Order | Feature | Impact | Effort | ROI Score | Rationale |
 |-------|---------|--------|--------|-----------|-----------|
-| **1** | CONV-003 | 8.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, immediate UX improvement |
-| **2** | CONV-004 | 7.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, better context awareness |
-| **3** | CONV-005 | 8.0 | Medium | ⭐⭐⭐⭐ | Enables pronoun resolution, foundational |
-| **4** | CONV-001 | 9.5 | High | ⭐⭐⭐⭐ | Transformative, but complex |
-| **5** | CONV-002 | 9.0 | Medium | ⭐⭐⭐ | Builds on existing workflow system |
-| **6** | CONV-006 | 6.0 | Medium | ⭐⭐⭐ | Polish, nice-to-have |
-| **7** | SEC-022 | N/A | High | ⭐⭐ | Security fix, complex implementation |
+| **1** | CTX-001 | 9.0 | Low | ⭐⭐⭐⭐⭐ | **TOP PRIORITY** - Critical UX gap, infrastructure exists |
+| **2** | CONV-003 | 8.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, immediate UX improvement |
+| **3** | CONV-004 | 7.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, better context awareness |
+| **4** | CONV-005 | 8.0 | Medium | ⭐⭐⭐⭐ | Enables pronoun resolution, foundational |
+| **5** | CONV-001 | 9.5 | High | ⭐⭐⭐⭐ | Transformative, but complex |
+| **6** | CONV-002 | 9.0 | Medium | ⭐⭐⭐ | Builds on existing workflow system |
+| **7** | CONV-006 | 6.0 | Medium | ⭐⭐⭐ | Polish, nice-to-have |
+| **8** | SEC-022 | N/A | High | ⭐⭐ | Security fix, complex implementation |
 
 ### Recommended Sprint Plan
 
-**Sprint 1 (3-4 days): Quick Wins**
+**Sprint 1 (3-4 days): Critical Quick Wins**
+- [ ] CTX-001: Context Compression Visibility & Control ⭐
 - [ ] CONV-003: Error Recovery Expansion
 - [ ] CONV-004: Project Type Detection
 
@@ -490,13 +569,14 @@ Based on **impact × (1/effort)** analysis:
 
 ## Priority Order (By Impact)
 
-1. **CONV-001** - Conversational Translation Layer (P0, Impact 9.5)
-2. **CONV-002** - Workflow Orchestration (P0, Impact 9.0)
-3. **CONV-003** - Context-Aware Error Recovery (P1, Impact 8.5) ⚡ Quick Win
-4. **CONV-005** - Session Context Continuity (P1, Impact 8.0)
-5. **CONV-004** - Smart Project Type Detection (P1, Impact 7.5) ⚡ Quick Win
-6. **CONV-006** - Visual Interface Enhancements (P2, Impact 6.0)
-7. **SEC-022** - Address SSRF vulnerability (documented, complex)
+1. **CTX-001** - Context Compression Visibility & Control (P0, Impact 9.0) ⭐ **START HERE**
+2. **CONV-001** - Conversational Translation Layer (P0, Impact 9.5)
+3. **CONV-002** - Workflow Orchestration (P0, Impact 9.0)
+4. **CONV-003** - Context-Aware Error Recovery (P1, Impact 8.5) ⚡ Quick Win
+5. **CONV-005** - Session Context Continuity (P1, Impact 8.0)
+6. **CONV-004** - Smart Project Type Detection (P1, Impact 7.5) ⚡ Quick Win
+7. **CONV-006** - Visual Interface Enhancements (P2, Impact 6.0)
+8. **SEC-022** - Address SSRF vulnerability (documented, complex)
 
 ---
 
