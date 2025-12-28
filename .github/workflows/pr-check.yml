@@ -1,0 +1,28 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title format
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|build|ci|perf|revert)\:.* ]]; then
+            echo "::warning::PR title should follow conventional commits format (e.g., 'feat: add feature')"
+          fi
+
+      - name: Check for CHANGELOG update
+        run: |
+          if git diff --name-only origin/main...HEAD | grep -q "CHANGELOG.md"; then
+            echo "CHANGELOG.md has been updated"
+          else
+            echo "::warning::CHANGELOG.md not updated - consider adding changelog entry"
+          fi
