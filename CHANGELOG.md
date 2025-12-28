@@ -5,6 +5,14 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.6] - 2025-12-28
+
+### Improved
+- **CODE-004: Lock Audit**: Audited threading.Lock usage across codebase
+  - Confirmed threading.Lock is appropriate for singleton instantiation and quick counter updates
+  - Added documentation comments in llm/client.py explaining lock choice
+  - Audit found 23 lock usages, all appropriate for their use cases
+
 ## [1.8.5] - 2025-12-27
 
 ### Improved

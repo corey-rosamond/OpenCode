@@ -102,6 +102,9 @@ class OpenRouterClient:
         self._closed = False
 
         # Usage tracking (protected by lock for thread safety)
+        # NOTE: threading.Lock is intentional here - quick counter updates don't
+        # benefit from asyncio.Lock, and counters may be accessed from sync contexts.
+        # Audited in CODE-004.
         self._usage_lock = threading.Lock()
         self._total_prompt_tokens = 0
         self._total_completion_tokens = 0

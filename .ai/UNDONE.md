@@ -44,15 +44,6 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 ### Medium Priority (P2)
 
-#### CODE-004: Mixed Threading/Async Locking
-**Status:** Pending
-**Priority:** Medium
-**Phase Directory:** `.ai/phase/code-cleanup/`
-**Files:** `src/code_forge/llm/client.py`, various singletons
-**Issue:** Uses `threading.Lock()` in async code (e.g., `OpenRouterClient._usage_lock`)
-**Impact:** Potential blocking in async context, though current usage may be safe
-**Note:** Audit all lock usage and determine if asyncio.Lock() is more appropriate
-
 #### CODE-005: Magic Numbers Scattered
 **Status:** Pending
 **Priority:** Medium
@@ -161,18 +152,17 @@ Migration plan: Create common base, migrate one module at a time with tests.
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
-| **P2 Medium** | 3 | 2 | 0 | 5 |
+| **P2 Medium** | 2 | 2 | 1 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **5** | **9** | **8** | **22** |
+| **TOTAL** | **4** | **9** | **9** | **22** |
 
 ### Priority Order for Implementation
 
 1. **SEC-022** - Address SSRF vulnerability
 2. **ARCH-004** - Consolidate config patterns
-3. **CODE-004** - Audit threading/async locking
-4. **CODE-005** - Centralize magic numbers
-5. **SESS-007** - Implement session cleanup
+3. **CODE-005** - Centralize magic numbers
+4. **SESS-007** - Implement session cleanup
 
 ---
 
@@ -180,6 +170,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.6 | 2025-12-28 | Lock audit (CODE-004): Audited threading.Lock usage, documented decisions |
 | 1.8.5 | 2025-12-27 | Version sync (CODE-003): Single-source version via importlib.metadata |
 | 1.8.4 | 2025-12-27 | Dead code removal (CODE-002): Removed unused WebConfig and related classes |
 | 1.8.3 | 2025-12-27 | CI/CD (CICD-001): Added GitHub Actions workflows for testing and releases |
