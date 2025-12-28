@@ -245,6 +245,59 @@ class SessionUntagCommand(Command):
         return CommandResult.fail("No active session")
 
 
+class SessionCleanupCommand(Command):
+    """Clean up old sessions and backups."""
+
+    name = "cleanup"
+    description = "Remove old sessions and backup files"
+    usage = "/session cleanup [--days N] [--keep N]"
+
+    async def execute(
+        self,
+        parsed: ParsedCommand,
+        context: CommandContext,
+    ) -> CommandResult:
+        """Clean up old sessions and backups."""
+        if context.session_manager is None:
+            return CommandResult.fail("Session manager not available")
+
+        # Parse options
+        days_str = parsed.get_kwarg("days", "30")
+        keep_str = parsed.get_kwarg("keep", "10")
+
+        try:
+            max_age_days = int(days_str) if days_str else 30
+        except ValueError:
+            return CommandResult.fail(f"Invalid days value: {days_str}")
+
+        try:
+            keep_minimum = int(keep_str) if keep_str else 10
+        except ValueError:
+            return CommandResult.fail(f"Invalid keep value: {keep_str}")
+
+        # Run cleanup
+        storage = context.session_manager.storage
+        deleted_sessions = storage.cleanup_old_sessions(
+            max_age_days=max_age_days,
+            keep_minimum=keep_minimum,
+        )
+        deleted_backups = storage.cleanup_old_backups()
+
+        lines = ["Session cleanup complete:"]
+        lines.append(f"  Sessions removed: {len(deleted_sessions)}")
+        lines.append(f"  Backups removed: {deleted_backups}")
+
+        if deleted_sessions:
+            lines.append("")
+            lines.append("Deleted session IDs:")
+            for sid in deleted_sessions[:5]:  # Show first 5
+                lines.append(f"  - {sid[:8]}...")
+            if len(deleted_sessions) > 5:
+                lines.append(f"  ... and {len(deleted_sessions) - 5} more")
+
+        return CommandResult.ok("\n".join(lines))
+
+
 class SessionCommand(SubcommandHandler):
     """Session management."""
 
@@ -261,6 +314,7 @@ class SessionCommand(SubcommandHandler):
         "title": SessionTitleCommand(),
         "tag": SessionTagCommand(),
         "untag": SessionUntagCommand(),
+        "cleanup": SessionCleanupCommand(),
     }
 
     async def execute_default(

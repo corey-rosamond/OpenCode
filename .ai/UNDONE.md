@@ -56,14 +56,6 @@ Migration plan: Create common base, migrate one module at a time with tests.
 **Issue:** Cache default `max_cache_size=1000` could cause memory issues
 **Note:** Feature request for cache statistics monitoring. Current size is reasonable for most use cases.
 
-#### SESS-007: No Automatic Session Cleanup
-**Status:** Pending
-**Priority:** Medium
-**Phase Directory:** `.ai/phase/code-cleanup/`
-**File:** `src/code_forge/sessions/storage.py:329-369`
-**Issue:** `cleanup_old_sessions()` and `cleanup_old_backups()` exist but never called
-**Solution:** Add scheduled cleanup or CLI command
-
 ---
 
 ### Low Priority (P3)
@@ -144,16 +136,15 @@ Migration plan: Create common base, migrate one module at a time with tests.
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
-| **P2 Medium** | 1 | 2 | 2 | 5 |
+| **P2 Medium** | 0 | 2 | 3 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **3** | **9** | **10** | **22** |
+| **TOTAL** | **2** | **9** | **11** | **22** |
 
 ### Priority Order for Implementation
 
-1. **SEC-022** - Address SSRF vulnerability
-2. **ARCH-004** - Consolidate config patterns
-3. **SESS-007** - Implement session cleanup
+1. **SEC-022** - Address SSRF vulnerability (documented, complex)
+2. **ARCH-004** - Consolidate config patterns (deferred, large refactoring)
 
 ---
 
@@ -161,6 +152,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.8 | 2025-12-28 | Session cleanup (SESS-007): Added /session cleanup command |
 | 1.8.7 | 2025-12-28 | Constants module (CODE-005): Created centralized constants for magic numbers |
 | 1.8.6 | 2025-12-28 | Lock audit (CODE-004): Audited threading.Lock usage, documented decisions |
 | 1.8.5 | 2025-12-27 | Version sync (CODE-003): Single-source version via importlib.metadata |
