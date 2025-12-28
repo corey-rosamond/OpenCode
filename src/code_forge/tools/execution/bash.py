@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from code_forge.tools.base import (
     BaseTool,
@@ -15,6 +16,10 @@ from code_forge.tools.base import (
     ToolResult,
 )
 from code_forge.tools.execution.shell_manager import ShellManager
+from code_forge.undo.bash_detector import BashFileDetector
+
+if TYPE_CHECKING:
+    from code_forge.undo.manager import UndoManager
 
 
 class BashTool(BaseTool):
@@ -133,11 +138,38 @@ Usage notes:
         if working_dir_error:
             return ToolResult.fail(working_dir_error)
 
+        # Get undo manager if available
+        undo_manager: UndoManager | None = context.metadata.get("undo_manager")
+
+        # Detect files that may be modified by this command
+        detected_files: list[str] = []
+        if undo_manager:
+            detected_files = BashFileDetector.detect_files(command, context.working_dir)
+            # Capture existing files before execution
+            for file_path in detected_files:
+                if os.path.exists(file_path):
+                    undo_manager.capture_before(file_path)
+
         # Execute
         if run_in_background:
+            # For background commands, we can't reliably track undo
+            # since we don't know when they complete
+            if undo_manager and detected_files:
+                undo_manager.discard_pending()
             return await self._run_background(command, context.working_dir)
         else:
-            return await self._run_foreground(command, context.working_dir, timeout_ms)
+            result = await self._run_foreground(command, context.working_dir, timeout_ms)
+
+            # Commit or discard undo entry based on result
+            if undo_manager and detected_files:
+                if result.success:
+                    # Truncate command for description
+                    cmd_preview = command[:50] + "..." if len(command) > 50 else command
+                    undo_manager.commit("Bash", f"Bash: {cmd_preview}", command=command)
+                else:
+                    undo_manager.discard_pending()
+
+            return result
 
     async def _run_foreground(
         self, command: str, working_dir: str, timeout_ms: int

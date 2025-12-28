@@ -320,6 +320,26 @@ class RAGConfig(BaseModel):
     context_token_budget: int = Field(default=4000, ge=100, le=50000)
 
 
+class UndoConfig(BaseModel):
+    """Undo system configuration.
+
+    Attributes:
+        enabled: Whether undo is enabled.
+        max_entries: Maximum undo history entries (1-1000).
+        max_size_mb: Maximum total size in megabytes (1-500).
+        max_file_size_kb: Maximum single file size to capture (1-10240 KB).
+        capture_binary: Whether to capture binary files.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    enabled: bool = True
+    max_entries: int = Field(default=100, ge=1, le=1000)
+    max_size_mb: int = Field(default=50, ge=1, le=500)
+    max_file_size_kb: int = Field(default=1024, ge=1, le=10240)
+    capture_binary: bool = False
+
+
 class CodeForgeConfig(BaseModel):
     """Root configuration model.
 
@@ -335,6 +355,7 @@ class CodeForgeConfig(BaseModel):
         display: Display/UI preferences.
         session: Session management settings.
         rag: RAG (Retrieval-Augmented Generation) settings.
+        undo: Undo system settings.
         api_key: OpenRouter API key (sensitive).
     """
 
@@ -350,6 +371,7 @@ class CodeForgeConfig(BaseModel):
     display: DisplayConfig = Field(default_factory=DisplayConfig)
     session: SessionConfig = Field(default_factory=SessionConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
+    undo: UndoConfig = Field(default_factory=UndoConfig)
 
     # Sensitive - use SecretStr to prevent logging
     api_key: SecretStr | None = None

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from code_forge.tools.base import (
     BaseTool,
@@ -13,6 +13,9 @@ from code_forge.tools.base import (
     ToolResult,
 )
 from code_forge.tools.file.utils import validate_path_security
+
+if TYPE_CHECKING:
+    from code_forge.undo.manager import UndoManager
 
 
 class WriteTool(BaseTool):
@@ -108,6 +111,9 @@ Usage:
                 dry_run=True,
             )
 
+        # Get undo manager if available
+        undo_manager: UndoManager | None = context.metadata.get("undo_manager")
+
         try:
             # Create parent directories if needed
             parent_dir = os.path.dirname(file_path)
@@ -117,9 +123,19 @@ Usage:
             # Check if file exists (for metadata)
             existed = os.path.exists(file_path)
 
+            # Capture file state before modification for undo
+            # (captures existing content or marks as non-existent)
+            if undo_manager:
+                undo_manager.capture_before(file_path)
+
             # Write the file
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(content)
+
+            # Commit undo entry after successful write
+            if undo_manager:
+                filename = os.path.basename(file_path)
+                undo_manager.commit("Write", f"Write {filename}")
 
             byte_count = len(content.encode("utf-8"))
             action = "Updated" if existed else "Created"
@@ -132,7 +148,13 @@ Usage:
             )
 
         except PermissionError:
+            # Discard pending capture on failure
+            if undo_manager:
+                undo_manager.discard_pending()
             return ToolResult.fail(f"Permission denied: {file_path}")
         except OSError:
+            # Discard pending capture on failure
+            if undo_manager:
+                undo_manager.discard_pending()
             # Don't expose detailed OS error - could leak filesystem info
             return ToolResult.fail(f"OS error writing file: {file_path}")

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import chardet
 
@@ -16,6 +16,9 @@ from code_forge.tools.base import (
     ToolResult,
 )
 from code_forge.tools.file.utils import validate_path_security
+
+if TYPE_CHECKING:
+    from code_forge.undo.manager import UndoManager
 
 logger = logging.getLogger(__name__)
 
@@ -170,9 +173,12 @@ Usage:
         old_string: str,
         new_string: str,
         replace_all: bool,
-        context: ExecutionContext,  # noqa: ARG002
+        context: ExecutionContext,
     ) -> ToolResult:
         """Perform the actual replacement operation."""
+        # Get undo manager if available
+        undo_manager: UndoManager | None = context.metadata.get("undo_manager")
+
         try:
             # Detect file encoding to preserve it
             encoding, confidence = detect_file_encoding(file_path)
@@ -206,6 +212,10 @@ Usage:
                     "2. Use replace_all=true to replace all occurrences"
                 )
 
+            # Capture file state before modification for undo
+            if undo_manager:
+                undo_manager.capture_before(file_path)
+
             # Perform replacement
             if replace_all:
                 new_content = content.replace(old_string, new_string)
@@ -218,6 +228,11 @@ Usage:
             with open(file_path, "w", encoding=encoding) as f:
                 f.write(new_content)
 
+            # Commit undo entry after successful write
+            if undo_manager:
+                filename = os.path.basename(file_path)
+                undo_manager.commit("Edit", f"Edit {filename}")
+
             return ToolResult.ok(
                 f"Replaced {replacements} occurrence(s) in {file_path}",
                 file_path=file_path,
@@ -226,8 +241,14 @@ Usage:
             )
 
         except PermissionError:
+            # Discard pending capture on failure
+            if undo_manager:
+                undo_manager.discard_pending()
             return ToolResult.fail(f"Permission denied: {file_path}")
         except UnicodeDecodeError:
+            # Discard pending capture on failure
+            if undo_manager:
+                undo_manager.discard_pending()
             return ToolResult.fail(
                 f"Cannot read file as text: {file_path}. It may be a binary file."
             )

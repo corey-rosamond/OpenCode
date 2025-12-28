@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from code_forge.rag.manager import RAGManager
     from code_forge.sessions import SessionManager
     from code_forge.tools import ToolRegistry
+    from code_forge.undo.manager import UndoManager
 
 
 @runtime_checkable
@@ -77,6 +78,7 @@ class Dependencies:
     command_context: CommandContext
     agent_executor: AgentExecutor | None = None
     rag_manager: RAGManager | None = None
+    undo_manager: UndoManager | None = None
 
     # Optional overrides for specific components
     _custom_tools: list[Any] = field(default_factory=list)
@@ -130,6 +132,7 @@ class Dependencies:
         from code_forge.rag.manager import RAGManager
         from code_forge.sessions import SessionManager as SessMgr
         from code_forge.tools import ToolRegistry as ToolReg, register_all_tools
+        from code_forge.undo.manager import UndoManager as UndoMgr
 
         logger = logging.getLogger(__name__)
 
@@ -142,22 +145,45 @@ class Dependencies:
             model=config.model.default,
         )
 
+        # Create or use provided session manager (needed early for undo manager)
+        actual_session_manager = session_manager or SessMgr.get_instance()
+
+        # Create or use provided mode manager
+        actual_mode_manager = mode_manager or setup_modes()
+
         # Create or use provided tool registry
         if tool_registry is None:
             register_all_tools()
             tool_registry = ToolReg()
 
-        # Create agent with tools
+        # Create undo manager early (if enabled) so tools can use it
+        from code_forge.tools.base import ExecutionContext
+        actual_undo_manager: UndoMgr | None = None
+        if config.undo.enabled:
+            try:
+                actual_undo_manager = UndoMgr(
+                    session_manager=actual_session_manager,
+                    max_entries=config.undo.max_entries,
+                    max_size_bytes=config.undo.max_size_mb * 1024 * 1024,
+                    max_file_size=config.undo.max_file_size_kb * 1024,
+                    enabled=True,
+                )
+                logger.info("Undo manager created successfully")
+            except Exception as e:
+                logger.warning(f"Failed to create undo manager: {e}")
+                actual_undo_manager = None
+
+        # Create execution context with undo manager for tools
+        tool_context = ExecutionContext(
+            working_dir=str(Path.cwd()),
+            metadata={"undo_manager": actual_undo_manager} if actual_undo_manager else {},
+        )
+
+        # Create agent with tools (pass context for undo support)
         raw_tools = [tool_registry.get(name) for name in tool_registry.list_names()]
         raw_tools = [t for t in raw_tools if t is not None]
-        tools = adapt_tools_for_langchain(raw_tools)
+        tools = adapt_tools_for_langchain(raw_tools, context=tool_context)
         agent = CodeForgeAgent(llm=actual_llm, tools=tools)
-
-        # Create or use provided session manager
-        actual_session_manager = session_manager or SessMgr.get_instance()
-
-        # Create or use provided mode manager
-        actual_mode_manager = mode_manager or setup_modes()
 
         # Register commands and create executor
         register_builtin_commands()
@@ -201,6 +227,7 @@ class Dependencies:
             config=config,
             llm=actual_llm,
             rag_manager=actual_rag_manager,
+            undo_manager=actual_undo_manager,
         )
 
         # Create agent executor and configure AgentManager
@@ -224,6 +251,7 @@ class Dependencies:
             command_context=cmd_context,
             agent_executor=actual_agent_executor,
             rag_manager=actual_rag_manager,
+            undo_manager=actual_undo_manager,
         )
 
     def get_tool_names(self) -> list[str]:
