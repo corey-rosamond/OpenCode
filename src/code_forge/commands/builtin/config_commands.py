@@ -224,6 +224,8 @@ class ModelCommand(Command):
                 return CommandResult.fail("LLM not available")
 
             try:
+                from code_forge.llm.routing import get_model_context_limit
+
                 # Set model on the LLM instance
                 context.llm.model = model_name
 
@@ -234,6 +236,12 @@ class ModelCommand(Command):
                         context.context_manager.model = model_name
                     except Exception:
                         pass  # Context manager may not support this
+
+                # Update status bar with new model and reset token count
+                if context.repl is not None and hasattr(context.repl, "_status"):
+                    new_context_limit = get_model_context_limit(model_name)
+                    context.repl._status.set_model(model_name)
+                    context.repl._status.set_tokens(0, new_context_limit)
 
                 return CommandResult.ok(f"Model changed to: {model_name}")
             except Exception as e:

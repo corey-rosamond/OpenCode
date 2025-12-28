@@ -203,6 +203,9 @@ async def run_with_agent(
     command_executor = deps.command_executor
     command_context = deps.command_context
 
+    # Add repl to command context so commands can update status bar
+    command_context.repl = repl
+
     # Update status bar with model info
     from code_forge.llm.routing import get_model_context_limit
     from code_forge.cli.context_adapter import ContextStatusAdapter
