@@ -6,44 +6,57 @@
 
 ## Current Status
 
-**All critical (P0) and most high-priority (P1/P2) issues have been resolved.**
+**Core features complete. Now focused on Conversational Intelligence Layer.**
 
-Check `UNDONE.md` for remaining deferred items.
+Check `UNDONE.md` for the full roadmap and priorities.
 
 ### Active Development
 
-No active development tasks. All critical issues resolved.
+**CTX-001: Context Compression Visibility & Control** ⭐ TOP PRIORITY
+- No notification when context is compressed/truncated
+- Token counter doesn't update after compression
+- No warning when approaching context limit
+- **Effort:** 1-2 days | **Impact:** 9.0/10
+
+**Conversational UX Gap Analysis** - 6 features identified:
+- CONV-001: Conversational Translation Layer (P0)
+- CONV-002: Workflow Orchestration (P0)
+- CONV-003: Context-Aware Error Recovery (P1) ⚡ Quick Win
+- CONV-004: Smart Project Type Detection (P1) ⚡ Quick Win
+- CONV-005: Session Context Continuity (P1)
+- CONV-006: Visual Interface Enhancements (P2)
 
 ### Recently Completed
+
+**FEAT-004: Undo System & Conversational UX** - ✅ Complete (v1.12.0)
+- Undo/Redo for Edit, Write, Bash file operations
+- BashFileDetector for shell command analysis
+- ConversationalPresenter for natural language tool descriptions
+- ErrorExplainer for friendly error messages
+- Commands: /undo, /redo, /undo-history, /undo-clear
+- 113 new tests, 5406 total tests pass
 
 **RAG-001: RAG Search UX Enhancements** - ✅ Complete (v1.11.0)
 - Hybrid search combining vector + text search fallback
 - Scope indicator showing project root when searching
 - Low confidence warning for vector scores < 0.3
-- Better "no results" messaging with guidance
 
-**TOOL-011: Edit Tool Empty String Validation** - ✅ Complete (v1.11.0)
-- Added min_length=1 to prevent empty string replacement
-
-**FEAT-002: Multi-Agent Tools & Web Search Integration** - ✅ Complete (v1.10.0)
-- Phase directory: `.ai/phase/llm-tool-integration/`
+**FEAT-002: Multi-Agent Tools & Web Search** - ✅ Complete (v1.10.0)
 - TaskTool, WebSearchBaseTool, WebFetchBaseTool
 - RAG integration for agents
-- 49 new tests, 5293 total tests pass
 
 **FEAT-001: Per-Project RAG Support** - ✅ Complete (v1.9.0)
-- Phase directory: `.ai/phase/per-project-rag/`
 - All 5 phases complete with 348 tests
 
 ### Remaining Work
 
 | Priority | Status | Items |
 |----------|--------|-------|
-| P0 Critical | ✅ Complete | All resolved |
-| P1 High | 1 pending | SEC-022 (documented) |
-| P2 Medium | ✅ Complete | All 5 items resolved |
+| P0 Critical | 3 pending | CTX-001, CONV-001, CONV-002 |
+| P1 High | 4 pending | CONV-003/004/005, SEC-022 |
+| P2 Medium | 1 pending | CONV-006 |
 | P3 Low | 3 deferred | Minor improvements |
-| Features | ✅ Complete | FEAT-001, FEAT-002 done |
+| Features | 7 pending | See UNDONE.md for details |
 
 ### Other Recent Completions (v1.8.1 - v1.9.0)
 
@@ -101,9 +114,9 @@ No active development tasks. All critical issues resolved.
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.11.0 (derived from pyproject.toml)
+**Version:** 1.12.0 (derived from pyproject.toml)
 **Status:** Production/Stable
-**Tests:** 5293+ (85%+ coverage)
+**Tests:** 5406+ (85%+ coverage)
 
 ---
 

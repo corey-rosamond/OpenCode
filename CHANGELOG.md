@@ -5,6 +5,26 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2025-12-28
+
+### Added
+- **FEAT-004: Undo System & Conversational UX Layer**
+  - Undo/Redo system for Edit, Write, and Bash file operations
+  - `FileSnapshot`, `UndoEntry`, `UndoHistory` data models
+  - `UndoManager` for capturing and restoring file state
+  - `BashFileDetector` for detecting file-modifying shell commands
+  - Commands: `/undo`, `/redo`, `/undo-history`, `/undo-clear`
+  - `ConversationalPresenter` for natural language tool descriptions
+  - `ToolDescriptor` maps tools to action/completion messages
+  - `ReasoningExtractor` detects LLM reasoning patterns
+  - `ErrorExplainer` provides friendly error messages with suggestions
+  - 113 new unit tests (81 undo + 32 conversation)
+  - Configuration: `UndoConfig` with max_entries, max_size_mb, max_file_size_kb
+
+### Improved
+- **Gap Analysis**: Identified 7 conversational UX enhancements (CTX-001, CONV-001 through CONV-006)
+- Documentation: Updated UNDONE.md with full roadmap and quick wins analysis
+
 ## [1.11.0] - 2025-12-28
 
 ### Improved

@@ -22,6 +22,8 @@ forge
 - **Multi-Model Access**: Connect to 400+ AI models through OpenRouter API
 - **LangChain Integration**: ReAct-style agent executor with tool loop
 - **Comprehensive Tool System**: File operations, shell execution, pattern matching
+- **Undo/Redo System**: Rollback file changes from Edit, Write, and Bash operations
+- **Per-Project RAG**: Semantic code search with auto-indexing and context augmentation
 - **Permission System**: Granular control with glob patterns, regex, and rule hierarchies
 - **Hooks System**: Execute custom shell commands on lifecycle events
 - **Interactive REPL**: Rich terminal UI with themes and status bar
@@ -129,7 +131,7 @@ Code-Forge/
 │   ├── git/                # Git integration
 │   ├── github/             # GitHub integration
 │   └── plugins/            # Plugin system
-├── tests/                  # Test suite (3400+ tests)
+├── tests/                  # Test suite (5400+ tests)
 └── .ai/                    # AI planning documentation
 ```
 
@@ -432,6 +434,11 @@ Code-Forge provides an extensible slash command system for quick actions within 
 | `/context` | `/ctx`, `/c` | Context management (compact, reset, mode) |
 | `/config` | `/cfg` | Configuration management (get, set) |
 | `/model` | | Change or show current model |
+| `/undo` | `/u` | Undo the last file operation |
+| `/redo` | | Redo the last undone operation |
+| `/undo-history` | `/undos` | Show undo/redo history |
+| `/undo-clear` | | Clear all undo/redo history |
+| `/rag` | | RAG search and indexing (index, search, status, clear) |
 | `/clear` | `/cls` | Clear the screen |
 | `/exit` | `/quit`, `/q` | Exit the REPL |
 | `/reset` | | Reset conversation context |
@@ -717,6 +724,10 @@ All code must pass:
 | 9.2 | GitHub Integration | Complete |
 | 10.1 | Plugin System | Complete |
 | 10.2 | Polish & Integration | Complete |
+| 11.1 | Per-Project RAG | Complete |
+| 11.2 | Multi-Agent Tools | Complete |
+| 12.1 | Undo/Redo System | Complete |
+| 12.2 | Conversational UX | In Progress |
 
 ## License
 
