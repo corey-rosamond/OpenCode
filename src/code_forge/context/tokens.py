@@ -365,11 +365,12 @@ MODEL_ENCODINGS: dict[str, str] = {
 }
 
 
-def get_counter(model: str) -> TokenCounter:
+def get_counter(model: str, cache_size: int = 1000) -> TokenCounter:
     """Get appropriate token counter for a model.
 
     Args:
         model: Model name or identifier.
+        cache_size: Maximum cache entries for the caching counter.
 
     Returns:
         TokenCounter instance.
@@ -380,8 +381,8 @@ def get_counter(model: str) -> TokenCounter:
     for prefix in MODEL_ENCODINGS:
         if prefix in model_lower:
             counter = TiktokenCounter(model)
-            return CachingCounter(counter)
+            return CachingCounter(counter, max_cache_size=cache_size)
 
     # Fall back to approximate counter
     logger.debug(f"Using approximate counter for model: {model}")
-    return CachingCounter(ApproximateCounter())
+    return CachingCounter(ApproximateCounter(), max_cache_size=cache_size)

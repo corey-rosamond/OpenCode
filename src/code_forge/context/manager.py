@@ -300,3 +300,29 @@ class ContextManager:
             "max_tokens": self.tracker.limits.max_tokens,
             "effective_limit": self.tracker.limits.effective_limit,
         }
+
+    def get_cache_stats(self) -> dict[str, int] | None:
+        """Get token counter cache statistics.
+
+        Returns:
+            Dictionary with hits, misses, size, hit_rate_percent,
+            or None if counter doesn't support caching.
+        """
+        from .tokens import CachingCounter
+
+        if isinstance(self.counter, CachingCounter):
+            return self.counter.get_stats()
+        return None
+
+    def clear_cache(self) -> bool:
+        """Clear the token counter cache.
+
+        Returns:
+            True if cache was cleared, False if counter doesn't support caching.
+        """
+        from .tokens import CachingCounter
+
+        if isinstance(self.counter, CachingCounter):
+            self.counter.clear_cache()
+            return True
+        return False

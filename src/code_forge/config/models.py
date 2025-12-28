@@ -201,6 +201,7 @@ class SessionConfig(BaseModel):
         max_history: Maximum messages in history (1-10000).
         session_dir: Custom session directory.
         compress_after: Messages before compression (10+).
+        token_cache_size: Maximum entries in token counter cache (100-10000).
     """
 
     model_config = ConfigDict(validate_assignment=True)
@@ -210,6 +211,7 @@ class SessionConfig(BaseModel):
     max_history: int = Field(default=100, ge=1, le=10000)
     session_dir: Path | None = None
     compress_after: int = Field(default=50, ge=10)
+    token_cache_size: int = Field(default=1000, ge=100, le=10000)
 
 
 class CodeForgeConfig(BaseModel):

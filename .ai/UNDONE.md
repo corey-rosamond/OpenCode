@@ -50,11 +50,10 @@ Migration plan: Create common base, migrate one module at a time with tests.
 **Issue:** No `--json`, `--no-color`, `-q` quiet mode options
 **Note:** Feature request requiring significant CLI restructuring.
 
-#### SESS-002: Memory Leak in Token Counter Caching
-**Status:** Deferred
-**File:** `src/code_forge/context/tokens.py:257-353`
-**Issue:** Cache default `max_cache_size=1000` could cause memory issues
-**Note:** Feature request for cache statistics monitoring. Current size is reasonable for most use cases.
+#### ~~SESS-002: Memory Leak in Token Counter Caching~~
+**Status:** ✅ Complete (v1.8.12)
+**File:** `src/code_forge/context/tokens.py`, `src/code_forge/config/models.py`
+**Resolution:** Added `token_cache_size` config option and `/session cache` command for monitoring and clearing cache
 
 ---
 
@@ -133,10 +132,10 @@ Migration plan: Create common base, migrate one module at a time with tests.
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
-| **P2 Medium** | 0 | 2 | 3 | 5 |
+| **P2 Medium** | 0 | 1 | 4 | 5 |
 | **P3 Low** | 0 | 3 | 3 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **2** | **6** | **14** | **22** |
+| **TOTAL** | **2** | **5** | **15** | **22** |
 
 ### Priority Order for Implementation
 
@@ -149,6 +148,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.12 | 2025-12-28 | Cache monitoring (SESS-002): Token cache config and /session cache command |
 | 1.8.11 | 2025-12-28 | File encoding (TOOL-009): Edit tool preserves file encoding |
 | 1.8.10 | 2025-12-28 | Exception sanitization (TOOL-010): Sanitized error messages |
 | 1.8.9 | 2025-12-28 | Skills dependencies (MCP-016): Added circular dependency detection |

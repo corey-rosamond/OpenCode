@@ -245,6 +245,45 @@ class SessionUntagCommand(Command):
         return CommandResult.fail("No active session")
 
 
+class SessionCacheCommand(Command):
+    """View or clear token counter cache statistics."""
+
+    name = "cache"
+    description = "View or clear token counter cache"
+    usage = "/session cache [--clear]"
+
+    async def execute(
+        self,
+        parsed: ParsedCommand,
+        context: CommandContext,
+    ) -> CommandResult:
+        """Show or clear cache stats."""
+        if context.context_manager is None:
+            return CommandResult.fail("Context manager not available")
+
+        # Check if clear flag is set
+        if parsed.has_flag("clear"):
+            if context.context_manager.clear_cache():
+                return CommandResult.ok("Token counter cache cleared.")
+            return CommandResult.fail("Cache clearing not supported")
+
+        # Get and display cache stats
+        stats = context.context_manager.get_cache_stats()
+        if stats is None:
+            return CommandResult.fail("Cache statistics not available")
+
+        lines = [
+            "Token Counter Cache Statistics:",
+            "",
+            f"  Cache Size: {stats['size']} entries",
+            f"  Cache Hits: {stats['hits']}",
+            f"  Cache Misses: {stats['misses']}",
+            f"  Hit Rate: {stats['hit_rate_percent']}%",
+        ]
+
+        return CommandResult.ok("\n".join(lines))
+
+
 class SessionCleanupCommand(Command):
     """Clean up old sessions and backups."""
 
@@ -314,6 +353,7 @@ class SessionCommand(SubcommandHandler):
         "title": SessionTitleCommand(),
         "tag": SessionTagCommand(),
         "untag": SessionUntagCommand(),
+        "cache": SessionCacheCommand(),
         "cleanup": SessionCleanupCommand(),
     }
 
