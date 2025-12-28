@@ -14,18 +14,6 @@ _No active tasks._
 
 ### Critical Priority (P0)
 
-#### DOC-001: README Package Name Mismatch
-**Status:** Pending
-**Priority:** Critical
-**Phase Directory:** `.ai/phase/documentation-fix/`
-**Files:** `README.md`
-**Issue:** All code examples in README use `forge.` imports but actual package is `code_forge`
-**Impact:** Every code example in the README is broken and will cause ImportError
-**Examples:**
-- Line 141: `from forge.tools.file import ReadTool` should be `from code_forge.tools.file import ReadTool`
-- Line 110: `├── src/forge/` should be `├── src/code_forge/`
-- All programmatic usage examples need updating
-
 #### CODE-001: ToolCategory Enum Missing UTILITY
 **Status:** Pending
 **Priority:** Critical
@@ -203,25 +191,24 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Priority | Pending | Deferred | Complete | Total |
 |----------|---------|----------|----------|-------|
-| **P0 Critical** | 3 | 0 | 0 | 3 |
+| **P0 Critical** | 2 | 0 | 1 | 3 |
 | **P1 High** | 3 | 1 | 0 | 4 |
 | **P2 Medium** | 3 | 2 | 0 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **10** | **9** | **3** | **22** |
+| **TOTAL** | **9** | **9** | **4** | **22** |
 
 ### Priority Order for Implementation
 
-1. **DOC-001** - Fix README (broken examples hurt adoption)
-2. **CODE-001** - Fix ToolCategory enum (broken tests)
-3. **CICD-001** - Add CI/CD pipeline (quality gate)
-4. **CODE-002** - Remove dead WebConfig code
-5. **CODE-003** - Fix version synchronization
-6. **SEC-022** - Address SSRF vulnerability
-7. **ARCH-004** - Consolidate config patterns
-8. **CODE-004** - Audit threading/async locking
-9. **CODE-005** - Centralize magic numbers
-10. **SESS-007** - Implement session cleanup
+1. **CODE-001** - Fix ToolCategory enum (broken tests)
+2. **CICD-001** - Add CI/CD pipeline (quality gate)
+3. **CODE-002** - Remove dead WebConfig code
+4. **CODE-003** - Fix version synchronization
+5. **SEC-022** - Address SSRF vulnerability
+6. **ARCH-004** - Consolidate config patterns
+7. **CODE-004** - Audit threading/async locking
+8. **CODE-005** - Centralize magic numbers
+9. **SESS-007** - Implement session cleanup
 
 ---
 
@@ -229,6 +216,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.1 | 2025-12-27 | Documentation fix (DOC-001): Fixed package references forge → code_forge |
 | 1.8.0 | 2025-12-27 | Test coverage (FEAT-004): 4,898 tests, 85%+ coverage |
 | 1.7.0 | 2025-12-22 | Workflow system (FEAT-003): Multi-step agent pipelines |
 | 1.6.0 | 2025-12-21 | Specialized agent system (FEAT-002): 16 new agent types |

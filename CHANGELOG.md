@@ -5,6 +5,16 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2025-12-27
+
+### Fixed
+- **DOC-001: README Package References**: Fixed all code examples using wrong package name
+  - Updated imports from `forge.*` to `code_forge.*` in README.md
+  - Updated project structure diagram to show `src/code_forge/`
+  - Fixed coverage and mypy paths in development section
+  - Fixed imports in docs/development/plugins.md
+  - Fixed example path in .ai/GUARDRAILS.md
+
 ## [1.8.0] - 2025-12-27
 
 ### Added
