@@ -14,13 +14,7 @@ _No active tasks._
 
 ### Critical Priority (P0)
 
-#### CICD-001: Missing CI/CD Pipeline
-**Status:** Pending
-**Priority:** Critical
-**Phase Directory:** `.ai/phase/cicd-setup/`
-**Files:** `.github/workflows/` (missing)
-**Issue:** `tests/README.md:254-259` references `.github/workflows/test.yml` but no `.github/` directory exists
-**Impact:** No automated testing, no PR checks, no deployment automation
+_All critical issues resolved._
 
 ---
 
@@ -183,23 +177,22 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Priority | Pending | Deferred | Complete | Total |
 |----------|---------|----------|----------|-------|
-| **P0 Critical** | 1 | 0 | 2 | 3 |
+| **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 3 | 1 | 0 | 4 |
 | **P2 Medium** | 3 | 2 | 0 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **8** | **9** | **5** | **22** |
+| **TOTAL** | **7** | **9** | **6** | **22** |
 
 ### Priority Order for Implementation
 
-1. **CICD-001** - Add CI/CD pipeline (quality gate)
-2. **CODE-002** - Remove dead WebConfig code
-3. **CODE-003** - Fix version synchronization
-4. **SEC-022** - Address SSRF vulnerability
-5. **ARCH-004** - Consolidate config patterns
-6. **CODE-004** - Audit threading/async locking
-7. **CODE-005** - Centralize magic numbers
-8. **SESS-007** - Implement session cleanup
+1. **CODE-002** - Remove dead WebConfig code
+2. **CODE-003** - Fix version synchronization
+3. **SEC-022** - Address SSRF vulnerability
+4. **ARCH-004** - Consolidate config patterns
+5. **CODE-004** - Audit threading/async locking
+6. **CODE-005** - Centralize magic numbers
+7. **SESS-007** - Implement session cleanup
 
 ---
 
@@ -207,6 +200,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.3 | 2025-12-27 | CI/CD (CICD-001): Added GitHub Actions workflows for testing and releases |
 | 1.8.2 | 2025-12-27 | Code fix (CODE-001): Added UTILITY to ToolCategory enum |
 | 1.8.1 | 2025-12-27 | Documentation fix (DOC-001): Fixed package references forge → code_forge |
 | 1.8.0 | 2025-12-27 | Test coverage (FEAT-004): 4,898 tests, 85%+ coverage |

@@ -5,6 +5,16 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.3] - 2025-12-27
+
+### Added
+- **CICD-001: CI/CD Pipeline**: Added GitHub Actions workflows for automated testing and releases
+  - test.yml: pytest, mypy, ruff checks on Python 3.11 and 3.12
+  - pr-check.yml: PR title format and CHANGELOG update validation
+  - release.yml: automated GitHub releases on version tags
+  - Issue templates for bug reports and feature requests
+  - PR template for consistent pull request format
+
 ## [1.8.2] - 2025-12-27
 
 ### Fixed
