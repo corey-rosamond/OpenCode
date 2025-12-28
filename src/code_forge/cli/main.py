@@ -203,6 +203,7 @@ async def run_with_agent(
     mode_manager = deps.mode_manager
     command_executor = deps.command_executor
     command_context = deps.command_context
+    session_context_tracker = deps.session_context_tracker
 
     # Add repl to command context so commands can update status bar
     command_context.repl = repl
@@ -340,6 +341,11 @@ async def run_with_agent(
                     if not is_quiet:
                         repl.output.print_dim("(Press ESC twice to interrupt)")
 
+                # Track conversation turn and extract entities from user input
+                if session_context_tracker is not None:
+                    session_context_tracker.increment_turn()
+                    session_context_tracker.extract_entities_from_text(text)
+
                 # Add user message to session
                 session_manager.add_message("user", text)
 
@@ -457,6 +463,37 @@ async def run_with_agent(
                                 "success": success,
                                 "duration": duration,
                             })
+
+                        # Track operation in session context
+                        if session_context_tracker is not None and current_tool:
+                            from code_forge.context.tracker import OperationType
+                            tool_args = current_tool.get("arguments", {})
+                            target = (
+                                tool_args.get("file_path")
+                                or tool_args.get("path")
+                                or tool_args.get("command", "")[:50]
+                                or tool_args.get("url", "")
+                                or tool_name
+                            )
+                            # Map tool names to operation types
+                            op_type_map = {
+                                "Read": OperationType.READ,
+                                "Write": OperationType.WRITE,
+                                "Edit": OperationType.EDIT,
+                                "Glob": OperationType.SEARCH,
+                                "Grep": OperationType.SEARCH,
+                                "Bash": OperationType.EXECUTE,
+                                "WebFetch": OperationType.FETCH,
+                                "WebSearch": OperationType.SEARCH,
+                            }
+                            op_type = op_type_map.get(tool_name, OperationType.EXECUTE)
+                            session_context_tracker.track_operation(
+                                op_type=op_type,
+                                target=target,
+                                tool_name=tool_name,
+                                success=success,
+                                result_summary=str(result)[:200] if not success else "",
+                            )
 
                         # Show truncated result (not in JSON mode)
                         if not is_json_mode:

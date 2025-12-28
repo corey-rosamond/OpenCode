@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from code_forge.rag.manager import RAGManager
     from code_forge.sessions import SessionManager
     from code_forge.tools import ToolRegistry
+    from code_forge.context.tracker import SessionContextTracker
     from code_forge.undo.manager import UndoManager
 
 
@@ -81,6 +82,7 @@ class Dependencies:
     rag_manager: RAGManager | None = None
     undo_manager: UndoManager | None = None
     context_manager: ContextManager | None = None
+    session_context_tracker: SessionContextTracker | None = None
 
     # Optional overrides for specific components
     _custom_tools: list[Any] = field(default_factory=list)
@@ -126,6 +128,7 @@ class Dependencies:
             register_builtin_commands,
         )
         from code_forge.context.manager import ContextManager as CtxMgr, TruncationMode
+        from code_forge.context.tracker import SessionContextTracker as SessCtxTracker
         from code_forge.langchain.agent import CodeForgeAgent
         from code_forge.langchain.llm import OpenRouterLLM
         from code_forge.langchain.tools import adapt_tools_for_langchain
@@ -163,6 +166,10 @@ class Dependencies:
             critical_threshold=config.context.critical_threshold,
         )
         logger.info("Context manager created with warning thresholds")
+
+        # Create session context tracker for conversational context
+        actual_session_context_tracker = SessCtxTracker()
+        logger.info("Session context tracker created")
 
         # Create or use provided tool registry
         if tool_registry is None:
@@ -267,6 +274,7 @@ class Dependencies:
             rag_manager=actual_rag_manager,
             undo_manager=actual_undo_manager,
             context_manager=actual_context_manager,
+            session_context_tracker=actual_session_context_tracker,
         )
 
     def get_tool_names(self) -> list[str]:
