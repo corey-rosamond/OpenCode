@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 import sys
@@ -59,6 +60,11 @@ def main() -> int:
         print_help()
         return 0
 
+    # Parse output format flags
+    no_color = "--no-color" in args
+    quiet_mode = "-q" in args or "--quiet" in args
+    json_output = "--json" in args
+
     # Check for unknown flags
     for arg in args:
         if arg.startswith("-") and arg not in (
@@ -70,6 +76,10 @@ def main() -> int:
             "--print",
             "--continue",
             "--resume",
+            "--no-color",
+            "-q",
+            "--quiet",
+            "--json",
         ):
             print(f"Error: Unknown option '{arg}'", file=sys.stderr)
             print("Run 'forge --help' for usage information", file=sys.stderr)
@@ -100,6 +110,14 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Apply CLI flag overrides to config
+    if no_color:
+        config.display.color = False
+    if quiet_mode:
+        config.display.quiet = True
+    if json_output:
+        config.display.json_output = True
 
     # Check for API key - run setup wizard if not configured
     api_key = os.environ.get("OPENROUTER_API_KEY") or config.get_api_key()
@@ -261,11 +279,18 @@ async def run_with_agent(
             from code_forge.langchain.agent import AgentEventType
             from rich.status import Status
 
+            # Check if we're in JSON output mode
+            is_json_mode = repl.json_output
+            is_quiet = repl.quiet_mode
+
             repl._status.set_status("Thinking...")
 
             # Initialize spinners before try block to avoid NameError in except/finally
             spinner = None
             tool_spinner = None
+
+            # Track tool calls for JSON output
+            tool_calls_log: list[dict] = []
 
             try:
                 # Add user message to session
@@ -277,11 +302,13 @@ async def run_with_agent(
                 iteration_count = 0
                 first_content_received = False
 
-                repl.output.print("")  # Start on new line
+                if not is_json_mode:
+                    repl.output.print("")  # Start on new line
 
-                # Start with a spinner until we get content
-                spinner = Status("[dim]Thinking...[/dim]", console=repl._console, spinner="dots")
-                spinner.start()
+                # Start with a spinner until we get content (skip in JSON mode)
+                if not is_json_mode:
+                    spinner = Status("[dim]Thinking...[/dim]", console=repl._console, spinner="dots")
+                    spinner.start()
 
                 async for event in agent.stream(text):
                     if event.type == AgentEventType.LLM_START:
@@ -296,11 +323,14 @@ async def run_with_agent(
                             # Filter out keyboard escape sequences that may bleed in
                             chunk = strip_keyboard_escapes(chunk)
                             if chunk:  # Only proceed if content remains after filtering
-                                # Stop spinner on first content
+                                # Stop spinner on first content (not in JSON mode)
                                 if not first_content_received:
-                                    spinner.stop()
+                                    if spinner:
+                                        spinner.stop()
                                     first_content_received = True
-                                repl._console.print(chunk, end="")
+                                # Only print chunks in non-JSON mode
+                                if not is_json_mode:
+                                    repl._console.print(chunk, end="")
                                 accumulated_output += chunk
 
                     elif event.type == AgentEventType.LLM_END:
@@ -309,28 +339,30 @@ async def run_with_agent(
                     elif event.type == AgentEventType.TOOL_START:
                         # Stop thinking spinner if still running
                         if not first_content_received:
-                            spinner.stop()
+                            if spinner:
+                                spinner.stop()
                             first_content_received = True
 
                         tool_name = event.data.get("name", "unknown")
                         tool_args = event.data.get("arguments", {})
-                        current_tool = tool_name
+                        current_tool = {"name": tool_name, "arguments": tool_args}
 
-                        # Show tool call with formatted arguments
-                        repl.output.print("")  # New line before tool
-                        args_display = _format_tool_args(tool_args)
-                        repl._console.print(
-                            f"[dim]─── Tool: [bold cyan]{tool_name}[/bold cyan]{args_display} ───[/dim]"
-                        )
-                        repl._status.set_status(f"Running {tool_name}...")
+                        # Show tool call with formatted arguments (not in JSON mode)
+                        if not is_json_mode:
+                            repl.output.print("")  # New line before tool
+                            args_display = _format_tool_args(tool_args)
+                            repl._console.print(
+                                f"[dim]─── Tool: [bold cyan]{tool_name}[/bold cyan]{args_display} ───[/dim]"
+                            )
+                            repl._status.set_status(f"Running {tool_name}...")
 
-                        # Start a tool execution spinner
-                        tool_spinner = Status(
-                            f"[dim]⏳ Running {tool_name}...[/dim]",
-                            console=repl._console,
-                            spinner="dots"
-                        )
-                        tool_spinner.start()
+                            # Start a tool execution spinner
+                            tool_spinner = Status(
+                                f"[dim]⏳ Running {tool_name}...[/dim]",
+                                console=repl._console,
+                                spinner="dots"
+                            )
+                            tool_spinner.start()
 
                     elif event.type == AgentEventType.TOOL_END:
                         # Stop tool spinner
@@ -343,14 +375,25 @@ async def run_with_agent(
                         success = event.data.get("success", True)
                         duration = event.data.get("duration", 0)
 
-                        # Show truncated result
-                        result_preview = _truncate_result(result, max_lines=5)
-                        status = "[green]✓[/green]" if success else "[red]✗[/red]"
-                        repl._console.print(f"[dim]{result_preview}[/dim]")
-                        repl._console.print(
-                            f"[dim]─── {status} {tool_name} ({duration:.1f}s) ───[/dim]"
-                        )
-                        repl.output.print("")  # Blank line after tool
+                        # Log tool call for JSON output
+                        if current_tool and isinstance(current_tool, dict):
+                            tool_calls_log.append({
+                                "name": current_tool["name"],
+                                "arguments": current_tool["arguments"],
+                                "result": result,
+                                "success": success,
+                                "duration": duration,
+                            })
+
+                        # Show truncated result (not in JSON mode)
+                        if not is_json_mode:
+                            result_preview = _truncate_result(result, max_lines=5)
+                            status = "[green]✓[/green]" if success else "[red]✗[/red]"
+                            repl._console.print(f"[dim]{result_preview}[/dim]")
+                            repl._console.print(
+                                f"[dim]─── {status} {tool_name} ({duration:.1f}s) ───[/dim]"
+                            )
+                            repl.output.print("")  # Blank line after tool
                         current_tool = None
                         repl._status.set_status("Thinking...")
 
@@ -366,8 +409,23 @@ async def run_with_agent(
                         total_tokens[0] += event_total_tokens
                         repl._status.set_tokens(total_tokens[0])
 
-                        # Final stats (optional, can be dimmed)
-                        if tool_count > 0 or event_total_tokens > 0:
+                        # JSON output mode: emit structured response
+                        if is_json_mode:
+                            json_response = {
+                                "response": accumulated_output,
+                                "tool_calls": tool_calls_log,
+                                "stats": {
+                                    "iterations": iterations,
+                                    "tool_count": tool_count,
+                                    "duration": duration,
+                                    "prompt_tokens": prompt_tokens,
+                                    "completion_tokens": completion_tokens,
+                                    "total_tokens": event_total_tokens,
+                                },
+                            }
+                            print(json.dumps(json_response, indent=2))
+                        # Normal mode: show stats (skip in quiet mode)
+                        elif not is_quiet and (tool_count > 0 or event_total_tokens > 0):
                             token_info = ""
                             if event_total_tokens > 0:
                                 token_info = f", {event_total_tokens:,} tokens"
@@ -380,9 +438,13 @@ async def run_with_agent(
 
                     elif event.type == AgentEventType.ERROR:
                         error = event.data.get("error", "Unknown error")
-                        repl.output.print_error(f"Agent error: {error}")
+                        if is_json_mode:
+                            print(json.dumps({"error": error}, indent=2))
+                        else:
+                            repl.output.print_error(f"Agent error: {error}")
 
-                repl.output.print("")  # Final newline
+                if not is_json_mode:
+                    repl.output.print("")  # Final newline
 
                 # Process response through mode manager (extracts thinking if in thinking mode)
                 processed_output = mode_manager.process_response(accumulated_output)
@@ -397,7 +459,10 @@ async def run_with_agent(
                     spinner.stop()
                 if tool_spinner:
                     tool_spinner.stop()
-                repl.output.print_error(f"Error: {e}")
+                if is_json_mode:
+                    print(json.dumps({"error": str(e)}, indent=2))
+                else:
+                    repl.output.print_error(f"Error: {e}")
             finally:
                 # Ensure all spinners are stopped
                 if spinner:
@@ -489,6 +554,11 @@ Options:
   --continue        Resume most recent session
   --resume          Select session to resume
   -p, --print       Run in headless mode with prompt
+
+Output Options:
+  --no-color        Disable colored output
+  -q, --quiet       Reduce output verbosity
+  --json            Output responses in JSON format
 
 For more information, visit: https://github.com/corey-rosamond/Code-Forge
 """

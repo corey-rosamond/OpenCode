@@ -324,10 +324,14 @@ class CodeForgeREPL:
         """
         self._config = config
         self._theme = ThemeRegistry.get(config.display.theme)
-        self._console = Console(force_terminal=True)
+        # Respect color settings: force_terminal enables colors, no_color disables
+        self._console = Console(
+            force_terminal=config.display.color,
+            no_color=not config.display.color,
+        )
         self._status = StatusBar(
             model=config.model.default,
-            visible=config.display.status_line,
+            visible=config.display.status_line and not config.display.quiet,
         )
 
         # Create prompt_toolkit style from theme
@@ -383,7 +387,9 @@ class CodeForgeREPL:
         # No output here - the toolbar will update automatically
 
     def _show_welcome(self) -> None:
-        """Display welcome message."""
+        """Display welcome message (skipped in quiet mode)."""
+        if self._config.display.quiet:
+            return
         cwd = Path.cwd()
         welcome = f"""
 [bold {self._theme.accent}]Code-Forge[/bold {self._theme.accent}] v{__version__}
@@ -433,6 +439,24 @@ AI-powered CLI Development Assistant
             True if thinking mode is on.
         """
         return self._status.thinking_enabled
+
+    @property
+    def quiet_mode(self) -> bool:
+        """Check if quiet mode is enabled.
+
+        Returns:
+            True if quiet mode is on.
+        """
+        return self._config.display.quiet
+
+    @property
+    def json_output(self) -> bool:
+        """Check if JSON output mode is enabled.
+
+        Returns:
+            True if JSON output mode is on.
+        """
+        return self._config.display.json_output
 
     @property
     def output(self) -> OutputRenderer:

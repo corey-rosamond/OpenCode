@@ -185,6 +185,140 @@ class TestPrintHelp:
         assert "-h" in output
         assert "-p" in output
 
+    def test_help_contains_output_options(self) -> None:
+        """Help should list output format options."""
+        with patch("builtins.print") as mock_print:
+            print_help()
+        output = mock_print.call_args[0][0]
+        assert "--no-color" in output
+        assert "-q" in output or "--quiet" in output
+        assert "--json" in output
+
+
+class TestOutputFormatFlags:
+    """Tests for output format CLI flags."""
+
+    def test_no_color_flag_accepted(self) -> None:
+        """--no-color should be a valid flag."""
+        mock_repl = MagicMock()
+        mock_config = MagicMock()
+        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.get_api_key.return_value = "test-api-key"
+        mock_config.display.color = True
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
+
+        with patch.object(sys, "argv", ["forge", "--no-color"]):
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.return_value = 0
+                            exit_code = main()
+
+        assert exit_code == 0
+        # Verify color was disabled on config
+        assert mock_config.display.color is False
+
+    def test_quiet_flag_accepted(self) -> None:
+        """-q should be a valid flag."""
+        mock_repl = MagicMock()
+        mock_config = MagicMock()
+        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.get_api_key.return_value = "test-api-key"
+        mock_config.display.quiet = False
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
+
+        with patch.object(sys, "argv", ["forge", "-q"]):
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.return_value = 0
+                            exit_code = main()
+
+        assert exit_code == 0
+        # Verify quiet was enabled on config
+        assert mock_config.display.quiet is True
+
+    def test_quiet_long_flag_accepted(self) -> None:
+        """--quiet should be a valid flag."""
+        mock_repl = MagicMock()
+        mock_config = MagicMock()
+        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.get_api_key.return_value = "test-api-key"
+        mock_config.display.quiet = False
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
+
+        with patch.object(sys, "argv", ["forge", "--quiet"]):
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.return_value = 0
+                            exit_code = main()
+
+        assert exit_code == 0
+        assert mock_config.display.quiet is True
+
+    def test_json_flag_accepted(self) -> None:
+        """--json should be a valid flag."""
+        mock_repl = MagicMock()
+        mock_config = MagicMock()
+        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.get_api_key.return_value = "test-api-key"
+        mock_config.display.json_output = False
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
+
+        with patch.object(sys, "argv", ["forge", "--json"]):
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.return_value = 0
+                            exit_code = main()
+
+        assert exit_code == 0
+        assert mock_config.display.json_output is True
+
+    def test_multiple_output_flags_combined(self) -> None:
+        """Multiple output flags should work together."""
+        mock_repl = MagicMock()
+        mock_config = MagicMock()
+        mock_config.model.default = "anthropic/claude-3.5-sonnet"
+        mock_config.get_api_key.return_value = "test-api-key"
+        mock_config.display.color = True
+        mock_config.display.quiet = False
+        mock_config.display.json_output = False
+        mock_stdin = MagicMock()
+        mock_stdin.read.return_value = ""
+        mock_stdin.isatty.return_value = True
+
+        with patch.object(sys, "argv", ["forge", "--no-color", "-q", "--json"]):
+            with patch.object(sys, "stdin", mock_stdin):
+                with patch("code_forge.cli.main.ConfigLoader") as mock_loader:
+                    mock_loader.return_value.load_all.return_value = mock_config
+                    with patch("code_forge.cli.main.CodeForgeREPL", return_value=mock_repl):
+                        with patch("code_forge.cli.main.run_with_agent", new_callable=AsyncMock) as mock_run:
+                            mock_run.return_value = 0
+                            exit_code = main()
+
+        assert exit_code == 0
+        assert mock_config.display.color is False
+        assert mock_config.display.quiet is True
+        assert mock_config.display.json_output is True
+
 
 class TestCLIIntegration:
     """Integration tests for CLI as subprocess."""

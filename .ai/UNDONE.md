@@ -44,11 +44,10 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 ### Medium Priority (P2)
 
-#### CLI-002: No Output Format Options
-**Status:** Deferred
-**File:** `src/code_forge/cli/repl.py`
-**Issue:** No `--json`, `--no-color`, `-q` quiet mode options
-**Note:** Feature request requiring significant CLI restructuring.
+#### ~~CLI-002: No Output Format Options~~
+**Status:** ✅ Complete (v1.8.13)
+**File:** `src/code_forge/cli/main.py`, `src/code_forge/cli/repl.py`, `src/code_forge/config/models.py`
+**Resolution:** Added `--json`, `--no-color`, `-q`/`--quiet` CLI flags with corresponding `color`, `quiet`, `json_output` config options
 
 #### ~~SESS-002: Memory Leak in Token Counter Caching~~
 **Status:** ✅ Complete (v1.8.12)
@@ -132,10 +131,10 @@ Migration plan: Create common base, migrate one module at a time with tests.
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
-| **P2 Medium** | 0 | 1 | 4 | 5 |
+| **P2 Medium** | 0 | 0 | 5 | 5 |
 | **P3 Low** | 0 | 3 | 3 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **2** | **5** | **15** | **22** |
+| **TOTAL** | **2** | **4** | **16** | **22** |
 
 ### Priority Order for Implementation
 
@@ -148,6 +147,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.13 | 2025-12-28 | Output options (CLI-002): Added --json, --no-color, -q CLI flags |
 | 1.8.12 | 2025-12-28 | Cache monitoring (SESS-002): Token cache config and /session cache command |
 | 1.8.11 | 2025-12-28 | File encoding (TOOL-009): Edit tool preserves file encoding |
 | 1.8.10 | 2025-12-28 | Exception sanitization (TOOL-010): Sanitized error messages |

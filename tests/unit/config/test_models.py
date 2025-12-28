@@ -238,6 +238,9 @@ class TestDisplayConfig:
         assert config.streaming is True
         assert config.vim_mode is False
         assert config.status_line is True
+        assert config.color is True
+        assert config.quiet is False
+        assert config.json_output is False
 
     def test_custom_values(self) -> None:
         """Test custom display values."""
@@ -254,6 +257,17 @@ class TestDisplayConfig:
         """Test theme is normalized to lowercase."""
         config = DisplayConfig(theme="DARK")
         assert config.theme == "dark"
+
+    def test_output_format_options(self) -> None:
+        """Test output format options (color, quiet, json_output)."""
+        config = DisplayConfig(
+            color=False,
+            quiet=True,
+            json_output=True,
+        )
+        assert config.color is False
+        assert config.quiet is True
+        assert config.json_output is True
 
 
 class TestSessionConfig:

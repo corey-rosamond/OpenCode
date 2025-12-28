@@ -5,6 +5,17 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.13] - 2025-12-28
+
+### Added
+- **CLI-002: Output Format Options**: Added CLI flags for output customization
+  - `--no-color` flag to disable colored output
+  - `-q` / `--quiet` flag for reduced output verbosity
+  - `--json` flag for machine-readable JSON output
+  - Added `color`, `quiet`, and `json_output` fields to DisplayConfig
+  - JSON mode outputs structured response with tool calls and stats
+  - Quiet mode suppresses welcome message and completion stats
+
 ## [1.8.12] - 2025-12-28
 
 ### Added

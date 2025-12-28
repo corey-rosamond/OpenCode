@@ -170,6 +170,9 @@ class DisplayConfig(BaseModel):
         streaming: Enable streaming responses.
         vim_mode: Enable vim keybindings.
         status_line: Show status line.
+        color: Enable colored output (can be overridden by --no-color).
+        quiet: Reduce output verbosity (can be overridden by -q/--quiet).
+        json_output: Output responses in JSON format (can be overridden by --json).
     """
 
     model_config = ConfigDict(validate_assignment=True)
@@ -180,6 +183,9 @@ class DisplayConfig(BaseModel):
     streaming: bool = True
     vim_mode: bool = False
     status_line: bool = True
+    color: bool = True
+    quiet: bool = False
+    json_output: bool = False
 
     @field_validator("theme")
     @classmethod
