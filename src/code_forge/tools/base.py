@@ -34,6 +34,7 @@ class ToolCategory(str, Enum):
     TASK = "task"  # TodoRead, TodoWrite, Memory
     NOTEBOOK = "notebook"  # NotebookRead, NotebookEdit
     MCP = "mcp"  # Dynamic MCP tools
+    UTILITY = "utility"  # General utility tools
     OTHER = "other"  # Miscellaneous
 
 
