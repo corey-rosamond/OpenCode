@@ -35,22 +35,28 @@ class ContextCompactCommand(Command):
 
         try:
             stats_before = context.context_manager.get_stats()
-            # Use threshold of 0.0 to always compact
-            await context.context_manager.compact_if_needed(threshold=0.0)
-            stats_after = context.context_manager.get_stats()
+            msgs_before = stats_before.get("message_count", 0)
+            tokens_before = stats_before.get("token_usage", 0)
 
-            tokens_saved = stats_before.get("token_count", 0) - stats_after.get(
-                "token_count", 0
-            )
-            if tokens_saved > 0:
+            # Use threshold of 0.0 to always compact
+            compacted = await context.context_manager.compact_if_needed(threshold=0.0)
+
+            if compacted:
+                stats_after = context.context_manager.get_stats()
+                msgs_after = stats_after.get("message_count", 0)
+                tokens_after = stats_after.get("token_usage", 0)
+
+                tokens_saved = tokens_before - tokens_after
+                msgs_removed = msgs_before - msgs_after
+
                 lines = [
                     "Context compacted.",
-                    f"Before: {stats_before.get('token_count', 0)} tokens",
-                    f"After: {stats_after.get('token_count', 0)} tokens",
-                    f"Savings: {tokens_saved} tokens",
+                    f"  Messages: {msgs_before} -> {msgs_after} ({msgs_removed} summarized)",
+                    f"  Tokens: {tokens_before:,} -> {tokens_after:,}",
+                    f"  Saved: {tokens_saved:,} tokens",
                 ]
             else:
-                lines = ["Context already compact. No changes made."]
+                lines = ["Context already compact or no compactor available."]
 
             return CommandResult.ok("\n".join(lines))
         except Exception as e:
@@ -146,12 +152,13 @@ class ContextCommand(SubcommandHandler):
         parsed: ParsedCommand,
         context: CommandContext,
     ) -> CommandResult:
-        """Show context status."""
+        """Show context status with compression visibility."""
         if context.context_manager is None:
             return CommandResult.fail("Context manager not available")
 
         try:
             stats = context.context_manager.get_stats()
+            mgr = context.context_manager
 
             lines = [
                 "Context Status:",
@@ -160,23 +167,41 @@ class ContextCommand(SubcommandHandler):
                 f"  Messages: {stats.get('message_count', 0)}",
             ]
 
-            token_count = stats.get("token_count", 0)
-            max_tokens = stats.get("max_tokens", 0)
+            # Token usage with correct key
+            token_usage = stats.get("token_usage", 0)
+            max_tokens = stats.get("effective_limit", stats.get("max_tokens", 0))
+            available = stats.get("available_tokens", 0)
+            usage_pct = stats.get("usage_percentage", 0.0)
+
             if max_tokens > 0:
-                usage_pct = (token_count / max_tokens) * 100
-                available = max_tokens - token_count
                 lines.append(
-                    f"  Token Usage: {token_count:,} / {max_tokens:,} ({usage_pct:.1f}%)"
+                    f"  Token Usage: {token_usage:,} / {max_tokens:,} ({usage_pct:.1f}%)"
                 )
                 lines.append(f"  Available: {available:,} tokens")
+
+                # Warning indicator
+                if usage_pct >= 90:
+                    lines.append("  Status: [CRITICAL] Context near limit!")
+                elif usage_pct >= 80:
+                    lines.append("  Status: [CAUTION] Approaching context limit")
+                else:
+                    lines.append("  Status: Normal")
             else:
-                lines.append(f"  Tokens: {token_count:,}")
+                lines.append(f"  Tokens: {token_usage:,}")
 
-            if "system_tokens" in stats:
-                lines.append(f"  System Prompt: {stats['system_tokens']:,} tokens")
+            # Cache stats if available
+            cache_stats = mgr.get_cache_stats()
+            if cache_stats:
+                lines.append("")
+                lines.append("Token Cache:")
+                lines.append(f"  Size: {cache_stats.get('size', 0)} entries")
+                lines.append(f"  Hit Rate: {cache_stats.get('hit_rate_percent', 0):.1f}%")
 
-            if "tools_tokens" in stats:
-                lines.append(f"  Tools: {stats['tools_tokens']:,} tokens")
+            lines.append("")
+            lines.append("Commands:")
+            lines.append("  /context compact  - Summarize older messages")
+            lines.append("  /context reset    - Clear all context")
+            lines.append("  /context mode <m> - Set truncation mode")
 
             return CommandResult.ok("\n".join(lines))
         except Exception as e:

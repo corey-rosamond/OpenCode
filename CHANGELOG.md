@@ -5,6 +5,26 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2025-12-28
+
+### Added
+- **CTX-001: Context Compression Visibility & Control**
+  - `CompressionEvent` dataclass with event types: truncation, compaction, warning, cleared
+  - `CompressionObserver` protocol for monitoring context operations
+  - `WarningLevel` enum: none, caution (80%), critical (90%)
+  - Observer pattern in `ContextManager` for real-time event notification
+  - `ContextStatusAdapter` bridges ContextManager events to StatusBar
+  - StatusBar now shows `[CAUTION]` and `[!CRITICAL!]` warnings
+  - Configurable thresholds via `ContextConfig` in settings
+  - Enhanced `/context` command with usage status, warning indicators, and cache stats
+  - 100+ new tests for events, observers, adapter, and configuration
+
+### Improved
+- `/context` command shows detailed token usage with warning indicators
+- `/context compact` shows messages and tokens before/after compaction
+- Token counter now updates after compression events
+- StatusBar displays real-time context usage warnings
+
 ## [1.12.0] - 2025-12-28
 
 ### Added

@@ -338,9 +338,13 @@ class TestContextCommands:
             "model": "test-model",
             "mode": "smart",
             "message_count": 10,
-            "token_count": 5000,
+            "token_usage": 5000,
             "max_tokens": 100000,
+            "effective_limit": 100000,
+            "available_tokens": 95000,
+            "usage_percentage": 5.0,
         }
+        mock_manager.get_cache_stats.return_value = None
 
         cmd = ContextCommand()
         parsed = ParsedCommand(name="context", args=[])
@@ -736,8 +740,11 @@ class TestContextCompactCommand:
         from code_forge.commands.builtin.context_commands import ContextCompactCommand
 
         mock_manager = MagicMock()
-        mock_manager.get_stats.return_value = {"token_count": 100}
-        mock_manager.compact_if_needed = AsyncMock()
+        mock_manager.get_stats.return_value = {
+            "message_count": 10,
+            "token_usage": 100,
+        }
+        mock_manager.compact_if_needed = AsyncMock(return_value=False)
 
         cmd = ContextCompactCommand()
         parsed = ParsedCommand(name="compact", args=[])
@@ -1264,11 +1271,15 @@ class TestContextShowStatus:
             "model": "gpt-4",
             "mode": "sliding_window",
             "message_count": 10,
-            "token_count": 5000,
+            "token_usage": 5000,
             "max_tokens": 10000,
+            "effective_limit": 10000,
+            "available_tokens": 5000,
+            "usage_percentage": 50.0,
             "system_tokens": 500,
             "tools_tokens": 200,
         }
+        mock_manager.get_cache_stats.return_value = None
 
         cmd = ContextCommand()
         parsed = ParsedCommand(name="context", args=[])

@@ -6,6 +6,7 @@ import pytest
 from pydantic import SecretStr, ValidationError
 
 from code_forge.config.models import (
+    ContextConfig,
     DisplayConfig,
     HookConfig,
     HooksConfig,
@@ -398,3 +399,105 @@ class TestHookType:
         """Test hook type values."""
         assert HookType.COMMAND.value == "command"
         assert HookType.PROMPT.value == "prompt"
+
+
+class TestContextConfig:
+    """Tests for ContextConfig."""
+
+    def test_default_values(self) -> None:
+        """Test default values are set correctly."""
+        config = ContextConfig()
+        assert config.auto_truncate is True
+        assert config.warning_threshold == 0.8
+        assert config.critical_threshold == 0.9
+        assert config.compression_threshold == 0.9
+        assert config.default_mode == "smart"
+
+    def test_custom_values(self) -> None:
+        """Test custom values are accepted."""
+        config = ContextConfig(
+            auto_truncate=False,
+            warning_threshold=0.7,
+            critical_threshold=0.85,
+            compression_threshold=0.8,
+            default_mode="sliding_window",
+        )
+        assert config.auto_truncate is False
+        assert config.warning_threshold == 0.7
+        assert config.critical_threshold == 0.85
+        assert config.compression_threshold == 0.8
+        assert config.default_mode == "sliding_window"
+
+    def test_warning_threshold_minimum(self) -> None:
+        """Test warning_threshold minimum validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ContextConfig(warning_threshold=0.4)
+        assert "warning_threshold" in str(exc_info.value)
+
+    def test_warning_threshold_maximum(self) -> None:
+        """Test warning_threshold maximum validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ContextConfig(warning_threshold=1.1)
+        assert "warning_threshold" in str(exc_info.value)
+
+    def test_critical_threshold_minimum(self) -> None:
+        """Test critical_threshold minimum validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ContextConfig(critical_threshold=0.4)
+        assert "critical_threshold" in str(exc_info.value)
+
+    def test_critical_threshold_maximum(self) -> None:
+        """Test critical_threshold maximum validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ContextConfig(critical_threshold=1.1)
+        assert "critical_threshold" in str(exc_info.value)
+
+    def test_compression_threshold_minimum(self) -> None:
+        """Test compression_threshold minimum validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ContextConfig(compression_threshold=0.4)
+        assert "compression_threshold" in str(exc_info.value)
+
+    def test_compression_threshold_maximum(self) -> None:
+        """Test compression_threshold maximum validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ContextConfig(compression_threshold=1.1)
+        assert "compression_threshold" in str(exc_info.value)
+
+    def test_valid_modes(self) -> None:
+        """Test all valid truncation modes."""
+        for mode in ["sliding_window", "token_budget", "smart", "summarize"]:
+            config = ContextConfig(default_mode=mode)
+            assert config.default_mode == mode
+
+    def test_invalid_mode_rejected(self) -> None:
+        """Test invalid mode is rejected."""
+        with pytest.raises(ValidationError):
+            ContextConfig(default_mode="invalid_mode")
+
+    def test_mode_normalized(self) -> None:
+        """Test mode is normalized (stripped and lowercased)."""
+        config = ContextConfig(default_mode="  SMART  ")
+        assert config.default_mode == "smart"
+
+
+class TestCodeForgeConfigWithContext:
+    """Tests for CodeForgeConfig context section."""
+
+    def test_default_context_config(self) -> None:
+        """Test that context config is included in root config."""
+        config = CodeForgeConfig()
+        assert hasattr(config, "context")
+        assert isinstance(config.context, ContextConfig)
+        assert config.context.auto_truncate is True
+
+    def test_custom_context_config(self) -> None:
+        """Test custom context config in root config."""
+        config = CodeForgeConfig(
+            context=ContextConfig(
+                warning_threshold=0.75,
+                default_mode="token_budget",
+            )
+        )
+        assert config.context.warning_threshold == 0.75
+        assert config.context.default_mode == "token_budget"

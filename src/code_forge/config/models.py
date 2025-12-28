@@ -340,6 +340,36 @@ class UndoConfig(BaseModel):
     capture_binary: bool = False
 
 
+class ContextConfig(BaseModel):
+    """Context management configuration.
+
+    Attributes:
+        auto_truncate: Automatically truncate on overflow.
+        warning_threshold: Usage percentage to show warning (0.5-1.0).
+        critical_threshold: Usage percentage for critical warning (0.5-1.0).
+        compression_threshold: Usage percentage to trigger auto-compaction (0.5-1.0).
+        default_mode: Default truncation mode.
+    """
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    auto_truncate: bool = True
+    warning_threshold: float = Field(default=0.8, ge=0.5, le=1.0)
+    critical_threshold: float = Field(default=0.9, ge=0.5, le=1.0)
+    compression_threshold: float = Field(default=0.9, ge=0.5, le=1.0)
+    default_mode: str = "smart"
+
+    @field_validator("default_mode")
+    @classmethod
+    def validate_mode(cls, v: str) -> str:
+        """Validate truncation mode."""
+        valid_modes = {"sliding_window", "token_budget", "smart", "summarize"}
+        v = v.strip().lower()
+        if v not in valid_modes:
+            raise ValueError(f"Invalid mode: {v}. Valid: {', '.join(valid_modes)}")
+        return v
+
+
 class CodeForgeConfig(BaseModel):
     """Root configuration model.
 
@@ -356,6 +386,7 @@ class CodeForgeConfig(BaseModel):
         session: Session management settings.
         rag: RAG (Retrieval-Augmented Generation) settings.
         undo: Undo system settings.
+        context: Context management settings.
         api_key: OpenRouter API key (sensitive).
     """
 
@@ -372,6 +403,7 @@ class CodeForgeConfig(BaseModel):
     session: SessionConfig = Field(default_factory=SessionConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
     undo: UndoConfig = Field(default_factory=UndoConfig)
+    context: ContextConfig = Field(default_factory=ContextConfig)
 
     # Sensitive - use SecretStr to prevent logging
     api_key: SecretStr | None = None

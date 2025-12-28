@@ -204,8 +204,8 @@ _All critical issues resolved._
 
 ## Feature Requests
 
-### 🔴 CTX-001: Context Compression Visibility & Control
-**Status:** Pending
+### CTX-001: Context Compression Visibility & Control
+**Status:** ✅ Complete (v1.13.0)
 **Priority:** Critical (P0)
 **Impact:** 9.0/10
 **Complexity:** Low
@@ -220,21 +220,24 @@ _All critical issues resolved._
 **Solution:**
 Add event hooks for compression events, update UI, provide manual controls.
 
-**Phase Plan:**
+**Progress:**
+- [x] Phase 1: CompressionEvent dataclass, observer pattern in ContextManager
+- [x] Phase 2: ContextStatusAdapter bridges ContextManager to StatusBar
+- [x] Phase 3: [CAUTION] and [!CRITICAL!] warning indicators in StatusBar
+- [x] Phase 4: Enhanced /context command with status, compact, reset, mode
+- [x] Phase 5: ContextConfig with configurable thresholds
+- [x] Unit tests (100+ new tests)
+- [x] Full verification (5489 tests pass)
 
-| Phase | Description | Deliverables |
-|-------|-------------|--------------|
-| **Phase 1: Compression Events** | Add observable events for truncation/compaction | CompressionEvent, observer pattern in ContextManager |
-| **Phase 2: Token Counter Update** | Update StatusBar after compression | Hook _truncate() and compact_if_needed() to status bar |
-| **Phase 3: Threshold Warnings** | Visual warning at 80%, 90% context usage | StatusBar indicator, console warning |
-| **Phase 4: Manual Control** | /context command for status and manual compression | /context status, /context compress, /context clear |
-| **Phase 5: Configuration** | Config options for compression threshold and behavior | ContextConfig model |
-
-**Files to Modify:**
-- `src/code_forge/context/manager.py` - Add compression events
-- `src/code_forge/cli/main.py` - Wire events to StatusBar
-- `src/code_forge/cli/status.py` - Add compression indicator
-- `src/code_forge/commands/builtin/context_commands.py` - Add /context command
+**Files Created/Modified:**
+- `src/code_forge/context/events.py` - CompressionEvent, observer protocol
+- `src/code_forge/context/manager.py` - Added observer support, event emission
+- `src/code_forge/cli/status.py` - Warning indicators, compression info
+- `src/code_forge/cli/context_adapter.py` - ContextStatusAdapter
+- `src/code_forge/config/models.py` - ContextConfig
+- `src/code_forge/commands/builtin/context_commands.py` - Enhanced commands
+- `tests/unit/context/test_events.py` - Event tests
+- `tests/unit/cli/test_context_adapter.py` - Adapter tests
 - `src/code_forge/config/models.py` - Add ContextConfig
 
 **Key Changes:**
@@ -468,25 +471,10 @@ Add Rich-based visual enhancements for diffs, suggestions, and file browsing.
 
 These features provide **high impact with low implementation effort** - ideal starting points:
 
-### 0. CTX-001: Context Compression Visibility & Control ⭐ TOP PRIORITY
+### 0. CTX-001: Context Compression Visibility & Control ✅ COMPLETED (v1.13.0)
 **Effort:** 1-2 days | **Impact:** 9.0/10 | **ROI:** Excellent
 
-**Why it's a quick win:**
-- Infrastructure exists (ContextManager, StatusBar, ContextCompactor)
-- Just needs event hooks and UI notifications
-- Critical UX gap - users have no visibility into context state
-
-**Current Problems:**
-- No notification when context is compressed/truncated
-- Token counter doesn't update after compression (shows stale count)
-- No warning when approaching context limit
-- No control over compression threshold or behavior
-
-**Implementation:**
-```
-Day 1: Add compression events, update token counter after truncation
-Day 2: Add warning indicator, /context command for manual control
-```
+✅ **Completed:** CompressionEvent, observer pattern, StatusBar warnings, ContextStatusAdapter, ContextConfig, enhanced /context command, 100+ tests.
 
 ---
 
@@ -539,19 +527,19 @@ Based on **impact × (1/effort)** analysis:
 
 | Order | Feature | Impact | Effort | ROI Score | Rationale |
 |-------|---------|--------|--------|-----------|-----------|
-| **1** | CTX-001 | 9.0 | Low | ⭐⭐⭐⭐⭐ | **TOP PRIORITY** - Critical UX gap, infrastructure exists |
-| **2** | CONV-003 | 8.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, immediate UX improvement |
-| **3** | CONV-004 | 7.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, better context awareness |
-| **4** | CONV-005 | 8.0 | Medium | ⭐⭐⭐⭐ | Enables pronoun resolution, foundational |
-| **5** | CONV-001 | 9.5 | High | ⭐⭐⭐⭐ | Transformative, but complex |
-| **6** | CONV-002 | 9.0 | Medium | ⭐⭐⭐ | Builds on existing workflow system |
-| **7** | CONV-006 | 6.0 | Medium | ⭐⭐⭐ | Polish, nice-to-have |
-| **8** | SEC-022 | N/A | High | ⭐⭐ | Security fix, complex implementation |
+| ~~1~~ | ~~CTX-001~~ | ~~9.0~~ | ~~Low~~ | ✅ | **COMPLETED v1.13.0** |
+| **1** | CONV-003 | 8.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, immediate UX improvement |
+| **2** | CONV-004 | 7.5 | Low | ⭐⭐⭐⭐⭐ | Quick win, better context awareness |
+| **3** | CONV-005 | 8.0 | Medium | ⭐⭐⭐⭐ | Enables pronoun resolution, foundational |
+| **4** | CONV-001 | 9.5 | High | ⭐⭐⭐⭐ | Transformative, but complex |
+| **5** | CONV-002 | 9.0 | Medium | ⭐⭐⭐ | Builds on existing workflow system |
+| **6** | CONV-006 | 6.0 | Medium | ⭐⭐⭐ | Polish, nice-to-have |
+| **7** | SEC-022 | N/A | High | ⭐⭐ | Security fix, complex implementation |
 
 ### Recommended Sprint Plan
 
-**Sprint 1 (3-4 days): Critical Quick Wins**
-- [ ] CTX-001: Context Compression Visibility & Control ⭐
+**Sprint 1 (2-3 days): Quick Wins**
+- [x] CTX-001: Context Compression Visibility & Control ✅ COMPLETED
 - [ ] CONV-003: Error Recovery Expansion
 - [ ] CONV-004: Project Type Detection
 
@@ -569,12 +557,12 @@ Based on **impact × (1/effort)** analysis:
 
 ## Priority Order (By Impact)
 
-1. **CTX-001** - Context Compression Visibility & Control (P0, Impact 9.0) ⭐ **START HERE**
-2. **CONV-001** - Conversational Translation Layer (P0, Impact 9.5)
-3. **CONV-002** - Workflow Orchestration (P0, Impact 9.0)
-4. **CONV-003** - Context-Aware Error Recovery (P1, Impact 8.5) ⚡ Quick Win
-5. **CONV-005** - Session Context Continuity (P1, Impact 8.0)
-6. **CONV-004** - Smart Project Type Detection (P1, Impact 7.5) ⚡ Quick Win
+1. ~~**CTX-001** - Context Compression Visibility & Control~~ ✅ **COMPLETED v1.13.0**
+2. **CONV-003** - Context-Aware Error Recovery (P1, Impact 8.5) ⚡ Quick Win ⭐ **NEXT**
+3. **CONV-004** - Smart Project Type Detection (P1, Impact 7.5) ⚡ Quick Win
+4. **CONV-001** - Conversational Translation Layer (P0, Impact 9.5)
+5. **CONV-002** - Workflow Orchestration (P0, Impact 9.0)
+6. **CONV-005** - Session Context Continuity (P1, Impact 8.0)
 7. **CONV-006** - Visual Interface Enhancements (P2, Impact 6.0)
 8. **SEC-022** - Address SSRF vulnerability (documented, complex)
 
@@ -584,6 +572,8 @@ Based on **impact × (1/effort)** analysis:
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.13.0 | 2025-12-28 | Context Visibility (CTX-001): CompressionEvent, observer pattern, StatusBar warnings, ContextStatusAdapter, ContextConfig, enhanced /context command, 100+ tests |
+| 1.12.0 | 2025-12-28 | Undo System (FEAT-004): Undo/Redo for file operations, ConversationalPresenter, ErrorExplainer, 113 tests |
 | 1.11.0 | 2025-12-28 | RAG UX (RAG-001): Hybrid search, scope indicator, low confidence warning, TOOL-011 edit fix |
 | 1.10.0 | 2025-12-28 | Multi-Agent Tools (FEAT-002): TaskTool, WebSearchBaseTool, WebFetchBaseTool, RAG integration, 49 new tests |
 | 1.9.0 | 2025-12-28 | RAG Support (FEAT-001): Per-project RAG with semantic search, 348 tests |

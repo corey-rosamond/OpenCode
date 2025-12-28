@@ -6,6 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from code_forge.context.compaction import ContextCompactor
+from code_forge.context.events import (
+    CompressionEvent,
+    CompressionEventType,
+    WarningLevel,
+)
 from code_forge.context.manager import (
     ContextManager,
     TruncationMode,
@@ -418,3 +423,218 @@ class TestContextManagerIntegration:
         tool_msg = manager._messages[1]
         assert len(tool_msg["content"]) < 5000
         assert "truncated" in tool_msg["content"].lower()
+
+
+class MockObserver:
+    """Mock observer for testing compression events."""
+
+    def __init__(self) -> None:
+        self.events: list[CompressionEvent] = []
+
+    def on_compression_event(self, event: CompressionEvent) -> None:
+        """Record the event."""
+        self.events.append(event)
+
+
+class TestContextManagerObservers:
+    """Tests for ContextManager observer functionality."""
+
+    def test_add_observer(self) -> None:
+        """Should add observer to list."""
+        manager = ContextManager(model="claude-3-opus")
+        observer = MockObserver()
+
+        manager.add_observer(observer)
+
+        assert observer in manager._observers
+
+    def test_add_observer_no_duplicates(self) -> None:
+        """Should not add same observer twice."""
+        manager = ContextManager(model="claude-3-opus")
+        observer = MockObserver()
+
+        manager.add_observer(observer)
+        manager.add_observer(observer)
+
+        assert manager._observers.count(observer) == 1
+
+    def test_remove_observer(self) -> None:
+        """Should remove observer from list."""
+        manager = ContextManager(model="claude-3-opus")
+        observer = MockObserver()
+        manager.add_observer(observer)
+
+        manager.remove_observer(observer)
+
+        assert observer not in manager._observers
+
+    def test_remove_observer_not_present(self) -> None:
+        """Should not raise when removing non-existent observer."""
+        manager = ContextManager(model="claude-3-opus")
+        observer = MockObserver()
+
+        # Should not raise
+        manager.remove_observer(observer)
+
+    def test_truncation_emits_event(self) -> None:
+        """Should emit truncation event when messages are removed."""
+        manager = ContextManager(
+            model="gpt-4",  # Small context
+            mode=TruncationMode.TOKEN_BUDGET,
+            auto_truncate=True,
+        )
+        observer = MockObserver()
+        manager.add_observer(observer)
+
+        # Add many messages to trigger truncation
+        for _ in range(50):
+            manager.add_message({"role": "user", "content": "word " * 200})
+
+        # Should have received truncation events
+        truncation_events = [
+            e for e in observer.events if e.event_type == CompressionEventType.TRUNCATION
+        ]
+        assert len(truncation_events) > 0
+
+        # Check event properties
+        event = truncation_events[-1]
+        assert event.messages_before > event.messages_after
+        assert event.tokens_before >= event.tokens_after
+
+    def test_reset_emits_cleared_event(self) -> None:
+        """Should emit cleared event when reset is called."""
+        manager = ContextManager(model="claude-3-opus")
+        observer = MockObserver()
+        manager.add_observer(observer)
+
+        # Add messages
+        manager.add_message({"role": "user", "content": "Hello"})
+        manager.add_message({"role": "assistant", "content": "Hi!"})
+
+        # Clear any events from adding
+        observer.events.clear()
+
+        # Reset
+        manager.reset()
+
+        # Should have received cleared event
+        assert len(observer.events) == 1
+        event = observer.events[0]
+        assert event.event_type == CompressionEventType.CLEARED
+        assert event.messages_before == 2
+        assert event.messages_after == 0
+
+    def test_reset_no_event_when_empty(self) -> None:
+        """Should not emit event when resetting empty context."""
+        manager = ContextManager(model="claude-3-opus")
+        observer = MockObserver()
+        manager.add_observer(observer)
+
+        manager.reset()
+
+        assert len(observer.events) == 0
+
+    def test_warning_event_at_threshold(self) -> None:
+        """Should emit warning event when crossing threshold."""
+        manager = ContextManager(
+            model="gpt-4",
+            auto_truncate=False,
+            warning_threshold=80.0,
+            critical_threshold=90.0,
+        )
+        observer = MockObserver()
+        manager.add_observer(observer)
+
+        # Add messages until we cross 80%
+        for _ in range(50):
+            manager.add_message({"role": "user", "content": "word " * 100})
+            if manager.usage_percentage > 85:
+                break
+
+        # Check for warning events
+        warning_events = [
+            e for e in observer.events if e.event_type == CompressionEventType.WARNING
+        ]
+        if manager.usage_percentage >= 80:
+            assert len(warning_events) > 0
+            # Should have at least caution level
+            assert any(e.warning_level == WarningLevel.CAUTION for e in warning_events)
+
+    def test_custom_warning_thresholds(self) -> None:
+        """Should respect custom warning thresholds."""
+        manager = ContextManager(
+            model="claude-3-opus",
+            warning_threshold=50.0,  # Warn at 50%
+            critical_threshold=70.0,  # Critical at 70%
+        )
+
+        assert manager.warning_threshold == 50.0
+        assert manager.critical_threshold == 70.0
+
+    def test_observer_exception_handled(self) -> None:
+        """Should handle observer exceptions gracefully."""
+        manager = ContextManager(model="claude-3-opus")
+
+        # Create an observer that raises
+        class BadObserver:
+            def on_compression_event(self, event: CompressionEvent) -> None:
+                raise RuntimeError("Observer error")
+
+        bad_observer = BadObserver()
+        good_observer = MockObserver()
+
+        manager.add_observer(bad_observer)
+        manager.add_observer(good_observer)
+
+        # Add messages then reset to trigger event
+        manager.add_message({"role": "user", "content": "Hello"})
+        manager.reset()
+
+        # Good observer should still receive event
+        assert len(good_observer.events) == 1
+
+
+class TestContextManagerWithConfig:
+    """Tests for ContextManager with configuration options."""
+
+    def test_init_with_custom_thresholds(self) -> None:
+        """Should initialize with custom threshold settings."""
+        manager = ContextManager(
+            model="claude-3-opus",
+            warning_threshold=75.0,
+            critical_threshold=85.0,
+        )
+
+        assert manager.warning_threshold == 75.0
+        assert manager.critical_threshold == 85.0
+
+    def test_get_cache_stats(self) -> None:
+        """Should return cache statistics."""
+        manager = ContextManager(model="claude-3-opus")
+
+        # Add messages to populate cache
+        for i in range(10):
+            manager.add_message({"role": "user", "content": f"Message {i}"})
+
+        stats = manager.get_cache_stats()
+
+        assert stats is not None
+        assert "size" in stats
+        assert "hits" in stats
+        assert "misses" in stats
+        assert "hit_rate_percent" in stats
+
+    def test_clear_cache(self) -> None:
+        """Should clear token counter cache."""
+        manager = ContextManager(model="claude-3-opus")
+
+        # Add messages to populate cache
+        for i in range(10):
+            manager.add_message({"role": "user", "content": f"Message {i}"})
+
+        result = manager.clear_cache()
+
+        assert result is True
+        stats = manager.get_cache_stats()
+        assert stats is not None
+        assert stats["size"] == 0

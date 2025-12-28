@@ -7,6 +7,15 @@ at the bottom of the terminal, including model, tokens, mode, and status.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
+
+
+class ContextWarningLevel(str, Enum):
+    """Warning levels for context usage."""
+
+    NONE = "none"  # Below 80%
+    CAUTION = "caution"  # 80-90%
+    CRITICAL = "critical"  # 90%+
 
 
 @dataclass
@@ -24,6 +33,8 @@ class StatusBar:
         status: Current status text.
         visible: Whether status bar is visible.
         thinking_enabled: Whether extended thinking is enabled.
+        warning_level: Current context usage warning level.
+        last_compression: Description of last compression event.
     """
 
     model: str = ""
@@ -33,6 +44,8 @@ class StatusBar:
     status: str = "Ready"
     visible: bool = True
     thinking_enabled: bool = False
+    warning_level: ContextWarningLevel = ContextWarningLevel.NONE
+    last_compression: str = ""
     _observers: list[StatusBarObserver] = field(default_factory=list, repr=False)
 
     def set_model(self, model: str) -> None:
@@ -110,6 +123,43 @@ class StatusBar:
         self._notify()
         return self.thinking_enabled
 
+    def set_warning_level(self, level: ContextWarningLevel) -> None:
+        """Set context usage warning level.
+
+        Args:
+            level: New warning level.
+        """
+        if level != self.warning_level:
+            self.warning_level = level
+            self._notify()
+
+    def set_compression_info(self, info: str) -> None:
+        """Set last compression event description.
+
+        Args:
+            info: Description of compression event.
+        """
+        if info != self.last_compression:
+            self.last_compression = info
+            self._notify()
+
+    def clear_compression_info(self) -> None:
+        """Clear the compression info after display."""
+        if self.last_compression:
+            self.last_compression = ""
+            self._notify()
+
+    @property
+    def usage_percentage(self) -> float:
+        """Calculate current usage percentage.
+
+        Returns:
+            Usage as percentage (0-100).
+        """
+        if self.tokens_max == 0:
+            return 0.0
+        return (self.tokens_used / self.tokens_max) * 100
+
     def add_observer(self, observer: StatusBarObserver) -> None:
         """Add an observer to be notified of changes.
 
@@ -133,6 +183,30 @@ class StatusBar:
         for observer in self._observers:
             observer.on_status_changed(self)
 
+    def _get_warning_indicator(self) -> str:
+        """Get warning indicator text based on warning level.
+
+        Returns:
+            Warning indicator string or empty string.
+        """
+        if self.warning_level == ContextWarningLevel.CRITICAL:
+            return "[!CRITICAL!]"
+        elif self.warning_level == ContextWarningLevel.CAUTION:
+            return "[CAUTION]"
+        return ""
+
+    def _format_tokens_with_warning(self) -> str:
+        """Format token display with optional warning indicator.
+
+        Returns:
+            Formatted token string.
+        """
+        base = f"Tokens: {self.tokens_used:,}/{self.tokens_max:,}"
+        warning = self._get_warning_indicator()
+        if warning:
+            return f"{base} {warning}"
+        return base
+
     def render(self, width: int) -> str:
         """Render status bar to string.
 
@@ -152,7 +226,7 @@ class StatusBar:
             return ""
 
         left = f" {self.model}"
-        center = f"Tokens: {self.tokens_used:,}/{self.tokens_max:,}"
+        center = self._format_tokens_with_warning()
         right = f"{self.mode} | {self.status} "
 
         total_content = len(left) + len(center) + len(right)
@@ -200,10 +274,11 @@ class StatusBar:
             return ""
 
         thinking_indicator = "Thinking: On" if self.thinking_enabled else "Thinking: Off"
+        tokens_display = self._format_tokens_with_warning()
 
         return (
             f" {self.model}  |  "
-            f"Tokens: {self.tokens_used:,}/{self.tokens_max:,}  |  "
+            f"{tokens_display}  |  "
             f"{thinking_indicator}  |  "
             f"{self.mode}  |  {self.status} "
         )

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from code_forge.cli.status import StatusBar, StatusBarObserver
+from code_forge.cli.status import ContextWarningLevel, StatusBar, StatusBarObserver
 
 
 class MockObserver(StatusBarObserver):
@@ -398,3 +398,179 @@ class TestStatusBarThinking:
         status = StatusBar(thinking_enabled=True)
         result = status.format_input_hints()
         assert "(on)" in result
+
+
+class TestContextWarningLevel:
+    """Tests for ContextWarningLevel enum."""
+
+    def test_values(self) -> None:
+        """Test warning level values."""
+        assert ContextWarningLevel.NONE.value == "none"
+        assert ContextWarningLevel.CAUTION.value == "caution"
+        assert ContextWarningLevel.CRITICAL.value == "critical"
+
+
+class TestStatusBarWarningLevel:
+    """Tests for StatusBar warning level functionality."""
+
+    def test_default_warning_level(self) -> None:
+        """Test default warning level is NONE."""
+        status = StatusBar()
+        assert status.warning_level == ContextWarningLevel.NONE
+
+    def test_set_warning_level(self) -> None:
+        """Test setting warning level."""
+        status = StatusBar()
+        status.set_warning_level(ContextWarningLevel.CAUTION)
+        assert status.warning_level == ContextWarningLevel.CAUTION
+
+    def test_set_warning_level_critical(self) -> None:
+        """Test setting critical warning level."""
+        status = StatusBar()
+        status.set_warning_level(ContextWarningLevel.CRITICAL)
+        assert status.warning_level == ContextWarningLevel.CRITICAL
+
+    def test_set_warning_level_notifies(self) -> None:
+        """Test that set_warning_level notifies observers."""
+        status = StatusBar()
+        observer = MockObserver()
+        status.add_observer(observer)
+        status.set_warning_level(ContextWarningLevel.CAUTION)
+        assert observer.call_count == 1
+
+    def test_set_warning_level_no_notify_if_same(self) -> None:
+        """Test that set_warning_level doesn't notify if unchanged."""
+        status = StatusBar(warning_level=ContextWarningLevel.CAUTION)
+        observer = MockObserver()
+        status.add_observer(observer)
+        status.set_warning_level(ContextWarningLevel.CAUTION)
+        assert observer.call_count == 0
+
+    def test_render_with_warning(self) -> None:
+        """Test rendering includes warning indicator."""
+        status = StatusBar(
+            model="gpt-4",
+            tokens_used=8000,
+            tokens_max=10000,
+            warning_level=ContextWarningLevel.CAUTION,
+        )
+        result = status.render(100)
+        assert "[CAUTION]" in result
+
+    def test_render_with_critical_warning(self) -> None:
+        """Test rendering includes critical warning indicator."""
+        status = StatusBar(
+            model="gpt-4",
+            tokens_used=9500,
+            tokens_max=10000,
+            warning_level=ContextWarningLevel.CRITICAL,
+        )
+        result = status.render(100)
+        assert "[!CRITICAL!]" in result
+
+    def test_render_no_warning_indicator_when_none(self) -> None:
+        """Test no warning indicator when level is NONE."""
+        status = StatusBar(
+            model="gpt-4",
+            tokens_used=1000,
+            tokens_max=10000,
+            warning_level=ContextWarningLevel.NONE,
+        )
+        result = status.render(100)
+        assert "[CAUTION]" not in result
+        assert "[!CRITICAL!]" not in result
+
+    def test_format_prompt_toolkit_with_warning(self) -> None:
+        """Test prompt_toolkit format includes warning."""
+        status = StatusBar(
+            model="gpt-4",
+            warning_level=ContextWarningLevel.CAUTION,
+        )
+        result = status.format_for_prompt_toolkit()
+        assert "[CAUTION]" in result
+
+    def test_format_prompt_toolkit_with_critical(self) -> None:
+        """Test prompt_toolkit format includes critical warning."""
+        status = StatusBar(
+            model="gpt-4",
+            warning_level=ContextWarningLevel.CRITICAL,
+        )
+        result = status.format_for_prompt_toolkit()
+        assert "[!CRITICAL!]" in result
+
+
+class TestStatusBarCompressionInfo:
+    """Tests for StatusBar compression info functionality."""
+
+    def test_default_compression_info(self) -> None:
+        """Test default compression info is empty."""
+        status = StatusBar()
+        assert status.last_compression == ""
+
+    def test_set_compression_info(self) -> None:
+        """Test setting compression info."""
+        status = StatusBar()
+        status.set_compression_info("Context truncated: 5 messages removed")
+        assert status.last_compression == "Context truncated: 5 messages removed"
+
+    def test_set_compression_info_notifies(self) -> None:
+        """Test that set_compression_info notifies observers."""
+        status = StatusBar()
+        observer = MockObserver()
+        status.add_observer(observer)
+        status.set_compression_info("Context truncated")
+        assert observer.call_count == 1
+
+    def test_set_compression_info_no_notify_if_same(self) -> None:
+        """Test that set_compression_info doesn't notify if unchanged."""
+        status = StatusBar(last_compression="Context truncated")
+        observer = MockObserver()
+        status.add_observer(observer)
+        status.set_compression_info("Context truncated")
+        assert observer.call_count == 0
+
+    def test_clear_compression_info(self) -> None:
+        """Test clearing compression info."""
+        status = StatusBar(last_compression="Context truncated")
+        status.clear_compression_info()
+        assert status.last_compression == ""
+
+    def test_clear_compression_info_notifies(self) -> None:
+        """Test that clear_compression_info notifies observers."""
+        status = StatusBar(last_compression="Context truncated")
+        observer = MockObserver()
+        status.add_observer(observer)
+        status.clear_compression_info()
+        assert observer.call_count == 1
+
+    def test_clear_compression_info_no_notify_if_empty(self) -> None:
+        """Test that clear doesn't notify if already empty."""
+        status = StatusBar()
+        observer = MockObserver()
+        status.add_observer(observer)
+        status.clear_compression_info()
+        assert observer.call_count == 0
+
+
+class TestStatusBarUsagePercentage:
+    """Tests for StatusBar usage percentage property."""
+
+    def test_usage_percentage_zero(self) -> None:
+        """Test usage percentage when zero tokens used."""
+        status = StatusBar(tokens_used=0, tokens_max=10000)
+        assert status.usage_percentage == 0.0
+
+    def test_usage_percentage_half(self) -> None:
+        """Test usage percentage at 50%."""
+        status = StatusBar(tokens_used=5000, tokens_max=10000)
+        assert status.usage_percentage == 50.0
+
+    def test_usage_percentage_full(self) -> None:
+        """Test usage percentage at 100%."""
+        status = StatusBar(tokens_used=10000, tokens_max=10000)
+        assert status.usage_percentage == 100.0
+
+    def test_usage_percentage_zero_max(self) -> None:
+        """Test usage percentage when max is zero."""
+        status = StatusBar(tokens_used=1000, tokens_max=0)
+        assert status.usage_percentage == 0.0

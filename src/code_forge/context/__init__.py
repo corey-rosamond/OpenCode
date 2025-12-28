@@ -27,6 +27,13 @@ Example:
 """
 
 from .compaction import ContextCompactor, ToolResultCompactor
+from .events import (
+    CompressionEvent,
+    CompressionEventType,
+    CompressionObserver,
+    WarningLevel,
+    get_warning_level,
+)
 from .limits import ContextBudget, ContextLimits, ContextTracker
 from .manager import ContextManager, TruncationMode, get_strategy
 from .strategies import (
@@ -49,6 +56,9 @@ __all__ = [
     "ApproximateCounter",
     "CachingCounter",
     "CompositeStrategy",
+    "CompressionEvent",
+    "CompressionEventType",
+    "CompressionObserver",
     "ContextBudget",
     "ContextCompactor",
     "ContextLimits",
@@ -63,6 +73,8 @@ __all__ = [
     "ToolResultCompactor",
     "TruncationMode",
     "TruncationStrategy",
+    "WarningLevel",
     "get_counter",
     "get_strategy",
+    "get_warning_level",
 ]

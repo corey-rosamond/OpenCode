@@ -1,10 +1,19 @@
 """Central context management."""
 
+from __future__ import annotations
+
 import logging
 from enum import Enum
 from typing import Any
 
 from .compaction import ContextCompactor, LLMProtocol, ToolResultCompactor
+from .events import (
+    CompressionEvent,
+    CompressionEventType,
+    CompressionObserver,
+    WarningLevel,
+    get_warning_level,
+)
 from .limits import ContextTracker
 from .strategies import (
     CompositeStrategy,
@@ -67,6 +76,8 @@ class ContextManager:
         mode: TruncationMode = TruncationMode.SMART,
         llm: LLMProtocol | None = None,
         auto_truncate: bool = True,
+        warning_threshold: float = 80.0,
+        critical_threshold: float = 90.0,
     ) -> None:
         """Initialize context manager.
 
@@ -75,10 +86,14 @@ class ContextManager:
             mode: Truncation mode to use.
             llm: LLM client for summarization (optional).
             auto_truncate: Automatically truncate on overflow.
+            warning_threshold: Usage percentage for caution warning (default 80).
+            critical_threshold: Usage percentage for critical warning (default 90).
         """
         self.model = model
         self.mode = mode
         self.auto_truncate = auto_truncate
+        self.warning_threshold = warning_threshold
+        self.critical_threshold = critical_threshold
 
         # Initialize components
         self.counter: TokenCounter = get_counter(model)
@@ -94,6 +109,8 @@ class ContextManager:
         # Internal state
         self._messages: list[dict[str, Any]] = []
         self._system_prompt: str = ""
+        self._observers: list[CompressionObserver] = []
+        self._last_warning_level: WarningLevel = WarningLevel.NONE
 
     def set_system_prompt(self, prompt: str) -> int:
         """Set the system prompt.
@@ -122,6 +139,7 @@ class ContextManager:
         """Add a message to context.
 
         Automatically truncates if needed and auto_truncate is enabled.
+        Emits warning events when usage crosses thresholds.
 
         Args:
             message: Message to add.
@@ -136,6 +154,9 @@ class ContextManager:
         # Check for overflow
         if self.auto_truncate and self.tracker.exceeds_limit():
             self._truncate()
+
+        # Check warning thresholds after adding message
+        self._check_warning_threshold()
 
     def add_messages(self, messages: list[dict[str, Any]]) -> None:
         """Add multiple messages.
@@ -175,12 +196,69 @@ class ContextManager:
         messages.extend(self._messages)
         return messages
 
+    def add_observer(self, observer: CompressionObserver) -> None:
+        """Add a compression event observer.
+
+        Args:
+            observer: Observer to add.
+        """
+        if observer not in self._observers:
+            self._observers.append(observer)
+
+    def remove_observer(self, observer: CompressionObserver) -> None:
+        """Remove a compression event observer.
+
+        Args:
+            observer: Observer to remove.
+        """
+        if observer in self._observers:
+            self._observers.remove(observer)
+
+    def _notify_observers(self, event: CompressionEvent) -> None:
+        """Notify all observers of a compression event.
+
+        Args:
+            event: Event to broadcast.
+        """
+        for observer in self._observers:
+            try:
+                observer.on_compression_event(event)
+            except Exception as e:
+                logger.warning(f"Observer failed to handle event: {e}")
+
+    def _check_warning_threshold(self) -> None:
+        """Check if usage has crossed a warning threshold and emit event."""
+        usage = self.usage_percentage
+        current_level = get_warning_level(
+            usage,
+            warning_threshold=self.warning_threshold,
+            critical_threshold=self.critical_threshold,
+        )
+
+        # Only emit if level increased (went from none->caution or caution->critical)
+        if current_level != self._last_warning_level:
+            if current_level != WarningLevel.NONE:
+                event = CompressionEvent(
+                    event_type=CompressionEventType.WARNING,
+                    tokens_before=self.token_usage,
+                    tokens_after=self.token_usage,
+                    messages_before=len(self._messages),
+                    messages_after=len(self._messages),
+                    warning_level=current_level,
+                    usage_percentage=usage,
+                )
+                self._notify_observers(event)
+            self._last_warning_level = current_level
+
     def _truncate(self) -> None:
         """Truncate messages to fit within limit.
 
         Validates that truncated result fits within budget.
         Logs warning if truncation was insufficient.
+        Emits CompressionEvent when messages are removed.
         """
+        tokens_before = self.token_usage
+        messages_before = len(self._messages)
         target_tokens = self.tracker.budget.conversation_budget
 
         truncated = self.strategy.truncate(
@@ -195,6 +273,19 @@ class ContextManager:
             )
             self._messages = truncated
             self.tracker.update(truncated)
+
+            # Emit truncation event
+            tokens_after = self.token_usage
+            event = CompressionEvent(
+                event_type=CompressionEventType.TRUNCATION,
+                tokens_before=tokens_before,
+                tokens_after=tokens_after,
+                messages_before=messages_before,
+                messages_after=len(truncated),
+                usage_percentage=self.usage_percentage,
+                strategy=self.mode.value,
+            )
+            self._notify_observers(event)
 
             # Validate truncation result
             actual_tokens = sum(
@@ -228,6 +319,8 @@ class ContextManager:
         if usage < threshold * 100:
             return False
 
+        tokens_before = self.token_usage
+        messages_before = len(self._messages)
         target_tokens = int(self.tracker.budget.conversation_budget * 0.7)
 
         compacted = await self.compactor.compact(
@@ -239,6 +332,19 @@ class ContextManager:
         if len(compacted) < len(self._messages):
             self._messages = compacted
             self.tracker.update(compacted)
+
+            # Emit compaction event
+            tokens_after = self.token_usage
+            event = CompressionEvent(
+                event_type=CompressionEventType.COMPACTION,
+                tokens_before=tokens_before,
+                tokens_after=tokens_after,
+                messages_before=messages_before,
+                messages_after=len(compacted),
+                usage_percentage=self.usage_percentage,
+                strategy="llm_summarization",
+            )
+            self._notify_observers(event)
             return True
 
         return False
@@ -280,9 +386,25 @@ class ContextManager:
         return self.usage_percentage > 80
 
     def reset(self) -> None:
-        """Clear all messages."""
+        """Clear all messages and emit cleared event."""
+        tokens_before = self.token_usage
+        messages_before = len(self._messages)
+
         self._messages = []
         self.tracker.reset()
+        self._last_warning_level = WarningLevel.NONE
+
+        # Emit cleared event if there were messages
+        if messages_before > 0:
+            event = CompressionEvent(
+                event_type=CompressionEventType.CLEARED,
+                tokens_before=tokens_before,
+                tokens_after=0,
+                messages_before=messages_before,
+                messages_after=0,
+                usage_percentage=0.0,
+            )
+            self._notify_observers(event)
 
     def get_stats(self) -> dict[str, Any]:
         """Get context statistics.

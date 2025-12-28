@@ -7,10 +7,11 @@ This package provides the command-line interface including:
 - Dependency injection for testability
 """
 
+from code_forge.cli.context_adapter import ContextStatusAdapter
 from code_forge.cli.dependencies import Dependencies
 from code_forge.cli.main import main
 from code_forge.cli.repl import InputHandler, CodeForgeREPL, OutputRenderer
-from code_forge.cli.status import StatusBar, StatusBarObserver
+from code_forge.cli.status import ContextWarningLevel, StatusBar, StatusBarObserver
 from code_forge.cli.themes import (
     DARK_THEME,
     LIGHT_THEME,
@@ -19,6 +20,8 @@ from code_forge.cli.themes import (
 )
 
 __all__ = [
+    "ContextStatusAdapter",
+    "ContextWarningLevel",
     "DARK_THEME",
     "Dependencies",
     "LIGHT_THEME",
