@@ -408,7 +408,7 @@ AI-powered CLI Development Assistant
 
 [{self._theme.accent}]Tab[/{self._theme.accent}]        Autocomplete commands
 [{self._theme.accent}]Shift+Tab[/{self._theme.accent}]  Toggle extended thinking
-[{self._theme.accent}]Esc[/{self._theme.accent}]        Cancel current input
+[{self._theme.accent}]Esc[/{self._theme.accent}]        Clear input (x2 to interrupt)
 [{self._theme.accent}]Ctrl+C[/{self._theme.accent}]     Interrupt operation
 [{self._theme.accent}]Ctrl+D[/{self._theme.accent}]     Exit (on empty input)
 [{self._theme.accent}]Ctrl+L[/{self._theme.accent}]     Clear screen
