@@ -204,3 +204,40 @@ tests/
 ├── plugins/        # Plugin tests
 └── conftest.py     # Shared fixtures
 ```
+
+---
+
+## Phase Directories
+
+Active planning phases with full documentation:
+
+```
+.ai/phase/
+├── documentation-fix/    # DOC-001: Fix README package references
+│   ├── PLAN.md           # Implementation plan
+│   ├── COMPLETION_CRITERIA.md  # What "done" means
+│   ├── GHERKIN.md        # BDD scenarios
+│   ├── DEPENDENCIES.md   # Phase dependencies
+│   ├── TESTS.md          # Test strategy
+│   └── REVIEW.md         # Code review checklist
+├── code-cleanup/         # CODE-001 to CODE-005, SESS-007
+│   ├── PLAN.md           # Enum fix, dead code, version sync
+│   ├── COMPLETION_CRITERIA.md
+│   ├── GHERKIN.md
+│   ├── DEPENDENCIES.md
+│   ├── TESTS.md
+│   └── REVIEW.md
+└── cicd-setup/           # CICD-001: GitHub Actions setup
+    ├── PLAN.md           # Workflow configuration
+    ├── COMPLETION_CRITERIA.md
+    ├── GHERKIN.md
+    ├── DEPENDENCIES.md
+    ├── TESTS.md
+    └── REVIEW.md
+```
+
+| Phase | Priority | Issues | Effort |
+|-------|----------|--------|--------|
+| documentation-fix | P0 Critical | DOC-001 | 2-4 hours |
+| code-cleanup | P0-P2 | CODE-001 to CODE-005, SESS-007 | 4-8 hours |
+| cicd-setup | P0 Critical | CICD-001 | 4-6 hours |

@@ -14,7 +14,33 @@ _No active tasks._
 
 ### Critical Priority (P0)
 
-_All critical issues have been addressed._
+#### DOC-001: README Package Name Mismatch
+**Status:** Pending
+**Priority:** Critical
+**Phase Directory:** `.ai/phase/documentation-fix/`
+**Files:** `README.md`
+**Issue:** All code examples in README use `forge.` imports but actual package is `code_forge`
+**Impact:** Every code example in the README is broken and will cause ImportError
+**Examples:**
+- Line 141: `from forge.tools.file import ReadTool` should be `from code_forge.tools.file import ReadTool`
+- Line 110: `├── src/forge/` should be `├── src/code_forge/`
+- All programmatic usage examples need updating
+
+#### CODE-001: ToolCategory Enum Missing UTILITY
+**Status:** Pending
+**Priority:** Critical
+**Phase Directory:** `.ai/phase/code-cleanup/`
+**Files:** `src/code_forge/tools/base.py`, `tests/conftest.py`
+**Issue:** `tests/conftest.py:627` references `ToolCategory.UTILITY` which doesn't exist in the enum
+**Impact:** Test fixtures use non-existent enum value - may cause test failures or masking issues
+
+#### CICD-001: Missing CI/CD Pipeline
+**Status:** Pending
+**Priority:** Critical
+**Phase Directory:** `.ai/phase/cicd-setup/`
+**Files:** `.github/workflows/` (missing)
+**Issue:** `tests/README.md:254-259` references `.github/workflows/test.yml` but no `.github/` directory exists
+**Impact:** No automated testing, no PR checks, no deployment automation
 
 ---
 
@@ -22,6 +48,7 @@ _All critical issues have been addressed._
 
 #### ARCH-004: Configuration System Fragmentation
 **Status:** Deferred
+**Phase Directory:** `.ai/phase/config-consolidation/` (to be created)
 **Files:** `config/`, `mcp/config.py`, `hooks/config.py`, `permissions/config.py`, `web/config.py`
 **Issue:** 6+ modules use different config patterns (Pydantic vs dataclass vs custom)
 **Impact:** Inconsistent API, hard to compose/test configurations
@@ -30,23 +57,59 @@ _All critical issues have been addressed._
 - mcp/config.py uses dataclasses (MCPServerConfig duplicates Pydantic version)
 - hooks/config.py and permissions/config.py use class methods
 - web/config.py uses dataclasses (currently unused)
-Migration plan: Create common base, migrate one module at a time with tests. Deferred to avoid breaking changes.
+Migration plan: Create common base, migrate one module at a time with tests.
+
+#### CODE-002: Dead Code - Unused WebConfig
+**Status:** Pending
+**Priority:** High
+**Phase Directory:** `.ai/phase/code-cleanup/`
+**Files:** `src/code_forge/web/config.py`
+**Issue:** `WebConfig` class appears to be completely unused - never instantiated
+**Impact:** Dead code increases maintenance burden and confusion
+
+#### CODE-003: Version Synchronization Burden
+**Status:** Pending
+**Priority:** High
+**Phase Directory:** `.ai/phase/code-cleanup/`
+**Files:** `pyproject.toml`, `src/code_forge/__init__.py`, `.ai/START.md`
+**Issue:** Version must be manually updated in 4 places
+**Solution:** Use `importlib.metadata.version()` pattern to derive version from pyproject.toml
+**Impact:** Risk of version mismatch, manual overhead
 
 #### SEC-022: Race Condition in SSRF Check
 **Status:** Documented
+**Priority:** High
+**Phase Directory:** `.ai/phase/security-hardening/` (to be created)
 **File:** `src/code_forge/web/fetch/fetcher.py:38-58`
 **Issue:** DNS validation at fetch time doesn't prevent TOCTOU (DNS rebinding)
-**Note:** Added detailed SECURITY NOTE in docstring explaining the vulnerability and mitigation complexity. Full fix requires custom aiohttp connector with IP pinning - deferred to future work.
+**Note:** Added detailed SECURITY NOTE in docstring explaining the vulnerability and mitigation complexity. Full fix requires custom aiohttp connector with IP pinning.
 
 ---
 
 ### Medium Priority (P2)
 
+#### CODE-004: Mixed Threading/Async Locking
+**Status:** Pending
+**Priority:** Medium
+**Phase Directory:** `.ai/phase/code-cleanup/`
+**Files:** `src/code_forge/llm/client.py`, various singletons
+**Issue:** Uses `threading.Lock()` in async code (e.g., `OpenRouterClient._usage_lock`)
+**Impact:** Potential blocking in async context, though current usage may be safe
+**Note:** Audit all lock usage and determine if asyncio.Lock() is more appropriate
+
+#### CODE-005: Magic Numbers Scattered
+**Status:** Pending
+**Priority:** Medium
+**Phase Directory:** `.ai/phase/code-cleanup/`
+**Files:** Multiple files
+**Issue:** Hardcoded values like `max_retries: int = 3`, `timeout: float = 120.0` scattered across classes
+**Solution:** Centralize in constants module or derive from config
+
 #### CLI-002: No Output Format Options
 **Status:** Deferred
 **File:** `src/code_forge/cli/repl.py`
 **Issue:** No `--json`, `--no-color`, `-q` quiet mode options
-**Note:** Feature request requiring significant CLI restructuring. Deferred to future enhancement.
+**Note:** Feature request requiring significant CLI restructuring.
 
 #### SESS-002: Memory Leak in Token Counter Caching
 **Status:** Deferred
@@ -55,16 +118,12 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Note:** Feature request for cache statistics monitoring. Current size is reasonable for most use cases.
 
 #### SESS-007: No Automatic Session Cleanup
-**Status:** Deferred
+**Status:** Pending
+**Priority:** Medium
+**Phase Directory:** `.ai/phase/code-cleanup/`
 **File:** `src/code_forge/sessions/storage.py:329-369`
 **Issue:** `cleanup_old_sessions()` and `cleanup_old_backups()` exist but never called
-**Note:** Feature request - requires implementing scheduled cleanup or CLI command.
-
-#### SESS-008: No Conflict Detection for Concurrent Access
-**Status:** Fixed (2025-12-21)
-**File:** `src/code_forge/sessions/storage.py`
-**Fix:** Implemented cross-platform file locking with timeout support, automatic lock cleanup
-**Commit:** 6e8c07b
+**Solution:** Add scheduled cleanup or CLI command
 
 ---
 
@@ -74,88 +133,41 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 **Status:** Deferred
 **File:** `src/code_forge/tools/file/edit.py:119-120, 152`
 **Issue:** Always uses UTF-8, losing original file encoding (latin-1, utf-16)
-**Note:** Requires adding chardet as a dependency. Deferred to future enhancement.
+**Note:** Requires adding chardet as a dependency.
 
 #### TOOL-010: Exception Details Leaked in Error Messages
 **Status:** Deferred
 **Files:** Multiple tool files
 **Issue:** Raw exception strings may leak system information (paths, library versions)
-**Note:** Requires systematic audit of all tools. Deferred to future security pass.
+**Note:** Requires systematic audit of all tools.
 
 #### LLM-014: Thread Overhead Per Call
 **Status:** Deferred
 **File:** `src/code_forge/langchain/llm.py:246-260`
 **Issue:** Creates new thread for every streaming operation
-**Note:** Requires design work for module-level thread pool with proper lifecycle management. Deferred to future optimization pass.
+**Note:** Requires design work for module-level thread pool with proper lifecycle management.
 
 #### MCP-016: No Circular Dependency Detection in Skills
 **Status:** Deferred
 **File:** `src/code_forge/skills/registry.py:255-278`
 **Issue:** Skills can have circular dependencies via prompt references
 **Impact:** Potential infinite loops
-**Reason:** Requires building full dependency graph - substantial feature addition
 
 #### MCP-019: Inefficient Plugin Unregister
 **Status:** Deferred
 **File:** `src/code_forge/plugins/registry.py:153-168`
 **Issue:** Dictionary comprehensions iterate entire collection for each type
-**Reason:** Current O(n) per collection is acceptable for typical plugin counts. Reverse indexing adds complexity for marginal gains.
+**Reason:** Current O(n) per collection is acceptable for typical plugin counts.
 
 #### MCP-020: Linear Search in Skills Registry
 **Status:** Deferred
 **File:** `src/code_forge/skills/registry.py:136-150`
 **Issue:** `search()` iterates all skills
-**Reason:** Linear search is acceptable for typical skill counts. Search indexing would add complexity for marginal gains.
-
-#### PERM-015: No Rate Limiting on Permission Denials
-**Status:** Fixed (2025-12-21)
-**File:** `src/code_forge/permissions/checker.py`
-**Fix:** Added sliding window rate limiter (10 denials/60s), 5-minute backoff, thread-safe tracking
-**Commit:** 7fac204
-
-#### PERM-016: No Hook Error Recovery
-**Status:** Fixed (2025-12-21)
-**File:** `src/code_forge/hooks/executor.py`
-**Fix:** Added retry logic with exponential backoff for transient errors (max_retries=2 default)
-**Commit:** 4018e02
-
-#### PERM-017: No Dry-Run Mode for Hooks
-**Status:** Fixed (2025-12-21)
-**File:** `src/code_forge/hooks/executor.py`
-**Fix:** Added dry_run parameter that simulates execution without running commands
-**Commit:** 4018e02
+**Reason:** Linear search is acceptable for typical skill counts.
 
 ---
 
 ## Feature Requests
-
-### FEAT-004: Comprehensive Test Coverage Enhancement
-**Status:** Complete (v1.8.0)
-**Priority:** Critical
-**Version Target:** 1.8.0
-**Phase Directory:** `.ai/phase/test-coverage/`
-**Description:** Achieve comprehensive test coverage (85%+) across all Code-Forge modules
-
-**Results:**
-- 4,898 tests across 150+ test files
-- All 20 built-in agent types tested (712 agent tests)
-- CLI setup wizard fully tested (38 tests)
-- Dependency injection fully tested (21 tests)
-- Security-critical code validated (SSRF, permissions)
-- Async/concurrent scenarios covered
-- Performance benchmarks added (18 tests)
-- tests/README.md documentation
-
-**Completed Phases:**
-1. **Phase 1:** Critical Security & Setup - Complete
-2. **Phase 2:** Agent Coverage - Complete (712 tests for 20 agents)
-3. **Phase 3:** Provider & Transport Tests - Complete
-4. **Phase 4:** Async & Concurrency - Complete
-5. **Phase 5:** Error Handling & Edge Cases - Complete
-6. **Phase 6:** Integration & E2E - Complete
-7. **Phase 7:** Documentation & Metrics - Complete
-
----
 
 ### FEAT-001: Per-Project RAG Support
 **Status:** Proposed
@@ -185,121 +197,31 @@ Migration plan: Create common base, migrate one module at a time with tests. Def
 
 ---
 
-### FEAT-002: Specialized Task Agents
-**Status:** Complete (v1.6.0)
-**Priority:** High
-**Description:** Create different specialized agents for different tasks instead of one general-purpose agent
-
-**Benefits:**
-- Better focused prompts for specific tasks
-- Specialized tool access per agent type
-- Improved output quality for domain-specific work
-- Parallel agent execution for complex workflows
-
-**Proposed Agent Types:**
-
-1. **Code Review Agent**
-   - Specialized in analyzing diffs and code changes
-   - Security vulnerability detection
-   - Code style and best practices checking
-   - Performance issue identification
-
-2. **Test Generation Agent**
-   - Creates test cases from code
-   - Identifies edge cases and boundary conditions
-   - Generates unit, integration, and e2e tests
-   - Maintains test coverage metrics
-
-3. **Documentation Agent**
-   - Extracts and generates documentation
-   - Creates README files and API docs
-   - Updates docstrings and comments
-   - Generates architecture diagrams (mermaid)
-
-4. **Refactoring Agent**
-   - Identifies code smells and anti-patterns
-   - Suggests and implements refactoring
-   - Modernizes legacy code patterns
-   - Optimizes performance bottlenecks
-
-5. **Planning Agent**
-   - Breaks down complex tasks into steps
-   - Creates implementation plans
-   - Estimates complexity and dependencies
-   - Generates task trees and milestones
-
-6. **Debug Agent**
-   - Analyzes error messages and stack traces
-   - Identifies root causes
-   - Suggests fixes with explanations
-   - Creates reproduction steps
-
-**Implementation Considerations:**
-- Agent registry with metadata and capabilities
-- Agent-specific system prompts and tool restrictions
-- Agent orchestration for multi-agent workflows
-- Shared context between agents
-- Agent selection heuristics based on user intent
-
-**Potential Structure:**
-```
-src/code_forge/agents/
-├── specialized/
-│   ├── code_review.py
-│   ├── test_generation.py
-│   ├── documentation.py
-│   ├── refactoring.py
-│   ├── planning.py
-│   └── debug.py
-├── orchestrator.py      # Multi-agent coordination
-└── selector.py          # Automatic agent selection
-```
-
----
-
-### FEAT-003: Agent Workflow System
-**Status:** Complete (v1.7.0)
-**Priority:** Medium
-**Description:** Enable chaining multiple specialized agents together for complex workflows
-
-**Implemented Features:**
-- Workflow definition via YAML
-- Conditional agent execution based on results
-- DAG-based parallel execution where possible
-- Built-in workflow templates
-- State checkpointing and resumability
-- /workflow command and WorkflowTool for LLM
-
-**Location:** `src/code_forge/workflows/`
-
----
-
 ## Summary
 
 ### Remaining Work
 
 | Priority | Pending | Deferred | Complete | Total |
 |----------|---------|----------|----------|-------|
-| **P0 Critical** | 0 | 0 | 1 | 1 |
-| **P1 High** | 0 | 2 | 0 | 2 |
-| **P2 Medium** | 0 | 3 | 0 | 3 |
+| **P0 Critical** | 3 | 0 | 0 | 3 |
+| **P1 High** | 3 | 1 | 0 | 4 |
+| **P2 Medium** | 3 | 2 | 0 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **1** | **11** | **4** | **16** |
+| **TOTAL** | **10** | **9** | **3** | **22** |
 
-### Breakdown
+### Priority Order for Implementation
 
-**Pending Items (1):**
-- FEAT-001: Per-Project RAG Support
-
-**Deferred Items (11):**
-- Technical debt and optimizations that don't block functionality
-- Feature enhancements requiring significant refactoring
-- Performance optimizations with marginal gains
-- Security hardening for edge cases
-
-**Recently Completed:**
-- FEAT-004: Comprehensive Test Coverage Enhancement (v1.8.0) - 4,898 tests
+1. **DOC-001** - Fix README (broken examples hurt adoption)
+2. **CODE-001** - Fix ToolCategory enum (broken tests)
+3. **CICD-001** - Add CI/CD pipeline (quality gate)
+4. **CODE-002** - Remove dead WebConfig code
+5. **CODE-003** - Fix version synchronization
+6. **SEC-022** - Address SSRF vulnerability
+7. **ARCH-004** - Consolidate config patterns
+8. **CODE-004** - Audit threading/async locking
+9. **CODE-005** - Centralize magic numbers
+10. **SESS-007** - Implement session cleanup
 
 ---
 
