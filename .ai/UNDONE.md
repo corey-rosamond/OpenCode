@@ -78,11 +78,10 @@ Migration plan: Create common base, migrate one module at a time with tests.
 **Issue:** Creates new thread for every streaming operation
 **Note:** Requires design work for module-level thread pool with proper lifecycle management.
 
-#### MCP-016: No Circular Dependency Detection in Skills
-**Status:** Deferred
-**File:** `src/code_forge/skills/registry.py:255-278`
-**Issue:** Skills can have circular dependencies via prompt references
-**Impact:** Potential infinite loops
+#### ~~MCP-016: No Circular Dependency Detection in Skills~~
+**Status:** ✅ Complete (v1.8.9)
+**File:** `src/code_forge/skills/registry.py`
+**Resolution:** Added `dependencies` field to skills, implemented DFS-based circular dependency detection, added `CircularDependencyError` exception
 
 #### MCP-019: Inefficient Plugin Unregister
 **Status:** Deferred
@@ -137,9 +136,9 @@ Migration plan: Create common base, migrate one module at a time with tests.
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
 | **P2 Medium** | 0 | 2 | 3 | 5 |
-| **P3 Low** | 0 | 6 | 0 | 6 |
+| **P3 Low** | 0 | 5 | 1 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **2** | **9** | **11** | **22** |
+| **TOTAL** | **2** | **8** | **12** | **22** |
 
 ### Priority Order for Implementation
 
@@ -152,6 +151,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.9 | 2025-12-28 | Skills dependencies (MCP-016): Added circular dependency detection |
 | 1.8.8 | 2025-12-28 | Session cleanup (SESS-007): Added /session cleanup command |
 | 1.8.7 | 2025-12-28 | Constants module (CODE-005): Created centralized constants for magic numbers |
 | 1.8.6 | 2025-12-28 | Lock audit (CODE-004): Audited threading.Lock usage, documented decisions |

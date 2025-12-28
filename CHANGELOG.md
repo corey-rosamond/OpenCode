@@ -5,6 +5,17 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.9] - 2025-12-28
+
+### Added
+- **MCP-016: Circular Dependency Detection in Skills**: Added dependency support and cycle detection
+  - Added `dependencies` field to `SkillDefinition` for declaring skill dependencies
+  - Added `CircularDependencyError` exception for clear error reporting
+  - Added `_detect_circular_dependency()` method using DFS algorithm
+  - Added `validate_all_dependencies()` for bulk validation after loading
+  - Added `check_dependencies` parameter to `register()` for bulk loading scenarios
+  - Prevents infinite loops from circular skill references
+
 ## [1.8.8] - 2025-12-28
 
 ### Added

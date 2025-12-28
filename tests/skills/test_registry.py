@@ -8,7 +8,7 @@ import pytest
 
 from code_forge.skills.base import Skill, SkillConfig, SkillDefinition, SkillMetadata
 from code_forge.skills.loader import SkillLoader
-from code_forge.skills.registry import SkillRegistry
+from code_forge.skills.registry import CircularDependencyError, SkillRegistry
 
 
 def create_test_skill(
@@ -19,6 +19,7 @@ def create_test_skill(
     is_builtin: bool = False,
     tools: list[str] | None = None,
     config: list[SkillConfig] | None = None,
+    dependencies: list[str] | None = None,
 ) -> Skill:
     """Create a test skill."""
     metadata = SkillMetadata(
@@ -32,6 +33,7 @@ def create_test_skill(
         prompt=f"You are the {name} assistant.",
         tools=tools or [],
         config=config or [],
+        dependencies=dependencies or [],
         is_builtin=is_builtin,
     )
     return Skill(definition)
@@ -521,3 +523,178 @@ prompt: Test
 
         # All should be the same instance
         assert all(r is results[0] for r in results)
+
+
+class TestDependencies:
+    """Tests for skill dependencies and circular dependency detection."""
+
+    @pytest.fixture(autouse=True)
+    def reset_registry(self) -> None:
+        """Reset singleton before each test."""
+        SkillRegistry.reset_instance()
+
+    @pytest.fixture
+    def registry(self) -> SkillRegistry:
+        """Create a fresh registry."""
+        return SkillRegistry()
+
+    def test_register_skill_with_valid_dependency(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test registering a skill with a valid dependency."""
+        base = create_test_skill("base")
+        dependent = create_test_skill("dependent", dependencies=["base"])
+
+        registry.register(base)
+        registry.register(dependent)
+
+        assert registry.get("base") is base
+        assert registry.get("dependent") is dependent
+        assert registry.get("dependent").dependencies == ["base"]
+
+    def test_register_skill_with_missing_dependency(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test registering a skill with a missing dependency raises error."""
+        skill = create_test_skill("dependent", dependencies=["nonexistent"])
+
+        with pytest.raises(ValueError, match="depends on unknown skill"):
+            registry.register(skill)
+
+        # Skill should not be registered
+        assert registry.get("dependent") is None
+
+    def test_register_skill_with_self_dependency(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test that a skill cannot depend on itself."""
+        skill = create_test_skill("self-referencing", dependencies=["self-referencing"])
+
+        with pytest.raises(CircularDependencyError) as exc_info:
+            registry.register(skill)
+
+        assert "self-referencing" in exc_info.value.cycle
+
+    def test_detect_simple_circular_dependency(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test detecting A -> B -> A circular dependency."""
+        # Register A first (with check_dependencies=False since B doesn't exist yet)
+        skill_a = create_test_skill("skill-a", dependencies=["skill-b"])
+        skill_b = create_test_skill("skill-b", dependencies=["skill-a"])
+
+        # Register A without dependency check
+        registry.register(skill_a, check_dependencies=False)
+
+        # Registering B should detect the cycle
+        with pytest.raises(CircularDependencyError) as exc_info:
+            registry.register(skill_b)
+
+        cycle = exc_info.value.cycle
+        assert "skill-a" in cycle
+        assert "skill-b" in cycle
+
+    def test_detect_complex_circular_dependency(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test detecting A -> B -> C -> A circular dependency."""
+        skill_a = create_test_skill("skill-a", dependencies=["skill-b"])
+        skill_b = create_test_skill("skill-b", dependencies=["skill-c"])
+        skill_c = create_test_skill("skill-c", dependencies=["skill-a"])
+
+        # Register without dependency checks
+        registry.register(skill_a, check_dependencies=False)
+        registry.register(skill_b, check_dependencies=False)
+
+        # Registering C should detect the cycle
+        with pytest.raises(CircularDependencyError) as exc_info:
+            registry.register(skill_c)
+
+        cycle = exc_info.value.cycle
+        assert len(cycle) >= 3
+        assert "skill-a" in cycle
+        assert "skill-b" in cycle
+        assert "skill-c" in cycle
+
+    def test_validate_all_dependencies_no_errors(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test validate_all_dependencies with no issues."""
+        base = create_test_skill("base")
+        dependent = create_test_skill("dependent", dependencies=["base"])
+
+        registry.register(base, check_dependencies=False)
+        registry.register(dependent, check_dependencies=False)
+
+        errors = registry.validate_all_dependencies()
+        assert errors == []
+
+    def test_validate_all_dependencies_missing(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test validate_all_dependencies detects missing dependencies."""
+        skill = create_test_skill("dependent", dependencies=["missing"])
+        registry.register(skill, check_dependencies=False)
+
+        errors = registry.validate_all_dependencies()
+        assert len(errors) == 1
+        assert "depends on unknown skill" in errors[0]
+        assert "missing" in errors[0]
+
+    def test_validate_all_dependencies_circular(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test validate_all_dependencies detects circular dependencies."""
+        skill_a = create_test_skill("skill-a", dependencies=["skill-b"])
+        skill_b = create_test_skill("skill-b", dependencies=["skill-a"])
+
+        registry.register(skill_a, check_dependencies=False)
+        registry.register(skill_b, check_dependencies=False)
+
+        errors = registry.validate_all_dependencies()
+        assert any("Circular dependency" in e for e in errors)
+
+    def test_chain_dependencies_no_cycle(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test that a chain of dependencies without a cycle is valid."""
+        skill_a = create_test_skill("skill-a")
+        skill_b = create_test_skill("skill-b", dependencies=["skill-a"])
+        skill_c = create_test_skill("skill-c", dependencies=["skill-b"])
+        skill_d = create_test_skill("skill-d", dependencies=["skill-c"])
+
+        registry.register(skill_a)
+        registry.register(skill_b)
+        registry.register(skill_c)
+        registry.register(skill_d)
+
+        errors = registry.validate_all_dependencies()
+        assert errors == []
+
+    def test_diamond_dependencies_no_cycle(
+        self, registry: SkillRegistry
+    ) -> None:
+        """Test diamond pattern (A -> B, A -> C, B -> D, C -> D) is valid."""
+        skill_d = create_test_skill("skill-d")
+        skill_b = create_test_skill("skill-b", dependencies=["skill-d"])
+        skill_c = create_test_skill("skill-c", dependencies=["skill-d"])
+        skill_a = create_test_skill("skill-a", dependencies=["skill-b", "skill-c"])
+
+        registry.register(skill_d)
+        registry.register(skill_b)
+        registry.register(skill_c)
+        registry.register(skill_a)
+
+        errors = registry.validate_all_dependencies()
+        assert errors == []
+
+    def test_circular_dependency_error_message(self) -> None:
+        """Test CircularDependencyError message format."""
+        error = CircularDependencyError(["a", "b", "c", "a"])
+        assert "a -> b -> c -> a" in str(error)
+        assert error.cycle == ["a", "b", "c", "a"]
+
+    def test_skill_dependencies_property(self, registry: SkillRegistry) -> None:
+        """Test that skill.dependencies returns the dependency list."""
+        skill = create_test_skill("test", dependencies=["dep1", "dep2"])
+        assert skill.dependencies == ["dep1", "dep2"]

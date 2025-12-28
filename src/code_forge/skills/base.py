@@ -160,6 +160,7 @@ class SkillDefinition:
         prompt: System prompt addition
         tools: Required tool names
         config: Configuration options
+        dependencies: Names of other skills this skill depends on
         source_path: Path to source file
         is_builtin: Whether this is a built-in skill
     """
@@ -168,6 +169,7 @@ class SkillDefinition:
     prompt: str
     tools: list[str] = field(default_factory=list)
     config: list[SkillConfig] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     source_path: str | None = None
     is_builtin: bool = False
 
@@ -202,6 +204,8 @@ class SkillDefinition:
             result["tools"] = self.tools
         if self.config:
             result["config"] = [c.to_dict() for c in self.config]
+        if self.dependencies:
+            result["dependencies"] = self.dependencies
         if self.source_path:
             result["source_path"] = self.source_path
         if self.is_builtin:
@@ -234,6 +238,7 @@ class SkillDefinition:
             prompt=data.get("prompt", ""),
             tools=data.get("tools", []),
             config=config_list,
+            dependencies=data.get("dependencies", []),
             source_path=data.get("source_path"),
             is_builtin=data.get("is_builtin", False),
         )
@@ -283,6 +288,11 @@ class Skill:
     def is_builtin(self) -> bool:
         """Check if this is a built-in skill."""
         return self.definition.is_builtin
+
+    @property
+    def dependencies(self) -> list[str]:
+        """Get skill dependencies (names of other skills this depends on)."""
+        return self.definition.dependencies
 
     def activate(self, config: dict[str, Any] | None = None) -> list[str]:
         """Activate the skill.

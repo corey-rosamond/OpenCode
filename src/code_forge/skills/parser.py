@@ -124,6 +124,7 @@ class SkillParser:
             prompt=data.get("prompt", ""),
             tools=data.get("tools", []),
             config=config,
+            dependencies=data.get("dependencies", []),
             source_path=source_path if source_path else None,
         )
 
@@ -214,6 +215,7 @@ class SkillParser:
             prompt=prompt,
             tools=data.get("tools", []),
             config=config,
+            dependencies=data.get("dependencies", []),
             source_path=source_path if source_path else None,
         )
 

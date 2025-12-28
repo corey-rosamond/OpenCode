@@ -35,6 +35,7 @@ from .parser import (
     SkillParser,
 )
 from .registry import (
+    CircularDependencyError,
     SkillRegistry,
 )
 
@@ -59,6 +60,7 @@ def setup_skills() -> SkillRegistry:
 __all__ = [
     "API_SKILL",
     "BUILTIN_SKILLS",
+    "CircularDependencyError",
     "DATABASE_SKILL",
     "EXCEL_SKILL",
     "PDF_SKILL",
