@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from code_forge.agents.executor import AgentExecutor
     from code_forge.commands import CommandExecutor, CommandContext
     from code_forge.config import CodeForgeConfig
+    from code_forge.context.manager import ContextManager
     from code_forge.langchain.agent import CodeForgeAgent
     from code_forge.langchain.llm import OpenRouterLLM
     from code_forge.llm import OpenRouterClient
@@ -79,6 +80,7 @@ class Dependencies:
     agent_executor: AgentExecutor | None = None
     rag_manager: RAGManager | None = None
     undo_manager: UndoManager | None = None
+    context_manager: ContextManager | None = None
 
     # Optional overrides for specific components
     _custom_tools: list[Any] = field(default_factory=list)
@@ -123,6 +125,7 @@ class Dependencies:
             CommandContext as CmdContext,
             register_builtin_commands,
         )
+        from code_forge.context.manager import ContextManager as CtxMgr, TruncationMode
         from code_forge.langchain.agent import CodeForgeAgent
         from code_forge.langchain.llm import OpenRouterLLM
         from code_forge.langchain.tools import adapt_tools_for_langchain
@@ -150,6 +153,16 @@ class Dependencies:
 
         # Create or use provided mode manager
         actual_mode_manager = mode_manager or setup_modes()
+
+        # Create context manager with configured thresholds
+        context_mode = TruncationMode(config.context.default_mode)
+        actual_context_manager = CtxMgr(
+            model=config.model.default,
+            mode=context_mode,
+            warning_threshold=config.context.warning_threshold,
+            critical_threshold=config.context.critical_threshold,
+        )
+        logger.info("Context manager created with warning thresholds")
 
         # Create or use provided tool registry
         if tool_registry is None:
@@ -224,6 +237,7 @@ class Dependencies:
         # Create command context
         cmd_context = CmdContext(
             session_manager=actual_session_manager,
+            context_manager=actual_context_manager,
             config=config,
             llm=actual_llm,
             rag_manager=actual_rag_manager,
@@ -252,6 +266,7 @@ class Dependencies:
             agent_executor=actual_agent_executor,
             rag_manager=actual_rag_manager,
             undo_manager=actual_undo_manager,
+            context_manager=actual_context_manager,
         )
 
     def get_tool_names(self) -> list[str]:

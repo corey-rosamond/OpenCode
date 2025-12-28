@@ -137,6 +137,10 @@ class TestDependenciesCreate:
         """Create a mock config."""
         config = MagicMock()
         config.model.default = "gpt-4"
+        # Context config with proper values
+        config.context.default_mode = "smart"
+        config.context.warning_threshold = 0.8
+        config.context.critical_threshold = 0.9
         return config
 
     @pytest.fixture
@@ -512,6 +516,9 @@ class TestSingletonBehavior:
         """Test that SessionManager.get_instance() is used."""
         mock_config = MagicMock()
         mock_config.model.default = "gpt-4"
+        mock_config.context.default_mode = "smart"
+        mock_config.context.warning_threshold = 0.8
+        mock_config.context.critical_threshold = 0.9
 
         with patch(
             "code_forge.commands.CommandExecutor"
@@ -555,6 +562,9 @@ class TestLazyInitialization:
         """Test that tools are adapted during create, not eagerly."""
         mock_config = MagicMock()
         mock_config.model.default = "gpt-4"
+        mock_config.context.default_mode = "smart"
+        mock_config.context.warning_threshold = 0.8
+        mock_config.context.critical_threshold = 0.9
 
         with patch(
             "code_forge.commands.CommandExecutor"
@@ -602,6 +612,9 @@ class TestErrorPropagation:
         """Test that errors during client creation propagate."""
         mock_config = MagicMock()
         mock_config.model.default = "gpt-4"
+        mock_config.context.default_mode = "smart"
+        mock_config.context.warning_threshold = 0.8
+        mock_config.context.critical_threshold = 0.9
 
         with patch(
             "code_forge.llm.OpenRouterClient"
@@ -636,6 +649,9 @@ class TestErrorPropagation:
         """Test that errors during tool registration propagate."""
         mock_config = MagicMock()
         mock_config.model.default = "gpt-4"
+        mock_config.context.default_mode = "smart"
+        mock_config.context.warning_threshold = 0.8
+        mock_config.context.critical_threshold = 0.9
 
         with patch(
             "code_forge.commands.CommandExecutor"

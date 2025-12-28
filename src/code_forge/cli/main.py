@@ -10,6 +10,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from code_forge import __version__
+from code_forge.cli.conversation import ErrorExplainer
 from code_forge.cli.dependencies import Dependencies
 from code_forge.cli.repl import CodeForgeREPL
 from code_forge.config import ConfigLoader
@@ -204,10 +205,19 @@ async def run_with_agent(
 
     # Update status bar with model info
     from code_forge.llm.routing import get_model_context_limit
+    from code_forge.cli.context_adapter import ContextStatusAdapter
 
     model_context = get_model_context_limit(config.model.default)
     repl._status.set_model(config.model.default)
     repl._status.set_tokens(0, model_context)
+
+    # Wire up context compression visibility to status bar
+    if deps.context_manager:
+        context_adapter = ContextStatusAdapter(
+            status_bar=repl._status,
+            context_manager=deps.context_manager,
+        )
+        logger.debug("ContextStatusAdapter attached for compression visibility")
 
     # Create mode context for mode switching
     def mode_output(msg: str) -> None:
@@ -291,7 +301,9 @@ async def run_with_agent(
             if cmd_result.output:
                 repl.output.print(cmd_result.output)
             if cmd_result.error:
-                repl.output.print_error(cmd_result.error)
+                # Use ErrorExplainer for friendly error messages
+                explained = ErrorExplainer.explain(cmd_result.error)
+                repl.output.print_error(explained)
 
             # Check for exit command
             if text.strip() in ("/exit", "/quit", "/q"):
@@ -482,7 +494,9 @@ async def run_with_agent(
                         if is_json_mode:
                             print(json.dumps({"error": error}, indent=2))
                         else:
-                            repl.output.print_error(f"Agent error: {error}")
+                            # Use ErrorExplainer for friendly error messages
+                            explained = ErrorExplainer.explain(str(error))
+                            repl.output.print_error(f"Agent error: {explained}")
 
                 if not is_json_mode:
                     repl.output.print("")  # Final newline
@@ -503,7 +517,9 @@ async def run_with_agent(
                 if is_json_mode:
                     print(json.dumps({"error": str(e)}, indent=2))
                 else:
-                    repl.output.print_error(f"Error: {e}")
+                    # Use ErrorExplainer for friendly error messages
+                    explained = ErrorExplainer.explain(str(e))
+                    repl.output.print_error(f"Error: {explained}")
             finally:
                 # Ensure all spinners are stopped
                 if spinner:

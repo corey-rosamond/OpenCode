@@ -5,6 +5,23 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2025-12-28
+
+### Added
+- **CONV-003: Context-Aware Error Recovery**
+  - Expanded ErrorExplainer with 63 error patterns (up from 6)
+  - Categories: File System (10+), Python (12+), Node.js/npm (8+), Git (8+)
+  - Categories: Network/HTTP (15+), Shell/Command (9+), API/Service (5+)
+  - Categories: Docker (3+), Database (3+)
+  - Integrated ErrorExplainer at 3 error handling points in main.py
+  - 42 new unit tests for error patterns
+
+### Fixed
+- **CTX-001 Integration**: Wired ContextManager into Dependencies and REPL
+  - ContextManager now created with warning thresholds from config
+  - ContextStatusAdapter attached to StatusBar for real-time warnings
+  - `/context` command now properly shows compression status
+
 ## [1.13.0] - 2025-12-28
 
 ### Added

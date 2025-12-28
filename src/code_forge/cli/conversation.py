@@ -213,32 +213,594 @@ class ReasoningExtractor:
 
 
 class ErrorExplainer:
-    """Provides friendly error explanations."""
+    """Provides friendly error explanations.
+
+    The ERROR_CATALOG contains patterns organized by category:
+    - File System: File not found, permission denied, disk full, etc.
+    - Python: Import, syntax, type, attribute errors
+    - Node.js/npm: Module not found, version conflicts
+    - Git: Not a repo, merge conflicts, push rejected
+    - Network: Connection refused, DNS, SSL, timeout
+    - Shell: Command not found, exit codes
+    - API: Rate limiting, authentication, quota
+    """
 
     ERROR_CATALOG: ClassVar[dict[str, dict[str, Any]]] = {
+        # ===== FILE SYSTEM ERRORS =====
         "File not found": {
             "explanation": "The file doesn't exist at that location",
-            "suggestions": ["Check the file path spelling", "Use Glob to search for the file"],
+            "suggestions": [
+                "Check the file path spelling",
+                "Use Glob to search for the file",
+                "Verify the file wasn't recently moved or deleted",
+            ],
         },
         "Permission denied": {
             "explanation": "Cannot access this file due to permissions",
-            "suggestions": ["Check file permissions with 'ls -la'", "You may need elevated access"],
-        },
-        "timed out": {
-            "explanation": "The operation took too long to complete",
-            "suggestions": ["Try a smaller scope", "Break the task into steps"],
-        },
-        "Connection refused": {
-            "explanation": "Could not connect to the server",
-            "suggestions": ["Check if the service is running", "Verify the URL is correct"],
+            "suggestions": [
+                "Check file permissions with 'ls -la'",
+                "You may need elevated access (sudo)",
+                "Verify you own the file or have group access",
+            ],
         },
         "No such file or directory": {
             "explanation": "The path doesn't exist",
-            "suggestions": ["Create the directory first", "Check the path spelling"],
+            "suggestions": [
+                "Create the directory with 'mkdir -p'",
+                "Check the path spelling",
+                "Use absolute paths to avoid working directory issues",
+            ],
         },
+        "Is a directory": {
+            "explanation": "Expected a file but found a directory",
+            "suggestions": [
+                "Check if you meant to use a file path",
+                "List directory contents with 'ls'",
+            ],
+        },
+        "Not a directory": {
+            "explanation": "Expected a directory but found a file",
+            "suggestions": [
+                "Check if you meant to use a directory path",
+                "Use dirname to get the parent directory",
+            ],
+        },
+        "No space left on device": {
+            "explanation": "The disk is full",
+            "suggestions": [
+                "Free up disk space by removing unused files",
+                "Check disk usage with 'df -h'",
+                "Clear temp files and caches",
+            ],
+        },
+        "Too many open files": {
+            "explanation": "The process has exceeded its file descriptor limit",
+            "suggestions": [
+                "Close unused file handles",
+                "Increase ulimit with 'ulimit -n 4096'",
+                "Check for file handle leaks in your code",
+            ],
+        },
+        "Read-only file system": {
+            "explanation": "The filesystem is mounted as read-only",
+            "suggestions": [
+                "Remount the filesystem with write permissions",
+                "Check if the disk is failing",
+                "Write to a different location",
+            ],
+        },
+        "File exists": {
+            "explanation": "Cannot create file because it already exists",
+            "suggestions": [
+                "Use overwrite mode or remove the existing file",
+                "Rename the new file to avoid conflict",
+            ],
+        },
+        "Directory not empty": {
+            "explanation": "Cannot remove directory because it has contents",
+            "suggestions": [
+                "Use 'rm -rf' to remove recursively (carefully!)",
+                "Remove contents first, then the directory",
+            ],
+        },
+        # ===== PYTHON ERRORS =====
+        "ModuleNotFoundError": {
+            "explanation": "A Python module/package is not installed",
+            "suggestions": [
+                "Install with 'pip install <package>'",
+                "Check if you're in the right virtual environment",
+                "Verify the package name spelling",
+            ],
+        },
+        "ImportError": {
+            "explanation": "Cannot import a Python module or specific name",
+            "suggestions": [
+                "Check the import statement spelling",
+                "Verify the module is installed correctly",
+                "Check for circular import issues",
+            ],
+        },
+        "SyntaxError": {
+            "explanation": "Invalid Python syntax",
+            "suggestions": [
+                "Check for missing colons, parentheses, or quotes",
+                "Look at the line number indicated in the error",
+                "Ensure proper indentation",
+            ],
+        },
+        "IndentationError": {
+            "explanation": "Inconsistent indentation in Python code",
+            "suggestions": [
+                "Use consistent spaces or tabs (not mixed)",
+                "Configure your editor to use 4 spaces per indent",
+                "Check the line indicated in the error",
+            ],
+        },
+        "TypeError": {
+            "explanation": "Operation applied to wrong type",
+            "suggestions": [
+                "Check the types of variables being used",
+                "Use type() to inspect variable types",
+                "Ensure function arguments match expected types",
+            ],
+        },
+        "AttributeError": {
+            "explanation": "Object doesn't have the requested attribute/method",
+            "suggestions": [
+                "Check the spelling of the attribute name",
+                "Verify the object is the expected type",
+                "Use dir() to see available attributes",
+            ],
+        },
+        "KeyError": {
+            "explanation": "Dictionary key doesn't exist",
+            "suggestions": [
+                "Use .get(key, default) for safe access",
+                "Check if the key exists with 'in' operator",
+                "Verify the key spelling and type",
+            ],
+        },
+        "IndexError": {
+            "explanation": "List/sequence index out of range",
+            "suggestions": [
+                "Check the length of the sequence with len()",
+                "Use try/except or check bounds before indexing",
+                "Remember Python uses 0-based indexing",
+            ],
+        },
+        "ValueError": {
+            "explanation": "Function received correct type but inappropriate value",
+            "suggestions": [
+                "Check the value being passed",
+                "Validate input before passing to functions",
+                "Review the function's expected value range",
+            ],
+        },
+        "NameError": {
+            "explanation": "Variable or name is not defined",
+            "suggestions": [
+                "Check the variable spelling",
+                "Ensure the variable is defined before use",
+                "Check the scope - is it defined in this context?",
+            ],
+        },
+        "RecursionError": {
+            "explanation": "Maximum recursion depth exceeded",
+            "suggestions": [
+                "Check for infinite recursion in your code",
+                "Add a base case to stop recursion",
+                "Consider using iteration instead",
+            ],
+        },
+        "StopIteration": {
+            "explanation": "Iterator has no more items",
+            "suggestions": [
+                "Use a for loop instead of manual iteration",
+                "Check if the iterator is exhausted",
+            ],
+        },
+        # ===== NODE.JS / NPM ERRORS =====
+        "MODULE_NOT_FOUND": {
+            "explanation": "A Node.js module is not installed",
+            "suggestions": [
+                "Run 'npm install' to install dependencies",
+                "Install the specific package with 'npm install <package>'",
+                "Check package.json for the dependency",
+            ],
+        },
+        "ENOENT": {
+            "explanation": "File or directory not found (Node.js)",
+            "suggestions": [
+                "Check the path exists",
+                "Use path.resolve() for absolute paths",
+                "Create missing directories with fs.mkdirSync",
+            ],
+        },
+        "EACCES": {
+            "explanation": "Permission denied (Node.js)",
+            "suggestions": [
+                "Don't use sudo with npm - fix npm permissions instead",
+                "Change ownership of the directory",
+                "Use a different installation location",
+            ],
+        },
+        "EADDRINUSE": {
+            "explanation": "Port is already in use",
+            "suggestions": [
+                "Use a different port",
+                "Find and stop the process using the port: 'lsof -i :PORT'",
+                "Wait for the port to be released",
+            ],
+        },
+        "npm ERR! peer dep": {
+            "explanation": "Peer dependency conflict between packages",
+            "suggestions": [
+                "Try 'npm install --legacy-peer-deps'",
+                "Update conflicting packages",
+                "Check if packages are compatible",
+            ],
+        },
+        "npm ERR! code E404": {
+            "explanation": "npm package not found in registry",
+            "suggestions": [
+                "Check the package name spelling",
+                "Verify the package exists on npmjs.com",
+                "Check if the package is scoped (@org/package)",
+            ],
+        },
+        "EPERM": {
+            "explanation": "Operation not permitted (Node.js)",
+            "suggestions": [
+                "Close programs that may be using the files",
+                "Check file/directory permissions",
+                "On Windows, try running as administrator",
+            ],
+        },
+        "ENOMEM": {
+            "explanation": "Not enough memory",
+            "suggestions": [
+                "Close other applications to free memory",
+                "Increase Node.js memory with --max-old-space-size",
+                "Process data in smaller chunks",
+            ],
+        },
+        # ===== GIT ERRORS =====
+        "not a git repository": {
+            "explanation": "The current directory is not a Git repository",
+            "suggestions": [
+                "Initialize with 'git init'",
+                "Navigate to the correct project directory",
+                "Clone an existing repository",
+            ],
+        },
+        "CONFLICT": {
+            "explanation": "Merge conflict - same lines modified in both branches",
+            "suggestions": [
+                "Edit the conflicting files to resolve",
+                "Use 'git diff' to see the conflicts",
+                "After resolving, run 'git add' and 'git commit'",
+            ],
+        },
+        "merge conflict": {
+            "explanation": "Git couldn't automatically merge changes",
+            "suggestions": [
+                "Open the file and look for <<<<<<< markers",
+                "Choose which version to keep",
+                "Stage resolved files with 'git add'",
+            ],
+        },
+        "rejected": {
+            "explanation": "Push rejected - remote has changes you don't have",
+            "suggestions": [
+                "Pull first with 'git pull'",
+                "Resolve any merge conflicts",
+                "Then push again",
+            ],
+        },
+        "non-fast-forward": {
+            "explanation": "Cannot push because remote has diverged",
+            "suggestions": [
+                "Pull and merge/rebase first",
+                "Never force push to shared branches",
+                "Use 'git pull --rebase' for cleaner history",
+            ],
+        },
+        "detached HEAD": {
+            "explanation": "Not on a branch - commits won't be saved to any branch",
+            "suggestions": [
+                "Create a branch with 'git checkout -b <name>'",
+                "Or checkout an existing branch",
+                "Save your work before switching branches",
+            ],
+        },
+        "fatal: refusing to merge unrelated histories": {
+            "explanation": "Trying to merge repositories with no common history",
+            "suggestions": [
+                "Use '--allow-unrelated-histories' flag",
+                "Consider if this is really what you want",
+            ],
+        },
+        "error: Your local changes": {
+            "explanation": "Uncommitted changes would be overwritten",
+            "suggestions": [
+                "Commit your changes first",
+                "Or stash them with 'git stash'",
+                "Or discard with 'git checkout -- .'",
+            ],
+        },
+        # ===== NETWORK / HTTP ERRORS =====
+        "Connection refused": {
+            "explanation": "Could not connect to the server",
+            "suggestions": [
+                "Check if the service is running",
+                "Verify the URL/host and port are correct",
+                "Check firewall settings",
+            ],
+        },
+        "timed out": {
+            "explanation": "The operation took too long to complete",
+            "suggestions": [
+                "Check your network connection",
+                "The server may be slow or overloaded",
+                "Try again in a few moments",
+            ],
+        },
+        "Connection reset": {
+            "explanation": "The connection was forcibly closed",
+            "suggestions": [
+                "Check your network stability",
+                "The server may have crashed or restarted",
+                "Try again after a short wait",
+            ],
+        },
+        "Name or service not known": {
+            "explanation": "DNS lookup failed - hostname not found",
+            "suggestions": [
+                "Check the hostname spelling",
+                "Verify your DNS settings",
+                "Check your internet connection",
+            ],
+        },
+        "getaddrinfo": {
+            "explanation": "DNS resolution failed",
+            "suggestions": [
+                "Check internet connectivity",
+                "Verify the hostname is correct",
+                "Try using an IP address instead",
+            ],
+        },
+        "SSL": {
+            "explanation": "SSL/TLS certificate error",
+            "suggestions": [
+                "Check if the certificate is expired",
+                "Verify the hostname matches the certificate",
+                "Update your CA certificates",
+            ],
+        },
+        "certificate verify failed": {
+            "explanation": "SSL certificate validation failed",
+            "suggestions": [
+                "Check if the certificate is self-signed",
+                "Update your system's CA certificates",
+                "Verify the date/time on your system is correct",
+            ],
+        },
+        "HTTP 401": {
+            "explanation": "Authentication required or failed",
+            "suggestions": [
+                "Check your credentials/API key",
+                "Ensure the token hasn't expired",
+                "Verify you have access to this resource",
+            ],
+        },
+        "HTTP 403": {
+            "explanation": "Access forbidden",
+            "suggestions": [
+                "Check your permissions for this resource",
+                "Verify your account has the required access level",
+                "The resource may require different credentials",
+            ],
+        },
+        "HTTP 404": {
+            "explanation": "Resource not found",
+            "suggestions": [
+                "Check the URL spelling",
+                "Verify the resource still exists",
+                "Check if the API version has changed",
+            ],
+        },
+        "HTTP 429": {
+            "explanation": "Too many requests - rate limited",
+            "suggestions": [
+                "Wait before making more requests",
+                "Implement request throttling",
+                "Check the API rate limit documentation",
+            ],
+        },
+        "HTTP 500": {
+            "explanation": "Internal server error",
+            "suggestions": [
+                "The server encountered an error",
+                "Try again later",
+                "Check if the service is experiencing issues",
+            ],
+        },
+        "HTTP 502": {
+            "explanation": "Bad gateway - upstream server error",
+            "suggestions": [
+                "The upstream server is unreachable",
+                "Wait and try again",
+                "Check if the service is down",
+            ],
+        },
+        "HTTP 503": {
+            "explanation": "Service unavailable",
+            "suggestions": [
+                "The service is temporarily unavailable",
+                "Wait and try again later",
+                "Check the service status page",
+            ],
+        },
+        # ===== SHELL / COMMAND ERRORS =====
         "Command not found": {
             "explanation": "The program isn't installed or not in PATH",
-            "suggestions": ["Install the required tool", "Check if it's in your PATH"],
+            "suggestions": [
+                "Install the required tool",
+                "Check if it's in your PATH: 'echo $PATH'",
+                "Use the full path to the executable",
+            ],
+        },
+        "exit code 1": {
+            "explanation": "Command failed with general error",
+            "suggestions": [
+                "Check the command output for error messages",
+                "Verify the command arguments are correct",
+                "Run the command manually for more details",
+            ],
+        },
+        "exit code 2": {
+            "explanation": "Command misuse or invalid arguments",
+            "suggestions": [
+                "Check the command syntax with --help",
+                "Verify all required arguments are provided",
+                "Check for typos in options",
+            ],
+        },
+        "exit code 126": {
+            "explanation": "Command found but not executable",
+            "suggestions": [
+                "Make the file executable: 'chmod +x file'",
+                "Check file permissions",
+            ],
+        },
+        "exit code 127": {
+            "explanation": "Command not found",
+            "suggestions": [
+                "Install the required command",
+                "Check the spelling",
+                "Verify PATH environment variable",
+            ],
+        },
+        "exit code 128": {
+            "explanation": "Invalid exit code argument",
+            "suggestions": [
+                "This usually indicates a script error",
+                "Check the script's exit statements",
+            ],
+        },
+        "exit code 130": {
+            "explanation": "Script terminated by Ctrl+C (SIGINT)",
+            "suggestions": [
+                "The command was interrupted",
+                "This is normal if you pressed Ctrl+C",
+            ],
+        },
+        "Killed": {
+            "explanation": "Process was killed (likely out of memory)",
+            "suggestions": [
+                "The process ran out of memory",
+                "Try processing smaller data sets",
+                "Close other applications to free memory",
+            ],
+        },
+        "Segmentation fault": {
+            "explanation": "Program crashed due to memory access violation",
+            "suggestions": [
+                "This is usually a bug in the program",
+                "Check for buffer overflows or null pointers",
+                "Try updating the software",
+            ],
+        },
+        # ===== API / SERVICE ERRORS =====
+        "rate limit": {
+            "explanation": "Too many API requests",
+            "suggestions": [
+                "Wait before making more requests",
+                "Implement exponential backoff",
+                "Consider caching responses",
+            ],
+        },
+        "quota exceeded": {
+            "explanation": "Usage quota has been exceeded",
+            "suggestions": [
+                "Check your usage in the service dashboard",
+                "Wait for the quota to reset",
+                "Consider upgrading your plan",
+            ],
+        },
+        "invalid api key": {
+            "explanation": "The API key is invalid or expired",
+            "suggestions": [
+                "Check the API key in your environment/config",
+                "Generate a new API key",
+                "Verify the key has the required permissions",
+            ],
+        },
+        "unauthorized": {
+            "explanation": "Authentication is required or failed",
+            "suggestions": [
+                "Check your credentials",
+                "Ensure the token hasn't expired",
+                "Re-authenticate if needed",
+            ],
+        },
+        "invalid json": {
+            "explanation": "Malformed JSON in request or response",
+            "suggestions": [
+                "Validate your JSON with a linter",
+                "Check for trailing commas or missing quotes",
+                "Ensure proper escaping of special characters",
+            ],
+        },
+        # ===== DOCKER ERRORS =====
+        "docker: Error response from daemon": {
+            "explanation": "Docker daemon returned an error",
+            "suggestions": [
+                "Check if Docker daemon is running",
+                "Verify you have permission to access Docker",
+                "Check Docker logs for details",
+            ],
+        },
+        "image not found": {
+            "explanation": "Docker image doesn't exist",
+            "suggestions": [
+                "Pull the image with 'docker pull'",
+                "Check the image name and tag spelling",
+                "Verify the registry URL is correct",
+            ],
+        },
+        "port is already allocated": {
+            "explanation": "Container port conflicts with existing binding",
+            "suggestions": [
+                "Use a different host port mapping",
+                "Stop the container using that port",
+                "Use 'docker ps' to see running containers",
+            ],
+        },
+        # ===== DATABASE ERRORS =====
+        "connection refused": {
+            "explanation": "Cannot connect to the database",
+            "suggestions": [
+                "Check if the database server is running",
+                "Verify the connection string/host/port",
+                "Check firewall and network settings",
+            ],
+        },
+        "authentication failed": {
+            "explanation": "Database login credentials are incorrect",
+            "suggestions": [
+                "Verify username and password",
+                "Check if the user has access to the database",
+                "Review connection string format",
+            ],
+        },
+        "duplicate key": {
+            "explanation": "Trying to insert a record that already exists",
+            "suggestions": [
+                "Check for existing records before inserting",
+                "Use UPSERT or ON CONFLICT if available",
+                "Verify your unique constraints",
+            ],
         },
     }
 
