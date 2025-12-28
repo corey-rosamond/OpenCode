@@ -1,13 +1,6 @@
 """Web tools for Code-Forge."""
 
 from .cache import WebCache
-from .config import (
-    CacheConfig,
-    FetchConfig,
-    SearchConfig,
-    SearchProviderConfig,
-    WebConfig,
-)
 from .fetch.fetcher import FetchError, URLFetcher
 from .fetch.parser import HTMLParser
 from .search.base import SearchError, SearchProvider
@@ -25,24 +18,19 @@ from .types import (
 
 __all__ = [
     "BraveSearchProvider",
-    "CacheConfig",
     "DuckDuckGoProvider",
-    "FetchConfig",
     "FetchError",
     "FetchOptions",
     "FetchResponse",
     "GoogleSearchProvider",
     "HTMLParser",
     "ParsedContent",
-    "SearchConfig",
     "SearchError",
     "SearchProvider",
-    "SearchProviderConfig",
     "SearchResponse",
     "SearchResult",
     "URLFetcher",
     "WebCache",
-    "WebConfig",
     "WebFetchTool",
     "WebSearchTool",
 ]
