@@ -5,6 +5,32 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2025-12-28
+
+### Added
+- **CONV-005: Session Context Continuity (Phases 1-3)**
+  - `SessionContextTracker` tracks active file, recent operations, and mentioned entities
+  - `PronounResolver` resolves "it", "that file", "the function" to actual entities
+  - `EntityType` enum: FILE, FUNCTION, CLASS, VARIABLE, DIRECTORY, URL, COMMAND
+  - `OperationType` enum: READ, WRITE, EDIT, DELETE, CREATE, SEARCH, EXECUTE, FETCH
+  - Tracks file operations from TOOL_END events in main.py
+  - Extracts entities (files, functions, classes, URLs) from user input
+  - Increments conversation turn counter for context ordering
+  - 49 new unit tests for tracker and resolver
+
+- **ESC Key Interrupt Handler**
+  - `InterruptHandler` class monitors for double-ESC key presses
+  - Allows users to interrupt long-running AI operations (like Claude Code)
+  - Shows "(Press ESC twice to interrupt)" hint during streaming
+  - Gracefully stops spinners and resets status on interrupt
+  - 15 new tests for interrupt handler
+
+### Fixed
+- **Model Switching Bug**: Status bar now updates when switching models
+  - Added `command_context.repl` reference in main.py
+  - ModelCommand now calls `set_model()` and `set_tokens()` on status bar
+  - Token count resets to new model's context limit
+
 ## [1.15.0] - 2025-12-28
 
 ### Added
