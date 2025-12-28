@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from code_forge import __version__
 from code_forge.cli.conversation import ErrorExplainer
 from code_forge.cli.dependencies import Dependencies
+from code_forge.cli.interrupt import get_interrupt_handler
 from code_forge.cli.repl import CodeForgeREPL
 from code_forge.config import ConfigLoader
 from code_forge.core import get_logger
@@ -329,7 +330,16 @@ async def run_with_agent(
             # Track tool calls for JSON output
             tool_calls_log: list[dict] = []
 
+            # Get interrupt handler for ESC key detection
+            interrupt_handler = get_interrupt_handler()
+
             try:
+                # Start interrupt monitoring (only in interactive mode with tty)
+                if sys.stdin.isatty() and not is_json_mode:
+                    await interrupt_handler.start_monitoring()
+                    if not is_quiet:
+                        repl.output.print_dim("(Press ESC twice to interrupt)")
+
                 # Add user message to session
                 session_manager.add_message("user", text)
 
@@ -367,6 +377,13 @@ async def run_with_agent(
                     spinner.start()
 
                 async for event in agent.stream(augmented_text):
+                    # Check for user interrupt (double-ESC)
+                    if interrupt_handler.interrupted:
+                        if not is_json_mode:
+                            repl.output.print("")
+                            repl.output.print_warning("Operation interrupted by user")
+                        break
+
                     if event.type == AgentEventType.LLM_START:
                         iteration_count = event.data.get("iteration", 0)
                         if iteration_count > 1:
@@ -524,6 +541,9 @@ async def run_with_agent(
                     explained = ErrorExplainer.explain(str(e))
                     repl.output.print_error(f"Error: {explained}")
             finally:
+                # Stop interrupt monitoring
+                await interrupt_handler.stop_monitoring()
+
                 # Ensure all spinners are stopped
                 if spinner:
                     try:
