@@ -64,6 +64,15 @@ from .project_detector import (
     detect_project,
     get_detector,
 )
+from .resolver import PronounResolver, ResolvedReference
+from .tracker import (
+    EntityType,
+    OperationType,
+    SessionContext,
+    SessionContextTracker,
+    TrackedEntity,
+    TrackedOperation,
+)
 
 __all__ = [
     "ApproximateCounter",
@@ -92,6 +101,7 @@ __all__ = [
     "TruncationStrategy",
     "WarningLevel",
     "detect_project",
+    "EntityType",
     "generate_project_context",
     "get_counter",
     "get_detector",
@@ -99,4 +109,11 @@ __all__ = [
     "get_profile_for_project",
     "get_strategy",
     "get_warning_level",
+    "OperationType",
+    "PronounResolver",
+    "ResolvedReference",
+    "SessionContext",
+    "SessionContextTracker",
+    "TrackedEntity",
+    "TrackedOperation",
 ]
