@@ -5,6 +5,14 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.7] - 2025-12-28
+
+### Added
+- **CODE-005: Constants Module**: Created centralized constants for magic numbers
+  - New `src/code_forge/core/constants.py` with timeouts, retries, size limits
+  - Documented purpose of each constant
+  - New code should use these constants for consistency
+
 ## [1.8.6] - 2025-12-28
 
 ### Improved

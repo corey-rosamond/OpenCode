@@ -44,14 +44,6 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 ### Medium Priority (P2)
 
-#### CODE-005: Magic Numbers Scattered
-**Status:** Pending
-**Priority:** Medium
-**Phase Directory:** `.ai/phase/code-cleanup/`
-**Files:** Multiple files
-**Issue:** Hardcoded values like `max_retries: int = 3`, `timeout: float = 120.0` scattered across classes
-**Solution:** Centralize in constants module or derive from config
-
 #### CLI-002: No Output Format Options
 **Status:** Deferred
 **File:** `src/code_forge/cli/repl.py`
@@ -152,17 +144,16 @@ Migration plan: Create common base, migrate one module at a time with tests.
 |----------|---------|----------|----------|-------|
 | **P0 Critical** | 0 | 0 | 3 | 3 |
 | **P1 High** | 1 | 1 | 2 | 4 |
-| **P2 Medium** | 2 | 2 | 1 | 5 |
+| **P2 Medium** | 1 | 2 | 2 | 5 |
 | **P3 Low** | 0 | 6 | 0 | 6 |
 | **Features** | 1 | 0 | 3 | 4 |
-| **TOTAL** | **4** | **9** | **9** | **22** |
+| **TOTAL** | **3** | **9** | **10** | **22** |
 
 ### Priority Order for Implementation
 
 1. **SEC-022** - Address SSRF vulnerability
 2. **ARCH-004** - Consolidate config patterns
-3. **CODE-005** - Centralize magic numbers
-4. **SESS-007** - Implement session cleanup
+3. **SESS-007** - Implement session cleanup
 
 ---
 
@@ -170,6 +161,7 @@ Migration plan: Create common base, migrate one module at a time with tests.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.7 | 2025-12-28 | Constants module (CODE-005): Created centralized constants for magic numbers |
 | 1.8.6 | 2025-12-28 | Lock audit (CODE-004): Audited threading.Lock usage, documented decisions |
 | 1.8.5 | 2025-12-27 | Version sync (CODE-003): Single-source version via importlib.metadata |
 | 1.8.4 | 2025-12-27 | Dead code removal (CODE-002): Removed unused WebConfig and related classes |
