@@ -426,6 +426,22 @@ async def run_with_agent(
                         tool_args = event.data.get("arguments", {})
                         current_tool = {"name": tool_name, "arguments": tool_args}
 
+                        # Capture file content before Edit for diff display (if enabled)
+                        if (
+                            config.display.show_diffs
+                            and tool_name == "Edit"
+                            and not is_json_mode
+                        ):
+                            file_path = tool_args.get("file_path", "")
+                            if file_path:
+                                try:
+                                    from pathlib import Path
+                                    path = Path(file_path)
+                                    if path.exists():
+                                        current_tool["_before_content"] = path.read_text()
+                                except Exception:
+                                    pass  # Silently ignore read errors
+
                         # Show tool call with formatted arguments (not in JSON mode)
                         if not is_json_mode:
                             repl.output.print("")  # New line before tool
@@ -500,6 +516,40 @@ async def run_with_agent(
                             result_preview = _truncate_result(result, max_lines=5)
                             status = "[green]✓[/green]" if success else "[red]✗[/red]"
                             repl._console.print(f"[dim]{result_preview}[/dim]")
+
+                            # Show diff for successful Edit operations (if enabled)
+                            if (
+                                config.display.show_diffs
+                                and tool_name == "Edit"
+                                and success
+                                and current_tool
+                                and "_before_content" in current_tool
+                            ):
+                                try:
+                                    from pathlib import Path
+                                    from code_forge.cli.visual.diff import DiffPresenter
+
+                                    file_path = current_tool.get("arguments", {}).get(
+                                        "file_path", ""
+                                    )
+                                    if file_path:
+                                        path = Path(file_path)
+                                        if path.exists():
+                                            after_content = path.read_text()
+                                            before_content = current_tool["_before_content"]
+                                            if before_content != after_content:
+                                                diff_presenter = DiffPresenter(
+                                                    console=repl._console,
+                                                    max_lines=20,
+                                                )
+                                                diff_presenter.show_diff(
+                                                    before_content,
+                                                    after_content,
+                                                    path.name,
+                                                )
+                                except Exception:
+                                    pass  # Silently ignore diff display errors
+
                             repl._console.print(
                                 f"[dim]─── {status} {tool_name} ({duration:.1f}s) ───[/dim]"
                             )

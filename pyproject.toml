@@ -1,6 +1,6 @@
 [project]
 name = "code-forge"
-version = "1.16.0"
+version = "1.17.0"
 description = "AI-powered CLI development assistant with OpenRouter API and LangChain"
 readme = "README.md"
 license = { text = "MIT" }

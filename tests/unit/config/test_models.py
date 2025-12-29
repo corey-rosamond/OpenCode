@@ -239,9 +239,15 @@ class TestDisplayConfig:
         assert config.streaming is True
         assert config.vim_mode is False
         assert config.status_line is True
+        assert config.show_diffs is True
         assert config.color is True
         assert config.quiet is False
         assert config.json_output is False
+
+    def test_show_diffs_toggle(self) -> None:
+        """Test show_diffs can be disabled."""
+        config = DisplayConfig(show_diffs=False)
+        assert config.show_diffs is False
 
     def test_custom_values(self) -> None:
         """Test custom display values."""

@@ -1,6 +1,6 @@
 # Code-Forge: Current Work
 
-**Last Updated:** 2025-12-28
+**Last Updated:** 2025-12-29
 
 ---
 
@@ -424,8 +424,8 @@ Track session context including active files, recent operations, and resolve pro
 
 ---
 
-### 🟢 CONV-006: Visual Interface Enhancements
-**Status:** Pending
+### 🟡 CONV-006: Visual Interface Enhancements
+**Status:** In Progress (Phase 1 Complete) v1.17.0
 **Priority:** Medium (P2)
 **Impact:** 6.0/10
 **Complexity:** Medium
@@ -442,13 +442,31 @@ Add Rich-based visual enhancements for diffs, suggestions, and file browsing.
 
 | Phase | Description | Deliverables |
 |-------|-------------|--------------|
-| **Phase 1: Visual Diffs** | Show colored diffs for Edit operations | DiffPresenter using Rich |
+| **Phase 1: Visual Diffs** | Show colored diffs for Edit operations | ✅ DiffPresenter using Rich |
 | **Phase 2: Code Suggestions** | Inline syntax-highlighted suggestions | SuggestionPresenter |
 | **Phase 3: File Tree** | Interactive file browser | FileTreeBrowser |
 | **Phase 4: Progress Visualization** | Visual progress bars for long operations | ProgressVisualizer |
 
+**Files Created:**
+- `src/code_forge/cli/visual/__init__.py` - Visual package exports
+- `src/code_forge/cli/visual/diff.py` - DiffPresenter, DiffLine, DiffStyle, show_edit_diff, format_change_summary
+- `tests/unit/cli/visual/__init__.py` - Test package
+- `tests/unit/cli/visual/test_diff.py` - 32 unit tests
+
+**Progress:**
+- [x] Phase 1: DiffPresenter implementation with Rich
+- [x] Unified and minimal diff styles
+- [x] Line number display with context
+- [x] Max lines limit for large diffs
+- [x] Change summary (additions/deletions)
+- [x] Integration with Edit tool in main.py
+- [x] Config toggle: `display.show_diffs` (default: true)
+- [x] Unit tests (32 tests)
+- [ ] Phase 2: Code Suggestions (pending)
+- [ ] Phase 3: File Tree (pending)
+- [ ] Phase 4: Progress Visualization (pending)
+
 **Files to Create:**
-- `src/code_forge/cli/visual/diff.py`
 - `src/code_forge/cli/visual/suggestions.py`
 - `src/code_forge/cli/visual/tree.py`
 - `src/code_forge/cli/visual/progress.py`
@@ -551,8 +569,8 @@ Based on **impact × (1/effort)** analysis:
 - [x] CONV-004: Project Type Detection ✅ COMPLETED v1.15.0
 
 **Sprint 2 (4-5 days): Context Foundation**
-- [ ] CONV-005: Session Context Continuity
-- [ ] CONV-006 Phase 1: Visual Diffs
+- [x] CONV-005: Session Context Continuity (Phases 1-3) ✅ v1.16.0
+- [x] CONV-006 Phase 1: Visual Diffs ✅ v1.17.0
 
 **Sprint 3 (1 week): Intelligence Layer**
 - [ ] CONV-001: Conversational Translation Layer
@@ -579,6 +597,10 @@ Based on **impact × (1/effort)** analysis:
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.17.0 | 2025-12-29 | Visual Diffs (CONV-006 Phase 1): DiffPresenter with Rich, colored diff display for Edit operations, config toggle, 32 tests |
+| 1.16.0 | 2025-12-29 | Session Context (CONV-005 Phases 1-3): SessionContextTracker, PronounResolver, operation tracking, 49 tests |
+| 1.15.0 | 2025-12-28 | Project Detection (CONV-004): Smart project type detection, language profiles, prompt injection |
+| 1.14.0 | 2025-12-28 | Error Recovery (CONV-003): Expanded error catalog, auto-suggestions, recovery actions |
 | 1.13.0 | 2025-12-28 | Context Visibility (CTX-001): CompressionEvent, observer pattern, StatusBar warnings, ContextStatusAdapter, ContextConfig, enhanced /context command, 100+ tests |
 | 1.12.0 | 2025-12-28 | Undo System (FEAT-004): Undo/Redo for file operations, ConversationalPresenter, ErrorExplainer, 113 tests |
 | 1.11.0 | 2025-12-28 | RAG UX (RAG-001): Hybrid search, scope indicator, low confidence warning, TOOL-011 edit fix |
