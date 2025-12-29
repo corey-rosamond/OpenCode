@@ -201,6 +201,11 @@ class OpenRouterClient:
             chunks_received = 0
             parse_errors = 0
 
+            # Track per-stream usage (take LAST value, not cumulative)
+            # Some providers send usage on every chunk with cumulative values
+            stream_prompt_tokens = 0
+            stream_completion_tokens = 0
+
             async for line in response.aiter_lines():
                 if not line:
                     continue
@@ -213,12 +218,10 @@ class OpenRouterClient:
                         chunk = StreamChunk.from_dict(chunk_data)
                         chunks_received += 1
 
-                        # Track final usage (thread-safe)
+                        # Track usage - REPLACE (not add) to get final value
                         if chunk.usage:
-                            with self._usage_lock:
-                                self._total_prompt_tokens += chunk.usage.prompt_tokens
-                                self._total_completion_tokens += chunk.usage.completion_tokens
-                                self._total_requests += 1
+                            stream_prompt_tokens = chunk.usage.prompt_tokens
+                            stream_completion_tokens = chunk.usage.completion_tokens
 
                         yield chunk
                     except json.JSONDecodeError as e:
@@ -233,6 +236,13 @@ class OpenRouterClient:
                             f"Invalid chunk structure at position {chunks_received + parse_errors}: "
                             f"{e} - data: {data[:100]}..."
                         )
+
+            # Add this stream's final usage to cumulative totals (thread-safe)
+            if stream_prompt_tokens > 0 or stream_completion_tokens > 0:
+                with self._usage_lock:
+                    self._total_prompt_tokens += stream_prompt_tokens
+                    self._total_completion_tokens += stream_completion_tokens
+                    self._total_requests += 1
 
             # Log summary if there were errors (visible indicator of incomplete stream)
             if parse_errors > 0:

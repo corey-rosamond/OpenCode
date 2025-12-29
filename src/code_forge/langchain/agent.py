@@ -530,6 +530,7 @@ class CodeForgeAgent:
         start_time = time.time()
         tool_call_records: list[ToolCallRecord] = []
         iterations = 0
+        # Track totals across ALL iterations
         total_prompt_tokens = 0
         total_completion_tokens = 0
 
@@ -547,6 +548,11 @@ class CodeForgeAgent:
                     break
 
                 iterations += 1
+
+                # Track per-iteration usage (take LAST value, don't accumulate within iteration)
+                # Some providers send cumulative usage on every chunk
+                iteration_prompt_tokens = 0
+                iteration_completion_tokens = 0
 
                 # Yield LLM start event
                 yield AgentEvent(
@@ -594,18 +600,24 @@ class CodeForgeAgent:
                         tool_call_chunks.extend(chunk.tool_call_chunks)
 
                     # Track token usage from streaming chunks
-                    # LangChain includes usage_metadata on final chunk for many providers
+                    # IMPORTANT: Take LAST value, don't accumulate within iteration
+                    # Some providers (DeepSeek, Kimi) send cumulative usage on every chunk
                     if hasattr(chunk, "usage_metadata") and chunk.usage_metadata:
                         usage = chunk.usage_metadata
                         # Handle both dict and object access patterns
                         if isinstance(usage, dict):
-                            total_prompt_tokens += usage.get("input_tokens", 0)
-                            total_completion_tokens += usage.get("output_tokens", 0)
+                            # Replace, don't add - usage is cumulative within the iteration
+                            iteration_prompt_tokens = usage.get("input_tokens", 0)
+                            iteration_completion_tokens = usage.get("output_tokens", 0)
                         else:
                             if hasattr(usage, "input_tokens"):
-                                total_prompt_tokens += usage.input_tokens
+                                iteration_prompt_tokens = usage.input_tokens
                             if hasattr(usage, "output_tokens"):
-                                total_completion_tokens += usage.output_tokens
+                                iteration_completion_tokens = usage.output_tokens
+
+                # Add this iteration's final usage to the totals
+                total_prompt_tokens += iteration_prompt_tokens
+                total_completion_tokens += iteration_completion_tokens
 
                 # Yield LLM end event
                 yield AgentEvent(
