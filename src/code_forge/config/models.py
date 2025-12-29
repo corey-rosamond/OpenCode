@@ -303,7 +303,7 @@ class RAGConfig(BaseModel):
 
     model_config = ConfigDict(validate_assignment=True)
 
-    enabled: bool = False  # Disabled by default until user enables
+    enabled: bool = True  # Enabled by default (gracefully degrades if deps missing)
     auto_index: bool = True
     watch_files: bool = True
     embedding_provider: str = "local"

@@ -109,6 +109,9 @@ MODEL_LIMITS: dict[str, tuple[int, int]] = {
     "mistral-medium": (32_768, 4096),
     "mistral-small": (32_768, 4096),
     "mixtral-8x7b": (32_768, 4096),
+    # Moonshot models
+    "kimi-k2": (128_000, 8192),
+    "moonshotai/kimi-k2": (128_000, 8192),
     # Default for unknown models
     "default": (8_192, 4096),
 }

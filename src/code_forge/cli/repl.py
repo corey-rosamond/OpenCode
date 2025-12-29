@@ -386,8 +386,13 @@ class CodeForgeREPL:
         state_text = "enabled" if new_state else "disabled"
         # No output here - the toolbar will update automatically
 
-    def _show_welcome(self) -> None:
-        """Display welcome message (skipped in quiet mode)."""
+    def _show_welcome(self, show_help_hint: bool = True) -> None:
+        """Display welcome message (skipped in quiet mode).
+
+        Args:
+            show_help_hint: Whether to show the "Type /help" hint.
+                           Set to False if showing indexing status first.
+        """
         if self._config.display.quiet:
             return
         cwd = Path.cwd()
@@ -395,10 +400,21 @@ class CodeForgeREPL:
 [bold {self._theme.accent}]Code-Forge[/bold {self._theme.accent}] v{__version__}
 AI-powered CLI Development Assistant
 
-[{self._theme.dim}]Directory:[/{self._theme.dim}] {cwd}
-[{self._theme.dim}]Type /help for commands, ? for shortcuts[/{self._theme.dim}]
-"""
+[{self._theme.dim}]Directory:[/{self._theme.dim}] {cwd}"""
         self._output.print(welcome.strip())
+        if show_help_hint:
+            self._output.print(
+                f"[{self._theme.dim}]Type /help for commands, ? for shortcuts[/{self._theme.dim}]"
+            )
+            self._output.print("")
+
+    def show_help_hint(self) -> None:
+        """Display the help hint line (for use after indexing)."""
+        if self._config.display.quiet:
+            return
+        self._output.print(
+            f"[{self._theme.dim}]Type /help for commands, ? for shortcuts[/{self._theme.dim}]"
+        )
         self._output.print("")
 
     def _show_shortcuts(self) -> None:
@@ -503,14 +519,19 @@ AI-powered CLI Development Assistant
             if asyncio.iscoroutine(result):
                 await result
 
-    async def run(self) -> int:
+    async def run(self, skip_welcome: bool = False) -> int:
         """Run the REPL loop.
+
+        Args:
+            skip_welcome: If True, skip showing the welcome message
+                         (useful when welcome was already shown for indexing).
 
         Returns:
             Exit code (0 for normal exit).
         """
         self._running = True
-        self._show_welcome()
+        if not skip_welcome:
+            self._show_welcome()
 
         while self._running:
             try:

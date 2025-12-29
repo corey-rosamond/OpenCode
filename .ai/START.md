@@ -103,7 +103,7 @@ Check `UNDONE.md` for the full roadmap and priorities.
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.20.0 (derived from pyproject.toml)
+**Version:** 1.20.1 (derived from pyproject.toml)
 **Status:** Production/Stable
 **Tests:** 5600+ (85%+ coverage)
 

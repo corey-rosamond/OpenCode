@@ -6,8 +6,25 @@ making it easier to test and swap implementations.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+
+logger = logging.getLogger(__name__)
+
+
+def _check_rag_dependencies() -> bool:
+    """Check if RAG dependencies are available.
+
+    Returns:
+        True if both sentence-transformers and chromadb are importable.
+    """
+    try:
+        import chromadb  # noqa: F401
+        import sentence_transformers  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 if TYPE_CHECKING:
     from code_forge.agents.executor import AgentExecutor
@@ -209,9 +226,10 @@ class Dependencies:
         register_builtin_commands()
         actual_command_executor = command_executor or CmdExecutor()
 
-        # Create or use provided RAG manager (if enabled)
+        # Create or use provided RAG manager (if enabled and deps available)
         actual_rag_manager: RAGManager | None = rag_manager
-        if actual_rag_manager is None and config.rag.enabled:
+        rag_deps_available = _check_rag_dependencies()
+        if actual_rag_manager is None and config.rag.enabled and rag_deps_available:
             try:
                 project_root = Path.cwd()
                 rag_config = config.rag
@@ -240,6 +258,11 @@ class Dependencies:
             except Exception as e:
                 logger.warning(f"Failed to create RAG manager: {e}")
                 actual_rag_manager = None
+        elif config.rag.enabled and not rag_deps_available:
+            logger.warning(
+                "RAG is enabled but dependencies not installed. "
+                "Install with: pip install 'code-forge[rag]'"
+            )
 
         # Create command context
         cmd_context = CmdContext(

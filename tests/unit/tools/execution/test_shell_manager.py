@@ -276,14 +276,16 @@ class TestShellManager:
     @pytest.mark.asyncio
     async def test_list_running(self) -> None:
         """Test list_running returns only running shells."""
+        # Use sleep to ensure shell2 is still running when we check
         shell1 = await ShellManager.create_shell("echo 1", "/tmp")
-        shell2 = await ShellManager.create_shell("echo 2", "/tmp")
+        shell2 = await ShellManager.create_shell("sleep 5", "/tmp")
         # Wait for shell1 to complete
         await shell1.process.wait()
         shell1.status = ShellStatus.COMPLETED
 
         running = ShellManager.list_running()
-        assert len(running) >= 1  # At least shell2 if still running
+        assert len(running) >= 1  # shell2 should still be running
+        assert shell2.id in [s.id for s in running]
         shell1.kill()
         shell2.kill()
 

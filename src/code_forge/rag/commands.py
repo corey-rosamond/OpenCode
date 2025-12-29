@@ -241,6 +241,11 @@ class RAGConfigEnableCommand(Command):
             return CommandResult.fail("Configuration not available")
 
         context.config.rag.enabled = True
+
+        # Also update existing RAG manager if present
+        if hasattr(context, "rag_manager") and context.rag_manager is not None:
+            context.rag_manager.config.enabled = True
+
         return CommandResult.ok("RAG enabled. Run `/rag index` to index the project.")
 
 
@@ -261,6 +266,11 @@ class RAGConfigDisableCommand(Command):
             return CommandResult.fail("Configuration not available")
 
         context.config.rag.enabled = False
+
+        # Also update existing RAG manager if present
+        if hasattr(context, "rag_manager") and context.rag_manager is not None:
+            context.rag_manager.config.enabled = False
+
         return CommandResult.ok("RAG disabled.")
 
 

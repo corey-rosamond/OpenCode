@@ -87,6 +87,8 @@ MODEL_ALIASES: dict[str, str] = {
     "mistral-large": "mistralai/mistral-large",
     "deepseek-v3": "deepseek/deepseek-chat",
     "qwen-72b": "qwen/qwen-2.5-72b-instruct",
+    # Moonshot models
+    "kimi-k2": "moonshotai/kimi-k2",
 }
 
 
@@ -119,6 +121,8 @@ MODEL_CONTEXT_LIMITS: dict[str, int] = {
     "mistralai/mistral-large": 128000,
     "deepseek/deepseek-chat": 64000,
     "qwen/qwen-2.5-72b-instruct": 32000,
+    # Moonshot models
+    "moonshotai/kimi-k2": 128000,
 }
 
 

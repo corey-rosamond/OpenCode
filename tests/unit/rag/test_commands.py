@@ -240,6 +240,26 @@ class TestRAGConfigEnableCommand:
 
         assert result.success is False
 
+    def test_execute_updates_existing_manager(self) -> None:
+        """Test enable updates existing RAG manager."""
+        cmd = RAGConfigEnableCommand()
+        parsed = MockParsedCommand()
+        rag_config = RAGConfig(enabled=False)
+        mock_manager = MagicMock()
+        mock_manager.config = RAGConfig(enabled=False)
+        context = MockCommandContext(
+            config=MockCodeForgeConfig(rag=rag_config),
+            rag_manager=mock_manager,
+        )
+
+        result = asyncio.get_event_loop().run_until_complete(
+            cmd.execute(parsed, context)
+        )
+
+        assert result.success is True
+        assert context.config.rag.enabled is True
+        assert context.rag_manager.config.enabled is True
+
 
 class TestRAGConfigDisableCommand:
     """Tests for RAGConfigDisableCommand."""
@@ -265,6 +285,26 @@ class TestRAGConfigDisableCommand:
 
         assert result.success is True
         assert context.config.rag.enabled is False
+
+    def test_execute_updates_existing_manager(self) -> None:
+        """Test disable updates existing RAG manager."""
+        cmd = RAGConfigDisableCommand()
+        parsed = MockParsedCommand()
+        rag_config = RAGConfig(enabled=True)
+        mock_manager = MagicMock()
+        mock_manager.config = RAGConfig(enabled=True)
+        context = MockCommandContext(
+            config=MockCodeForgeConfig(rag=rag_config),
+            rag_manager=mock_manager,
+        )
+
+        result = asyncio.get_event_loop().run_until_complete(
+            cmd.execute(parsed, context)
+        )
+
+        assert result.success is True
+        assert context.config.rag.enabled is False
+        assert context.rag_manager.config.enabled is False
 
 
 class TestRAGConfigShowCommand:

@@ -5,6 +5,27 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.1] - 2025-12-29
+
+### Fixed
+- **RAG Enable Command Bug**: `/rag config enable` now properly enables RAG
+  - Enable/disable commands now update existing RAG manager's config
+  - Previously, config change didn't propagate to existing manager instance
+  - RAG is now enabled by default (gracefully degrades if deps missing)
+  - 2 new tests for enable/disable with existing manager
+
+### Added
+- **Moonshot Kimi-K2 Model Support**: Added `moonshotai/kimi-k2` to model routing
+  - Added to MODEL_ALIASES with `kimi-k2` shorthand
+  - Added to MODEL_CONTEXT_LIMITS (128k context)
+  - Added to context limits (128k context, 8k output)
+  - Resolves "Unknown model" warning when using kimi-k2 as default
+
+### Improved
+- **Welcome Message Ordering**: Indexing status now appears after "Directory:" line
+- **Flaky Test Fix**: `test_list_running` now uses `sleep` command to ensure shell is still running
+- **Graceful RAG Degradation**: RAG no longer shows errors when dependencies aren't installed
+
 ## [1.16.0] - 2025-12-28
 
 ### Added

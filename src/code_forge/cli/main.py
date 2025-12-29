@@ -173,18 +173,31 @@ async def run_with_agent(
     if deps is None:
         deps = Dependencies.create(config, api_key)
 
-    # Auto-index project if RAG is enabled with auto_index
+    # Show welcome message first (without help hint if we'll show indexing status)
+    needs_indexing = False
     if deps.rag_manager is not None and config.rag.auto_index:
         try:
-            # Check if index needs building
             status = await deps.rag_manager.get_status()
-            if not status.indexed:
-                logger.info("Auto-indexing project for RAG...")
-                repl.output.print_dim("Indexing project for semantic search...")
-                await deps.rag_manager.index_project()
-                repl.output.print_dim("Indexing complete.")
+            needs_indexing = not status.indexed
+        except Exception:
+            pass
+
+    # Show welcome (defer help hint if indexing will happen)
+    repl._show_welcome(show_help_hint=not needs_indexing)
+
+    # Auto-index project if RAG is enabled with auto_index
+    if needs_indexing and deps.rag_manager is not None:
+        try:
+            logger.info("Auto-indexing project for RAG...")
+            repl.output.print_dim("Indexing project for semantic search...")
+            await deps.rag_manager.index_project()
+            repl.output.print_dim("Indexing complete.")
         except Exception as e:
             logger.warning(f"Auto-index failed: {e}")
+
+    # Show help hint after indexing (if we deferred it)
+    if needs_indexing:
+        repl.show_help_hint()
 
     # Create RAG augmenter and processor if RAG is enabled
     rag_augmenter = None
@@ -673,7 +686,7 @@ async def run_with_agent(
         return 0  # Exit after processing stdin
 
     # Run REPL (interactive mode)
-    return await repl.run()
+    return await repl.run(skip_welcome=True)
 
 
 def _format_tool_args(args: dict) -> str:
