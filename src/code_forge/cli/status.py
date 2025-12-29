@@ -276,11 +276,16 @@ class StatusBar:
         thinking_indicator = "Thinking: On" if self.thinking_enabled else "Thinking: Off"
         tokens_display = self._format_tokens_with_warning()
 
+        # Add compression indicator if present
+        compression_display = ""
+        if self.last_compression:
+            compression_display = f"  |  [Compressed] {self.last_compression}"
+
         return (
             f" {self.model}  |  "
             f"{tokens_display}  |  "
             f"{thinking_indicator}  |  "
-            f"{self.mode}  |  {self.status} "
+            f"{self.mode}  |  {self.status}{compression_display} "
         )
 
     def format_input_hints(self) -> str:

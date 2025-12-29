@@ -217,6 +217,7 @@ async def run_with_agent(
     command_executor = deps.command_executor
     command_context = deps.command_context
     session_context_tracker = deps.session_context_tracker
+    context_manager = deps.context_manager
 
     # Add repl to command context so commands can update status bar
     command_context.repl = repl
@@ -341,6 +342,8 @@ async def run_with_agent(
                 # Reset token counter if requested (e.g., /clear, /reset)
                 if cmd_result.data.get("reset_tokens"):
                     total_tokens[0] = 0
+                    if context_manager is not None:
+                        context_manager.reset()
                     repl._status.set_tokens(0)
 
             # Check for exit command
@@ -379,8 +382,10 @@ async def run_with_agent(
                     session_context_tracker.increment_turn()
                     session_context_tracker.extract_entities_from_text(text)
 
-                # Add user message to session
+                # Add user message to session and context manager
                 session_manager.add_message("user", text)
+                if context_manager is not None:
+                    context_manager.add_message({"role": "user", "content": text})
 
                 # Augment query with RAG context if applicable
                 augmented_text = text
@@ -598,9 +603,19 @@ async def run_with_agent(
                         completion_tokens = event.data.get("completion_tokens", 0)
                         event_total_tokens = event.data.get("total_tokens", 0)
 
-                        # Update cumulative token count and status bar
+                        # Update cumulative token count (for stats)
                         total_tokens[0] += event_total_tokens
-                        repl._status.set_tokens(total_tokens[0])
+
+                        # Update status bar with context window usage (not cumulative API tokens)
+                        # ContextManager tracks actual context being sent to model
+                        if context_manager is not None:
+                            repl._status.set_tokens(
+                                context_manager.token_usage,
+                                context_manager.tracker.limits.effective_limit,
+                            )
+                        else:
+                            # Fallback to cumulative if no context manager
+                            repl._status.set_tokens(total_tokens[0])
 
                         # JSON output mode: emit structured response
                         if is_json_mode:
@@ -644,8 +659,10 @@ async def run_with_agent(
                 # Process response through mode manager (extracts thinking if in thinking mode)
                 processed_output = mode_manager.process_response(accumulated_output)
 
-                # Add assistant message to session
+                # Add assistant message to session and context manager
                 session_manager.add_message("assistant", processed_output)
+                if context_manager is not None:
+                    context_manager.add_message({"role": "assistant", "content": processed_output})
 
             except Exception as e:
                 logger.exception("Agent error")
