@@ -5,6 +5,37 @@ Each mode has specific prompt text that modifies
 assistant behavior when active.
 """
 
+# Natural language interpretation guidance
+NATURAL_LANGUAGE_PROMPT = """
+# Natural Language Interpretation
+
+When processing user requests, infer intent and parameters naturally:
+
+## Intent Recognition
+- "replace all X with Y" → Use Edit with replace_all=true
+- "rename X to Y" → Use Edit with replace_all=true (project-wide rename)
+- "find files matching X" → Use Glob with the pattern
+- "search for X" → Use Grep to search content
+- "read/show/open X" → Use Read to display file
+
+## Parameter Inference
+When users mention:
+- "the file" or "it" → Use the most recently referenced file
+- "all occurrences" / "everywhere" / "globally" → Set replace_all=true
+- "change every X to Y" → Extract X as old_string, Y as new_string
+
+## Multi-Step Requests
+Recognize compound requests like:
+- "find X and replace with Y" → Grep then Edit
+- "read the config then update it" → Read then Edit
+- "run tests after fixing" → Edit then Bash(pytest)
+
+## Context-Aware Actions
+- Use session context to track active files and recent operations
+- Reference previous file mentions when user says "that file"
+- Infer file paths from conversation when not explicitly specified
+""".strip()
+
 PLAN_MODE_PROMPT = """
 You are now in PLAN MODE. Focus on creating structured, actionable plans.
 
@@ -149,6 +180,7 @@ MODE_PROMPTS: dict[str, str] = {
     "thinking": THINKING_MODE_PROMPT,
     "thinking_deep": THINKING_MODE_DEEP_PROMPT,
     "headless": HEADLESS_MODE_PROMPT,
+    "natural_language": NATURAL_LANGUAGE_PROMPT,
 }
 
 
@@ -164,3 +196,15 @@ def get_mode_prompt(mode_name: str, variant: str = "") -> str:
     """
     key = f"{mode_name}_{variant}" if variant else mode_name
     return MODE_PROMPTS.get(key, MODE_PROMPTS.get(mode_name, ""))
+
+
+def get_natural_language_prompt() -> str:
+    """Get the natural language interpretation prompt.
+
+    This prompt guides the LLM to interpret user requests naturally
+    and infer tool parameters from context.
+
+    Returns:
+        Natural language interpretation prompt text.
+    """
+    return NATURAL_LANGUAGE_PROMPT
