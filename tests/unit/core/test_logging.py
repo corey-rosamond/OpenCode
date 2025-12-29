@@ -21,15 +21,21 @@ class TestSetupLogging:
         logger.setLevel(logging.WARNING)
 
     def test_setup_logging_default(self) -> None:
-        """setup_logging should configure INFO level by default."""
-        setup_logging()
+        """setup_logging should configure DEBUG level on root logger.
+
+        Root logger is DEBUG to allow file handler to capture everything.
+        Console handler respects FORGE_LOG_LEVEL or default (WARNING).
+        """
+        setup_logging(file_logging=False)  # Disable file for test
         logger = logging.getLogger("Code-Forge")
-        assert logger.level == logging.INFO
+        # Root logger is DEBUG so file handler can capture all
+        assert logger.level == logging.DEBUG
 
     def test_setup_logging_custom_level(self) -> None:
-        """setup_logging should accept custom log level."""
-        setup_logging(level=logging.DEBUG)
+        """setup_logging should accept custom log level for console."""
+        setup_logging(level=logging.DEBUG, file_logging=False)
         logger = logging.getLogger("Code-Forge")
+        # Root logger is always DEBUG
         assert logger.level == logging.DEBUG
 
     def test_setup_logging_with_file(self) -> None:
@@ -61,7 +67,7 @@ class TestSetupLogging:
 
     def test_setup_logging_without_rich(self) -> None:
         """setup_logging should use StreamHandler when rich_console=False."""
-        setup_logging(rich_console=False)
+        setup_logging(rich_console=False, file_logging=False)
         logger = logging.getLogger("Code-Forge")
 
         # Should have a StreamHandler, not RichHandler
@@ -75,10 +81,10 @@ class TestSetupLogging:
 
     def test_setup_logging_clears_existing_handlers(self) -> None:
         """setup_logging should clear existing handlers to avoid duplicates."""
-        setup_logging()
+        setup_logging(file_logging=False)
         initial_count = len(logging.getLogger("Code-Forge").handlers)
 
-        setup_logging()
+        setup_logging(file_logging=False)
         final_count = len(logging.getLogger("Code-Forge").handlers)
 
         # Should not accumulate handlers

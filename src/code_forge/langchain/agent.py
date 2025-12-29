@@ -211,17 +211,20 @@ class CodeForgeAgent:
                 continue
 
             except TimeoutError:
-                return (
-                    f"Tool {tool_name} timed out after {self.tool_timeout}s",
-                    False,
-                )
+                error_msg = f"Tool {tool_name} timed out after {self.tool_timeout}s"
+                logger.error(error_msg)
+                return error_msg, False
 
             except Exception as e:
-                # Non-retryable error
-                return f"Error executing {tool_name}: {e}", False
+                # Non-retryable error - log with full traceback for debugging
+                error_msg = f"Error executing {tool_name}: {e}"
+                logger.error(error_msg, exc_info=True)
+                return error_msg, False
 
         # All retries exhausted
-        return f"Tool {tool_name} failed after {self.tool_max_retries + 1} attempts: {last_error}", False
+        error_msg = f"Tool {tool_name} failed after {self.tool_max_retries + 1} attempts: {last_error}"
+        logger.error(error_msg)
+        return error_msg, False
 
     async def run(
         self,
@@ -352,8 +355,19 @@ class CodeForgeAgent:
                         else:
                             result = f"Unknown tool: {tool_name}"
                             success = False
+                            logger.error(f"Unknown tool requested: {tool_name}")
 
                         tool_duration = time.time() - tool_start
+
+                        # Log tool result
+                        if success:
+                            logger.debug(
+                                f"Tool {tool_name} completed in {tool_duration:.1f}s"
+                            )
+                        else:
+                            logger.error(
+                                f"Tool {tool_name} failed after {tool_duration:.1f}s: {result}"
+                            )
 
                         # Record tool call
                         tool_call_records.append(
@@ -670,8 +684,19 @@ class CodeForgeAgent:
                         else:
                             result = f"Unknown tool: {tool_name}"
                             success = False
+                            logger.error(f"Unknown tool requested: {tool_name}")
 
                         tool_duration = time.time() - tool_start
+
+                        # Log tool result
+                        if success:
+                            logger.debug(
+                                f"Tool {tool_name} completed in {tool_duration:.1f}s"
+                            )
+                        else:
+                            logger.error(
+                                f"Tool {tool_name} failed after {tool_duration:.1f}s: {result}"
+                            )
 
                         yield AgentEvent(
                             type=AgentEventType.TOOL_END,
@@ -716,6 +741,7 @@ class CodeForgeAgent:
             )
 
         except Exception as e:
+            logger.error(f"Agent stream error: {e}", exc_info=True)
             yield AgentEvent(
                 type=AgentEventType.ERROR,
                 data={"error": str(e)},

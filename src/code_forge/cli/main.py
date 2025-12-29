@@ -15,10 +15,15 @@ from code_forge.cli.dependencies import Dependencies
 from code_forge.cli.interrupt import get_interrupt_handler
 from code_forge.cli.repl import CodeForgeREPL
 from code_forge.config import ConfigLoader
-from code_forge.core import get_logger
+from code_forge.core import get_logger, setup_logging
+from code_forge.core.logging import DEFAULT_LOG_DIR
 
 if TYPE_CHECKING:
     from code_forge.config import CodeForgeConfig
+
+# Initialize logging early - before any logger is used
+# By default: file logging at DEBUG level, console at WARNING (or FORGE_LOG_LEVEL)
+setup_logging()
 
 logger = get_logger("cli")
 
@@ -140,7 +145,11 @@ def main() -> int:
         logger.exception("REPL error")
         print(f"Error: {e}", file=sys.stderr)
         print(
-            "Hint: For debugging, run with FORGE_LOG_LEVEL=DEBUG environment variable",
+            f"Hint: Check logs at {DEFAULT_LOG_DIR / 'forge.log'} for details",
+            file=sys.stderr,
+        )
+        print(
+            "      Set FORGE_LOG_LEVEL=DEBUG for verbose console output",
             file=sys.stderr,
         )
         return 1
