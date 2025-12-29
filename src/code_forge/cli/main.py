@@ -280,6 +280,19 @@ async def run_with_agent(
     # Create session
     session = session_manager.create(title="CLI Session")
 
+    # Wire up session context persistence
+    if session_context_tracker is not None:
+        # Register hook to save context before session saves
+        def save_context_hook(sess: Any) -> None:
+            """Save session context to session metadata before save."""
+            session_context_tracker.save_to_session(sess)
+
+        session_manager.register_hook("session:save", save_context_hook)
+
+        # Load any existing context from the session (for resumed sessions)
+        if session_context_tracker.load_from_session(session):
+            logger.debug("Loaded session context from session metadata")
+
     # Track cumulative token usage (use list for mutable closure)
     total_tokens = [0]
 

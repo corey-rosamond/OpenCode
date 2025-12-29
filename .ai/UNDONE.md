@@ -387,8 +387,8 @@ Detect project type at session start and inject context into system prompt.
 
 ---
 
-### 🟡 CONV-005: Session Context Continuity
-**Status:** In Progress (Phases 1-3 Complete) v1.16.0
+### ✅ CONV-005: Session Context Continuity
+**Status:** ✅ COMPLETED v1.18.0
 **Priority:** High (P1)
 **Impact:** 8.0/10
 **Complexity:** Medium
@@ -408,19 +408,19 @@ Track session context including active files, recent operations, and resolve pro
 | **Phase 1: Context Tracker** | Track active file, last operation, mentioned entities | ✅ SessionContextTracker |
 | **Phase 2: Pronoun Resolution** | Resolve "it", "that file", "the function" references | ✅ PronounResolver |
 | **Phase 3: Context Injection** | Track operations from tool events | ✅ main.py integration |
-| **Phase 4: Memory Integration** | Persist context across session restarts | Session metadata storage |
+| **Phase 4: Memory Integration** | Persist context across session restarts | ✅ Session metadata storage |
 
 **Files Created:**
-- `src/code_forge/context/tracker.py` - SessionContextTracker with EntityType, OperationType
+- `src/code_forge/context/tracker.py` - SessionContextTracker with EntityType, OperationType, serialization
 - `src/code_forge/context/resolver.py` - PronounResolver with ResolvedReference
-- `tests/unit/context/test_tracker.py` - 27 tests
+- `tests/unit/context/test_tracker.py` - 43 tests (including persistence)
 - `tests/unit/context/test_resolver.py` - 22 tests
 
 **Progress:**
 - [x] Phase 1: SessionContextTracker implementation
 - [x] Phase 2: PronounResolver implementation
 - [x] Phase 3: Integration with main.py event loop
-- [ ] Phase 4: Session metadata persistence (remaining)
+- [x] Phase 4: Session metadata persistence (to_dict/from_dict, save_to_session/load_from_session)
 
 ---
 
@@ -569,7 +569,7 @@ Based on **impact × (1/effort)** analysis:
 - [x] CONV-004: Project Type Detection ✅ COMPLETED v1.15.0
 
 **Sprint 2 (4-5 days): Context Foundation**
-- [x] CONV-005: Session Context Continuity (Phases 1-3) ✅ v1.16.0
+- [x] CONV-005: Session Context Continuity (All Phases) ✅ v1.18.0
 - [x] CONV-006 Phase 1: Visual Diffs ✅ v1.17.0
 
 **Sprint 3 (1 week): Intelligence Layer**
@@ -597,6 +597,7 @@ Based on **impact × (1/effort)** analysis:
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.18.0 | 2025-12-29 | Session Context Persistence (CONV-005 Phase 4): Context serialization, session metadata storage, 43 tests |
 | 1.17.0 | 2025-12-29 | Visual Diffs (CONV-006 Phase 1): DiffPresenter with Rich, colored diff display for Edit operations, config toggle, 32 tests |
 | 1.16.0 | 2025-12-29 | Session Context (CONV-005 Phases 1-3): SessionContextTracker, PronounResolver, operation tracking, 49 tests |
 | 1.15.0 | 2025-12-28 | Project Detection (CONV-004): Smart project type detection, language profiles, prompt injection |

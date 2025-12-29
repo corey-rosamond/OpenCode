@@ -68,6 +68,38 @@ class TrackedEntity:
             return NotImplemented
         return self.type == other.type and self.value == other.value
 
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation.
+        """
+        return {
+            "type": self.type.value,
+            "value": self.value,
+            "context": self.context,
+            "mention_count": self.mention_count,
+            "last_mentioned": self.last_mentioned,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TrackedEntity":
+        """Deserialize from dictionary.
+
+        Args:
+            data: Dictionary containing entity data.
+
+        Returns:
+            TrackedEntity instance.
+        """
+        return cls(
+            type=EntityType(data["type"]),
+            value=data["value"],
+            context=data.get("context", ""),
+            mention_count=data.get("mention_count", 1),
+            last_mentioned=data.get("last_mentioned", 0),
+        )
+
 
 @dataclass
 class TrackedOperation:
@@ -88,6 +120,40 @@ class TrackedOperation:
     success: bool = True
     result_summary: str = ""
     turn: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation.
+        """
+        return {
+            "type": self.type.value,
+            "target": self.target,
+            "tool_name": self.tool_name,
+            "success": self.success,
+            "result_summary": self.result_summary,
+            "turn": self.turn,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "TrackedOperation":
+        """Deserialize from dictionary.
+
+        Args:
+            data: Dictionary containing operation data.
+
+        Returns:
+            TrackedOperation instance.
+        """
+        return cls(
+            type=OperationType(data["type"]),
+            target=data["target"],
+            tool_name=data["tool_name"],
+            success=data.get("success", True),
+            result_summary=data.get("result_summary", ""),
+            turn=data.get("turn", 0),
+        )
 
 
 @dataclass
@@ -110,6 +176,51 @@ class SessionContext:
 
     # Maximum operations to keep in history
     MAX_OPERATIONS: int = 50
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to dictionary.
+
+        Returns:
+            Dictionary representation.
+        """
+        return {
+            "active_file": self.active_file,
+            "last_operation": self.last_operation.to_dict() if self.last_operation else None,
+            "entities": {k: v.to_dict() for k, v in self.entities.items()},
+            "operations": [op.to_dict() for op in self.operations],
+            "turn_count": self.turn_count,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SessionContext":
+        """Deserialize from dictionary.
+
+        Args:
+            data: Dictionary containing context data.
+
+        Returns:
+            SessionContext instance.
+        """
+        last_op_data = data.get("last_operation")
+        last_operation = TrackedOperation.from_dict(last_op_data) if last_op_data else None
+
+        entities = {
+            k: TrackedEntity.from_dict(v)
+            for k, v in data.get("entities", {}).items()
+        }
+
+        operations = [
+            TrackedOperation.from_dict(op)
+            for op in data.get("operations", [])
+        ]
+
+        return cls(
+            active_file=data.get("active_file"),
+            last_operation=last_operation,
+            entities=entities,
+            operations=operations,
+            turn_count=data.get("turn_count", 0),
+        )
 
 
 class SessionContextTracker:
@@ -416,3 +527,47 @@ class SessionContextTracker:
             True if it looks like a URL.
         """
         return value.startswith(("http://", "https://", "ftp://"))
+
+    # Session persistence key for metadata
+    METADATA_KEY = "session_context"
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize context to dictionary.
+
+        Returns:
+            Dictionary representation of the context.
+        """
+        return self._context.to_dict()
+
+    def load_from_dict(self, data: dict[str, Any]) -> None:
+        """Load context from dictionary.
+
+        Args:
+            data: Dictionary containing context data.
+        """
+        self._context = SessionContext.from_dict(data)
+
+    def save_to_session(self, session: Any) -> None:
+        """Save context to session metadata.
+
+        Args:
+            session: Session object with metadata dict.
+        """
+        if hasattr(session, "metadata") and isinstance(session.metadata, dict):
+            session.metadata[self.METADATA_KEY] = self.to_dict()
+
+    def load_from_session(self, session: Any) -> bool:
+        """Load context from session metadata.
+
+        Args:
+            session: Session object with metadata dict.
+
+        Returns:
+            True if context was loaded, False if not found.
+        """
+        if hasattr(session, "metadata") and isinstance(session.metadata, dict):
+            data = session.metadata.get(self.METADATA_KEY)
+            if data:
+                self.load_from_dict(data)
+                return True
+        return False

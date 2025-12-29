@@ -334,3 +334,308 @@ class TestSessionContextTracker:
 
         ops = tracker.get_recent_operations(100)
         assert len(ops) <= 50  # MAX_OPERATIONS
+
+
+class TestTrackedEntitySerialization:
+    """Tests for TrackedEntity serialization."""
+
+    def test_to_dict(self) -> None:
+        """Test entity serialization to dict."""
+        entity = TrackedEntity(
+            type=EntityType.FILE,
+            value="test.py",
+            context="main file",
+            mention_count=3,
+            last_mentioned=5,
+        )
+
+        data = entity.to_dict()
+
+        assert data["type"] == "file"
+        assert data["value"] == "test.py"
+        assert data["context"] == "main file"
+        assert data["mention_count"] == 3
+        assert data["last_mentioned"] == 5
+
+    def test_from_dict(self) -> None:
+        """Test entity deserialization from dict."""
+        data = {
+            "type": "function",
+            "value": "my_func",
+            "context": "helper function",
+            "mention_count": 2,
+            "last_mentioned": 10,
+        }
+
+        entity = TrackedEntity.from_dict(data)
+
+        assert entity.type == EntityType.FUNCTION
+        assert entity.value == "my_func"
+        assert entity.context == "helper function"
+        assert entity.mention_count == 2
+        assert entity.last_mentioned == 10
+
+    def test_from_dict_defaults(self) -> None:
+        """Test entity deserialization with missing optional fields."""
+        data = {
+            "type": "class",
+            "value": "MyClass",
+        }
+
+        entity = TrackedEntity.from_dict(data)
+
+        assert entity.type == EntityType.CLASS
+        assert entity.value == "MyClass"
+        assert entity.context == ""
+        assert entity.mention_count == 1
+        assert entity.last_mentioned == 0
+
+    def test_roundtrip(self) -> None:
+        """Test entity serialization roundtrip."""
+        original = TrackedEntity(
+            type=EntityType.URL,
+            value="https://example.com",
+            context="API endpoint",
+            mention_count=5,
+            last_mentioned=15,
+        )
+
+        restored = TrackedEntity.from_dict(original.to_dict())
+
+        assert restored.type == original.type
+        assert restored.value == original.value
+        assert restored.context == original.context
+        assert restored.mention_count == original.mention_count
+        assert restored.last_mentioned == original.last_mentioned
+
+
+class TestTrackedOperationSerialization:
+    """Tests for TrackedOperation serialization."""
+
+    def test_to_dict(self) -> None:
+        """Test operation serialization to dict."""
+        op = TrackedOperation(
+            type=OperationType.EDIT,
+            target="src/main.py",
+            tool_name="Edit",
+            success=True,
+            result_summary="Updated function",
+            turn=3,
+        )
+
+        data = op.to_dict()
+
+        assert data["type"] == "edit"
+        assert data["target"] == "src/main.py"
+        assert data["tool_name"] == "Edit"
+        assert data["success"] is True
+        assert data["result_summary"] == "Updated function"
+        assert data["turn"] == 3
+
+    def test_from_dict(self) -> None:
+        """Test operation deserialization from dict."""
+        data = {
+            "type": "write",
+            "target": "new_file.py",
+            "tool_name": "Write",
+            "success": False,
+            "result_summary": "Failed to write",
+            "turn": 7,
+        }
+
+        op = TrackedOperation.from_dict(data)
+
+        assert op.type == OperationType.WRITE
+        assert op.target == "new_file.py"
+        assert op.tool_name == "Write"
+        assert op.success is False
+        assert op.result_summary == "Failed to write"
+        assert op.turn == 7
+
+    def test_roundtrip(self) -> None:
+        """Test operation serialization roundtrip."""
+        original = TrackedOperation(
+            type=OperationType.SEARCH,
+            target="*.py",
+            tool_name="Glob",
+            success=True,
+            result_summary="Found 10 files",
+            turn=12,
+        )
+
+        restored = TrackedOperation.from_dict(original.to_dict())
+
+        assert restored.type == original.type
+        assert restored.target == original.target
+        assert restored.tool_name == original.tool_name
+        assert restored.success == original.success
+        assert restored.result_summary == original.result_summary
+        assert restored.turn == original.turn
+
+
+class TestSessionContextTrackerPersistence:
+    """Tests for SessionContextTracker persistence."""
+
+    def test_to_dict_empty(self) -> None:
+        """Test serializing empty tracker."""
+        tracker = SessionContextTracker()
+        data = tracker.to_dict()
+
+        assert data["active_file"] is None
+        assert data["last_operation"] is None
+        assert data["entities"] == {}
+        assert data["operations"] == []
+        assert data["turn_count"] == 0
+
+    def test_to_dict_with_data(self) -> None:
+        """Test serializing tracker with data."""
+        tracker = SessionContextTracker()
+        tracker.set_active_file("main.py")
+        tracker.track_operation(OperationType.READ, "main.py", "Read")
+        tracker.track_entity(EntityType.FUNCTION, "process_data")
+        tracker.increment_turn()
+
+        data = tracker.to_dict()
+
+        assert data["active_file"] == "main.py"
+        assert data["last_operation"] is not None
+        assert data["last_operation"]["target"] == "main.py"
+        assert len(data["entities"]) >= 1
+        assert len(data["operations"]) == 1
+        assert data["turn_count"] == 1
+
+    def test_load_from_dict(self) -> None:
+        """Test loading tracker from dict."""
+        data = {
+            "active_file": "config.py",
+            "last_operation": {
+                "type": "edit",
+                "target": "config.py",
+                "tool_name": "Edit",
+                "success": True,
+                "result_summary": "Updated config",
+                "turn": 5,
+            },
+            "entities": {
+                "file:config.py": {
+                    "type": "file",
+                    "value": "config.py",
+                    "context": "",
+                    "mention_count": 2,
+                    "last_mentioned": 5,
+                }
+            },
+            "operations": [
+                {
+                    "type": "edit",
+                    "target": "config.py",
+                    "tool_name": "Edit",
+                    "success": True,
+                    "result_summary": "Updated config",
+                    "turn": 5,
+                }
+            ],
+            "turn_count": 5,
+        }
+
+        tracker = SessionContextTracker()
+        tracker.load_from_dict(data)
+
+        assert tracker.active_file == "config.py"
+        assert tracker.last_operation is not None
+        assert tracker.last_operation.target == "config.py"
+        assert tracker.turn_count == 5
+        assert len(tracker.get_recent_files()) == 1
+
+    def test_roundtrip(self) -> None:
+        """Test serialization roundtrip."""
+        original = SessionContextTracker()
+        original.set_active_file("app.py")
+        original.track_operation(OperationType.WRITE, "app.py", "Write")
+        original.track_entity(EntityType.CLASS, "Application")
+        original.increment_turn()
+        original.increment_turn()
+
+        # Serialize and restore
+        data = original.to_dict()
+        restored = SessionContextTracker()
+        restored.load_from_dict(data)
+
+        assert restored.active_file == original.active_file
+        assert restored.turn_count == original.turn_count
+        assert restored.last_operation is not None
+        assert restored.last_operation.target == "app.py"
+
+    def test_save_to_session(self) -> None:
+        """Test saving context to session metadata."""
+
+        # Mock session object
+        class MockSession:
+            def __init__(self) -> None:
+                self.metadata: dict = {}
+
+        session = MockSession()
+        tracker = SessionContextTracker()
+        tracker.set_active_file("test.py")
+        tracker.increment_turn()
+
+        tracker.save_to_session(session)
+
+        assert "session_context" in session.metadata
+        assert session.metadata["session_context"]["active_file"] == "test.py"
+        assert session.metadata["session_context"]["turn_count"] == 1
+
+    def test_load_from_session(self) -> None:
+        """Test loading context from session metadata."""
+
+        # Mock session object with existing context
+        class MockSession:
+            def __init__(self) -> None:
+                self.metadata: dict = {
+                    "session_context": {
+                        "active_file": "restored.py",
+                        "last_operation": None,
+                        "entities": {},
+                        "operations": [],
+                        "turn_count": 10,
+                    }
+                }
+
+        session = MockSession()
+        tracker = SessionContextTracker()
+
+        result = tracker.load_from_session(session)
+
+        assert result is True
+        assert tracker.active_file == "restored.py"
+        assert tracker.turn_count == 10
+
+    def test_load_from_session_no_data(self) -> None:
+        """Test loading from session with no context data."""
+
+        class MockSession:
+            def __init__(self) -> None:
+                self.metadata: dict = {}
+
+        session = MockSession()
+        tracker = SessionContextTracker()
+        tracker.set_active_file("existing.py")  # Pre-existing state
+
+        result = tracker.load_from_session(session)
+
+        assert result is False
+        # Original state should be preserved
+        assert tracker.active_file == "existing.py"
+
+    def test_load_from_session_no_metadata(self) -> None:
+        """Test loading from session without metadata attribute."""
+
+        class MockSession:
+            pass
+
+        session = MockSession()
+        tracker = SessionContextTracker()
+
+        result = tracker.load_from_session(session)
+
+        assert result is False
