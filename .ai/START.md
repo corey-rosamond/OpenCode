@@ -138,6 +138,30 @@ Each active task has a phase directory with:
 
 ---
 
+## Debugging and Logging
+
+Code-Forge writes logs to `~/.forge/logs/forge.log` by default.
+
+```bash
+# View recent logs
+cat ~/.forge/logs/forge.log
+
+# Tail logs in real-time
+tail -f ~/.forge/logs/forge.log
+
+# Enable verbose console output
+FORGE_LOG_LEVEL=DEBUG forge
+```
+
+**Log Levels:** DEBUG, INFO, WARNING (default), ERROR, CRITICAL
+
+**Log Rotation:** 10MB per file, 5 backups kept
+
+**File logging:** Always captures DEBUG level (everything)
+**Console logging:** Respects FORGE_LOG_LEVEL (default: WARNING)
+
+---
+
 ## Verification Before Claiming Done
 
 ```bash

@@ -5,6 +5,24 @@ All notable changes to Code-Forge will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.2] - 2025-12-29
+
+### Added
+- **Comprehensive Error Logging Infrastructure**
+  - `setup_logging()` now called at CLI startup before any logger use
+  - Logs written to `~/.forge/logs/forge.log` with 10MB rotation (5 backups)
+  - `FORGE_LOG_LEVEL` environment variable (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+  - File logging always captures DEBUG level for complete history
+  - Console logging respects FORGE_LOG_LEVEL (default: WARNING)
+  - Tool execution errors logged with full stack traces
+  - Agent stream errors logged with traceback context
+  - Timeout and retry failures properly logged at ERROR level
+
+### Fixed
+- **ChromaDB Telemetry Errors**: Fixed PostHog compatibility issue
+  - Set `ANONYMIZED_TELEMETRY=false` at module level before chromadb import
+  - Switched to recommended `PersistentClient` API for chromadb >= 0.4
+
 ## [1.20.1] - 2025-12-29
 
 ### Fixed

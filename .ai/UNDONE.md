@@ -608,6 +608,7 @@ Based on **impact × (1/effort)** analysis:
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.20.2 | 2025-12-29 | Error Logging Infrastructure: setup_logging() at startup, ~/.forge/logs/forge.log with rotation, FORGE_LOG_LEVEL env var, tool/agent error logging with stack traces |
 | 1.20.0 | 2025-12-29 | Workflow Orchestration (CONV-002): WorkflowMatcher, WorkflowComposer, WorkflowProgressTracker, WorkflowRollback, 95 tests |
 | 1.19.0 | 2025-12-29 | Conversational Translation Layer (CONV-001): IntentClassifier, ParameterResolver, ToolSequencePlanner, NaturalLanguageMiddleware, 94 tests |
 | 1.18.0 | 2025-12-29 | Session Context Persistence (CONV-005 Phase 4): Context serialization, session metadata storage, 43 tests |
