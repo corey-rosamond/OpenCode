@@ -6,76 +6,65 @@
 
 ## Current Status
 
-**Core features complete. Now focused on Conversational Intelligence Layer.**
+**Conversational Intelligence Layer complete. Polish and security work remaining.**
 
 Check `UNDONE.md` for the full roadmap and priorities.
 
 ### Active Development
 
-**CTX-001: Context Compression Visibility & Control** ⭐ TOP PRIORITY
-- No notification when context is compressed/truncated
-- Token counter doesn't update after compression
-- No warning when approaching context limit
-- **Effort:** 1-2 days | **Impact:** 9.0/10
+**CONV-006: Visual Interface Enhancements** ⭐ NEXT PRIORITY
+- Phase 1 (Visual Diffs) complete
+- Phases 2-4 pending: Code Suggestions, File Tree, Progress Visualization
+- **Effort:** Medium | **Impact:** 6.0/10
 
-**Conversational UX Gap Analysis** - 6 features identified:
-- CONV-001: Conversational Translation Layer (P0)
-- CONV-002: Workflow Orchestration (P0)
-- CONV-003: Context-Aware Error Recovery (P1) ⚡ Quick Win
-- CONV-004: Smart Project Type Detection (P1) ⚡ Quick Win
-- CONV-005: Session Context Continuity (P1)
-- CONV-006: Visual Interface Enhancements (P2)
+**SEC-022: SSRF Check Race Condition**
+- DNS rebinding vulnerability in web fetcher
+- Documented, requires custom aiohttp connector
 
-### Recently Completed
+### Recently Completed (v1.13.0 - v1.20.0)
 
-**FEAT-004: Undo System & Conversational UX** - ✅ Complete (v1.12.0)
-- Undo/Redo for Edit, Write, Bash file operations
-- BashFileDetector for shell command analysis
-- ConversationalPresenter for natural language tool descriptions
-- ErrorExplainer for friendly error messages
-- Commands: /undo, /redo, /undo-history, /undo-clear
-- 113 new tests, 5406 total tests pass
+**CONV-002: Workflow Orchestration** - ✅ Complete (v1.20.0)
+- WorkflowMatcher with 7 built-in trigger patterns
+- WorkflowComposer for auto-sequencing
+- WorkflowProgressTracker with observer pattern
+- WorkflowRollback using undo system
+- 95 new tests
 
-**RAG-001: RAG Search UX Enhancements** - ✅ Complete (v1.11.0)
-- Hybrid search combining vector + text search fallback
-- Scope indicator showing project root when searching
-- Low confidence warning for vector scores < 0.3
+**CONV-001: Conversational Translation Layer** - ✅ Complete (v1.19.0)
+- IntentClassifier with 20+ intent types, 40+ patterns
+- ParameterResolver with context-aware inference
+- ToolSequencePlanner with 7 templates
+- NaturalLanguageMiddleware for request preprocessing
+- 94 new tests
 
-**FEAT-002: Multi-Agent Tools & Web Search** - ✅ Complete (v1.10.0)
-- TaskTool, WebSearchBaseTool, WebFetchBaseTool
-- RAG integration for agents
+**CONV-005: Session Context Continuity** - ✅ Complete (v1.18.0)
+- SessionContextTracker for file/operation tracking
+- PronounResolver for "it"/"that file" resolution
+- Session metadata persistence
 
-**FEAT-001: Per-Project RAG Support** - ✅ Complete (v1.9.0)
-- All 5 phases complete with 348 tests
+**CONV-006 Phase 1: Visual Diffs** - ✅ Complete (v1.17.0)
+- DiffPresenter with Rich rendering
+- Unified and minimal diff styles
+
+**CONV-004: Smart Project Type Detection** - ✅ Complete (v1.15.0)
+**CONV-003: Context-Aware Error Recovery** - ✅ Complete (v1.14.0)
+**CTX-001: Context Compression Visibility** - ✅ Complete (v1.13.0)
 
 ### Remaining Work
 
 | Priority | Status | Items |
 |----------|--------|-------|
-| P0 Critical | 3 pending | CTX-001, CONV-001, CONV-002 |
-| P1 High | 4 pending | CONV-003/004/005, SEC-022 |
-| P2 Medium | 1 pending | CONV-006 |
+| P0 Critical | 0 pending | All complete |
+| P1 High | 1 pending | SEC-022 |
+| P2 Medium | 1 pending | CONV-006 (Phases 2-4) |
 | P3 Low | 3 deferred | Minor improvements |
-| Features | 7 pending | See UNDONE.md for details |
 
-### Other Recent Completions (v1.8.1 - v1.9.0)
+### Previous Completions (v1.8.1 - v1.12.0)
 
+- FEAT-004: Undo System & Conversational UX (v1.12.0)
+- RAG-001: RAG Search UX Enhancements (v1.11.0)
+- FEAT-002: Multi-Agent Tools & Web Search (v1.10.0)
 - FEAT-001: Per-Project RAG Support (v1.9.0)
-- DOC-001: Fixed README package references
-- CODE-001: Added UTILITY to ToolCategory enum
-- CICD-001: Created GitHub Actions CI/CD pipeline
-- CODE-002: Removed dead WebConfig code
-- CODE-003: Single-source version via importlib.metadata
-- CODE-004: Audited threading.Lock usage
-- CODE-005: Created centralized constants module
-- SESS-007: Added `/session cleanup` command
-- MCP-016: Added circular dependency detection to skills
-- TOOL-010: Sanitized exception messages to prevent info leakage
-- TOOL-009: Edit tool preserves file encoding
-- SESS-002: Token cache monitoring and config
-- CLI-002: Added `--json`, `--no-color`, `-q`/`--quiet` CLI flags
-- ARCH-004: Unified config patterns to Pydantic BaseModel
-- CLI-003: Fixed streaming token counter showing 0/200000
 
 **When starting new work:**
 1. Check `UNDONE.md` for deferred items or feature requests
@@ -114,9 +103,9 @@ Check `UNDONE.md` for the full roadmap and priorities.
 - Workflow system for multi-step agent pipelines
 - Full CLI with tools, permissions, sessions, and extensibility
 
-**Version:** 1.12.0 (derived from pyproject.toml)
+**Version:** 1.20.0 (derived from pyproject.toml)
 **Status:** Production/Stable
-**Tests:** 5406+ (85%+ coverage)
+**Tests:** 5600+ (85%+ coverage)
 
 ---
 
