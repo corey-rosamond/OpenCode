@@ -12,11 +12,11 @@ if TYPE_CHECKING:
 
 
 class ClearCommand(Command):
-    """Clear the screen."""
+    """Clear the screen and conversation context."""
 
     name = "clear"
     aliases = ["cls"]
-    description = "Clear the screen"
+    description = "Clear the screen and conversation context"
     usage = "/clear"
     category = CommandCategory.CONTROL
 
@@ -25,10 +25,19 @@ class ClearCommand(Command):
         parsed: ParsedCommand,
         context: CommandContext,
     ) -> CommandResult:
-        """Clear screen."""
+        """Clear screen and context."""
+        # Clear context manager (conversation history)
+        if context.context_manager:
+            context.context_manager.reset()
+
         # ANSI escape code to clear screen and move cursor to top
         context.print("\033[2J\033[H")
-        return CommandResult.ok("")
+
+        # Signal to reset token counter
+        return CommandResult.ok(
+            "Conversation cleared.",
+            data={"action": "clear", "reset_tokens": True},
+        )
 
 
 class ExitCommand(Command):
@@ -89,7 +98,11 @@ class ResetCommand(Command):
         if not messages:
             messages.append("Reset complete.")
 
-        return CommandResult.ok("\n".join(messages))
+        # Signal to reset token counter
+        return CommandResult.ok(
+            "\n".join(messages),
+            data={"action": "reset", "reset_tokens": True},
+        )
 
 
 class StopCommand(Command):

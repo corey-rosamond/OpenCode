@@ -310,6 +310,13 @@ async def run_with_agent(
                 explained = ErrorExplainer.explain(cmd_result.error)
                 repl.output.print_error(explained)
 
+            # Handle special command actions
+            if cmd_result.data:
+                # Reset token counter if requested (e.g., /clear, /reset)
+                if cmd_result.data.get("reset_tokens"):
+                    total_tokens[0] = 0
+                    repl._status.set_tokens(0)
+
             # Check for exit command
             if text.strip() in ("/exit", "/quit", "/q"):
                 repl.stop()

@@ -80,7 +80,10 @@ class ContextResetCommand(Command):
             return CommandResult.fail("Context manager not available")
 
         context.context_manager.reset()
-        return CommandResult.ok("Context cleared.\nMessages: 0\nTokens: 0")
+        return CommandResult.ok(
+            "Context cleared.\nMessages: 0\nTokens: 0",
+            data={"reset_tokens": True},
+        )
 
 
 class ContextModeCommand(Command):
