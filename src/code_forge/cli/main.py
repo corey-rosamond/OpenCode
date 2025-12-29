@@ -436,6 +436,7 @@ async def run_with_agent(
                     elif event.type == AgentEventType.LLM_CHUNK:
                         # Stream text output in real-time
                         chunk = event.data.get("content", "")
+                        is_reasoning = event.data.get("is_reasoning", False)
                         if chunk:
                             # Filter out keyboard escape sequences that may bleed in
                             chunk = strip_keyboard_escapes(chunk)
@@ -445,9 +446,16 @@ async def run_with_agent(
                                     if spinner:
                                         spinner.stop()
                                     first_content_received = True
+                                    # If first content is reasoning, show a header
+                                    if is_reasoning and not is_json_mode:
+                                        repl._console.print("[dim]Reasoning:[/dim]", end=" ")
                                 # Only print chunks in non-JSON mode
                                 if not is_json_mode:
-                                    repl._console.print(chunk, end="")
+                                    if is_reasoning:
+                                        # Show reasoning in dim/italic style
+                                        repl._console.print(f"[dim italic]{chunk}[/dim italic]", end="")
+                                    else:
+                                        repl._console.print(chunk, end="")
                                 accumulated_output += chunk
 
                     elif event.type == AgentEventType.LLM_END:

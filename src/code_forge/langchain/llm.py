@@ -291,6 +291,7 @@ class OpenRouterLLM(BaseChatModel):
         async for chunk in self.client.stream(request):
             # Convert delta to message chunk
             content = chunk.delta.content or ""
+            reasoning_content = chunk.delta.reasoning_content or ""
             tool_call_chunks = []
 
             if chunk.delta.tool_calls:
@@ -313,10 +314,16 @@ class OpenRouterLLM(BaseChatModel):
                     "total_tokens": chunk.usage.total_tokens,
                 }
 
+            # Include reasoning_content in additional_kwargs for models like DeepSeek/Kimi
+            additional_kwargs = {}
+            if reasoning_content:
+                additional_kwargs["reasoning_content"] = reasoning_content
+
             message_chunk = AIMessageChunk(
                 content=content,
                 tool_call_chunks=tool_call_chunks if tool_call_chunks else [],  # type: ignore[arg-type]
                 usage_metadata=usage_metadata,  # type: ignore[arg-type]
+                additional_kwargs=additional_kwargs if additional_kwargs else {},
             )
 
             yield ChatGenerationChunk(
@@ -324,11 +331,15 @@ class OpenRouterLLM(BaseChatModel):
                 generation_info={
                     "finish_reason": chunk.finish_reason,
                     "usage": usage_metadata,
+                    "reasoning_content": reasoning_content if reasoning_content else None,
                 },
             )
 
             if run_manager:
-                await run_manager.on_llm_new_token(content)
+                # Report both content and reasoning content as new tokens
+                token_text = content + reasoning_content
+                if token_text:
+                    await run_manager.on_llm_new_token(token_text)
 
     def bind_tools(
         self,

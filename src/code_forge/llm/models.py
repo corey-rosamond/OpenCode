@@ -285,6 +285,7 @@ class StreamDelta:
     role: str | None = None
     content: str | None = None
     tool_calls: list[dict[str, Any]] | None = None
+    reasoning_content: str | None = None  # DeepSeek/Kimi reasoning tokens
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> StreamDelta:
@@ -293,6 +294,7 @@ class StreamDelta:
             role=data.get("role"),
             content=data.get("content"),
             tool_calls=data.get("tool_calls"),
+            reasoning_content=data.get("reasoning_content"),
         )
 
 

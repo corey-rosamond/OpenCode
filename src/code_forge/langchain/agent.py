@@ -557,12 +557,24 @@ class CodeForgeAgent:
                 # Stream LLM response
                 messages = self.memory.to_langchain_messages()
                 accumulated_content = ""
+                accumulated_reasoning = ""
                 tool_call_chunks: list[dict] = []
 
                 async for chunk in self._bound_llm.astream(
                     messages,
                     config={"callbacks": callbacks} if callbacks else None,
                 ):
+                    # Accumulate reasoning content (DeepSeek/Kimi thinking tokens)
+                    reasoning_content = None
+                    if hasattr(chunk, "additional_kwargs"):
+                        reasoning_content = chunk.additional_kwargs.get("reasoning_content")
+                    if reasoning_content:
+                        accumulated_reasoning += str(reasoning_content)
+                        yield AgentEvent(
+                            type=AgentEventType.LLM_CHUNK,
+                            data={"content": reasoning_content, "is_reasoning": True},
+                        )
+
                     # Accumulate content
                     if hasattr(chunk, "content") and chunk.content:
                         chunk_content = chunk.content
@@ -598,15 +610,25 @@ class CodeForgeAgent:
                 # Yield LLM end event
                 yield AgentEvent(
                     type=AgentEventType.LLM_END,
-                    data={"content": accumulated_content},
+                    data={
+                        "content": accumulated_content,
+                        "reasoning": accumulated_reasoning,
+                    },
                 )
 
                 # Assemble tool calls from streamed chunks (avoids duplicate API call)
                 assembled_tool_calls = self._assemble_tool_calls(tool_call_chunks)
 
+                # Combine reasoning and content for the full response
+                # (reasoning comes first as the model's thinking process)
+                full_content = accumulated_content
+                if accumulated_reasoning and not accumulated_content:
+                    # If only reasoning but no content, use reasoning as content
+                    full_content = accumulated_reasoning
+
                 # Build response message from streamed content
                 response = AIMessage(
-                    content=accumulated_content,
+                    content=full_content,
                     tool_calls=assembled_tool_calls,
                 )
 
@@ -665,7 +687,7 @@ class CodeForgeAgent:
                         )
                 else:
                     # No tool calls - done
-                    self.memory.add_message(Message.assistant(accumulated_content))
+                    self.memory.add_message(Message.assistant(full_content))
                     break
 
             # Yield completion event
