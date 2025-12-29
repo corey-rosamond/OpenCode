@@ -24,6 +24,14 @@ Example:
 
 from __future__ import annotations
 
+# Disable ChromaDB telemetry BEFORE any chromadb import
+# This prevents PostHog compatibility errors (capture() signature mismatch)
+# Must be set at module level before chromadb is imported anywhere
+# See: https://github.com/chroma-core/chroma/issues/1665
+import os
+
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
+
 import asyncio
 import json
 import logging
@@ -189,7 +197,6 @@ class ChromaStore(VectorStore):
 
         try:
             import chromadb
-            from chromadb.config import Settings
         except ImportError as e:
             raise ImportError(
                 "chromadb is required for ChromaStore. "
@@ -199,12 +206,11 @@ class ChromaStore(VectorStore):
         # Create persist directory
         self._persist_dir.mkdir(parents=True, exist_ok=True)
 
-        # Initialize client with persistence
-        settings = Settings(
-            persist_directory=str(self._persist_dir),
-            anonymized_telemetry=False,
+        # Use PersistentClient for proper persistent storage
+        # This is the recommended API for chromadb >= 0.4
+        self._client = chromadb.PersistentClient(
+            path=str(self._persist_dir),
         )
-        self._client = chromadb.Client(settings)
 
         # Get or create collection with cosine similarity
         self._collection = self._client.get_or_create_collection(
