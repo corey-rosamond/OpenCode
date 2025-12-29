@@ -285,16 +285,39 @@ class StreamDelta:
     role: str | None = None
     content: str | None = None
     tool_calls: list[dict[str, Any]] | None = None
-    reasoning_content: str | None = None  # DeepSeek/Kimi reasoning tokens
+    reasoning_content: str | None = None  # DeepSeek/Kimi/OpenRouter reasoning tokens
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> StreamDelta:
-        """Create from API response."""
+        """Create from API response.
+
+        Handles multiple reasoning token formats:
+        - reasoning_content: DeepSeek/Kimi native format
+        - reasoning_details: OpenRouter unified format (array of objects)
+        - thinking: Alternative format used by some models
+        """
+        # Extract reasoning content from various formats
+        reasoning = data.get("reasoning_content")
+
+        # OpenRouter's reasoning_details format (array of detail objects)
+        if not reasoning and data.get("reasoning_details"):
+            details = data["reasoning_details"]
+            if isinstance(details, list):
+                # Extract text from reasoning detail objects
+                reasoning = "".join(
+                    d.get("content", "") if isinstance(d, dict) else str(d)
+                    for d in details
+                )
+
+        # Alternative "thinking" format
+        if not reasoning:
+            reasoning = data.get("thinking")
+
         return cls(
             role=data.get("role"),
             content=data.get("content"),
             tool_calls=data.get("tool_calls"),
-            reasoning_content=data.get("reasoning_content"),
+            reasoning_content=reasoning,
         )
 
 
